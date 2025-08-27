@@ -1,0 +1,42 @@
+what: this
+ami: who knows
+files:
+        something: "this space intentionally left blank"
+        thoughts: |
+                sometimes I sits and thinks
+                sometimes I just sits.
+        nginx.conf: |
+                user nginx;
+                worker_processes  3;
+                error_log  /var/log/nginx/error.log;
+                events {
+                  worker_connections  10240;
+                }
+
+                stream {
+                        # ES definition
+                        upstream stream_es {
+                                least_conn;
+                                server somewhere:9200;
+                        }
+
+                        server {
+                                listen 3080; # the port to listen on this server
+                                proxy_pass stream_es; # forward traffic to this upstream group
+                                proxy_timeout 30s;
+                                proxy_connect_timeout 30s;
+                        }
+                        #
+                        # Kibana definition
+                        upstream stream_kibana {
+                                least_conn;
+                                server somewhere:5601;
+                        }
+
+                        server {
+                                listen 3081; # the port to listen on this server
+                                proxy_pass stream_kibana; # forward traffic to this upstream group
+                                proxy_timeout 30s;
+                                proxy_connect_timeout 30s;
+                        }
+                }

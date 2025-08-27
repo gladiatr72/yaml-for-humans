@@ -29,7 +29,7 @@ def _huml_main(
 ) -> None:
     """
     Main CLI functionality for processing YAML/JSON input.
-    
+
     Args:
         indent: Indentation level
         format: Input format (yaml, json, auto)
@@ -63,12 +63,12 @@ def _generate_k8s_filename(
 ) -> str:
     """
     Generate appropriate filename for Kubernetes resources.
-    
+
     Args:
         document: YAML document (should have apiVersion, kind, metadata)
         source_file: Source file path for fallback naming
         stdin_position: Position in stdin for fallback naming
-        
+
     Returns:
         Generated filename
     """
@@ -77,13 +77,13 @@ def _generate_k8s_filename(
 def _read_stdin_with_timeout(timeout_ms: int = ...) -> str:
     """
     Read from stdin with a timeout.
-    
+
     Args:
         timeout_ms: Timeout in milliseconds
-        
+
     Returns:
         Input text from stdin
-        
+
     Raises:
         TimeoutError: If timeout is exceeded
     """
@@ -98,7 +98,7 @@ def _write_to_output(
 ) -> None:
     """
     Write documents to output file or directory.
-    
+
     Args:
         documents: List of parsed documents
         output: Output path

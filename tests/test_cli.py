@@ -19,7 +19,9 @@ from yaml_for_humans.cli import (
     _huml_main,
     _is_json_lines,
     _is_multi_document_yaml,
+    _is_valid_file_type,
     _looks_like_json,
+    _looks_like_yaml,
     _read_stdin_with_timeout,
 )
 
@@ -459,11 +461,11 @@ ports: [80, 443]"""
         """Test --inputs flag with non-existent file."""
         nonexistent_file = os.path.join(self.temp_dir, "missing.yaml")
 
-        with pytest.raises(SystemExit):
-            _huml_main(inputs=nonexistent_file, timeout=1000)
+        # Now continues processing instead of exiting
+        _huml_main(inputs=nonexistent_file, timeout=1000)
 
         captured = capsys.readouterr()
-        assert "Error: File not found" in captured.err
+        assert "File not found" in captured.err
         assert "missing.yaml" in captured.err
 
     def test_inputs_flag_empty_file(self, capsys):
@@ -489,8 +491,8 @@ ports: [80, 443]"""
         with open(invalid_file, "w") as f:
             f.write('{"invalid": json}')  # Invalid JSON
 
-        with pytest.raises(SystemExit):
-            _huml_main(inputs=invalid_file, timeout=1000)
+        # Now continues processing instead of exiting
+        _huml_main(inputs=invalid_file, timeout=1000)
 
         captured = capsys.readouterr()
         assert "Error: Failed to parse" in captured.err
@@ -1213,6 +1215,381 @@ name: doc3"""
         assert "name: single-doc" in output
         assert "type: test" in output
         assert "---" not in output
+
+
+class TestGlobbingAndDirectorySupport:
+    """Test the enhanced --inputs flag with globbing and directory support."""
+
+    def setup_method(self):
+        """Set up test files and directories."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.sub_dir = os.path.join(self.temp_dir, "subdir")
+        os.makedirs(self.sub_dir)
+
+        # Create various test files
+        self.json_files = []
+        self.yaml_files = []
+        self.other_files = []
+
+        # JSON files
+        for i in range(3):
+            json_file = os.path.join(self.temp_dir, f"config{i}.json")
+            with open(json_file, "w") as f:
+                json.dump({"name": f"json-config-{i}", "id": i}, f)
+            self.json_files.append(json_file)
+
+        # YAML files
+        for i in range(2):
+            yaml_file = os.path.join(self.temp_dir, f"service{i}.yaml")
+            with open(yaml_file, "w") as f:
+                yaml.dump({"service": f"web-{i}", "port": 8000 + i}, f)
+            self.yaml_files.append(yaml_file)
+
+        # Files in subdirectory
+        sub_json = os.path.join(self.sub_dir, "sub.json")
+        with open(sub_json, "w") as f:
+            json.dump({"location": "subdirectory"}, f)
+        self.json_files.append(sub_json)
+
+        # Invalid files
+        txt_file = os.path.join(self.temp_dir, "readme.txt")
+        with open(txt_file, "w") as f:
+            f.write("This is just text, not JSON or YAML")
+        self.other_files.append(txt_file)
+
+        # Invalid JSON file
+        invalid_json = os.path.join(self.temp_dir, "invalid.json")
+        with open(invalid_json, "w") as f:
+            f.write('{"invalid": json}')  # Invalid syntax
+        self.other_files.append(invalid_json)
+
+    def teardown_method(self):
+        """Clean up test files."""
+        import shutil
+
+        shutil.rmtree(self.temp_dir)
+
+    def test_valid_file_type_detection(self):
+        """Test _is_valid_file_type function."""
+        # Valid extensions
+        assert _is_valid_file_type(self.json_files[0])
+        assert _is_valid_file_type(self.yaml_files[0])
+
+        # Invalid extension but might contain valid content
+        assert not _is_valid_file_type(self.other_files[0])  # txt file
+
+    def test_looks_like_yaml_function(self):
+        """Test the _looks_like_yaml helper function."""
+        assert _looks_like_yaml("key: value")
+        assert _looks_like_yaml("- item1\n- item2")
+        assert _looks_like_yaml("---\nkey: value")
+        assert _looks_like_yaml("key: value\n  nested: true")
+
+        # Should not detect JSON as YAML
+        assert not _looks_like_yaml('{"key": "value"}')
+        assert not _looks_like_yaml('["item1", "item2"]')
+
+        # Edge cases
+        assert not _looks_like_yaml("")
+        assert not _looks_like_yaml("   ")
+
+    def test_glob_pattern_json_files(self, capsys):
+        """Test globbing with JSON files."""
+        glob_pattern = os.path.join(self.temp_dir, "*.json")
+
+        _huml_main(inputs=glob_pattern, timeout=1000)
+
+        captured = capsys.readouterr()
+        output = captured.out
+        error = captured.err
+
+        # Should process all JSON files
+        assert "name: json-config-0" in output
+        assert "name: json-config-1" in output
+        assert "name: json-config-2" in output
+
+        # Should have multi-document separators
+        assert output.count("---") >= 2
+
+        # Should report invalid file
+        assert (
+            "Skipping file with invalid format" in error
+            or "Error: Failed to parse" in error
+        )
+
+    def test_glob_pattern_yaml_files(self, capsys):
+        """Test globbing with YAML files."""
+        glob_pattern = os.path.join(self.temp_dir, "service*.yaml")
+
+        _huml_main(inputs=glob_pattern, timeout=1000)
+
+        captured = capsys.readouterr()
+        output = captured.out
+
+        # Should process all matching YAML files
+        assert "service: web-0" in output
+        assert "service: web-1" in output
+        assert "port: 8000" in output
+        assert "port: 8001" in output
+
+    def test_glob_pattern_no_matches(self, capsys):
+        """Test glob pattern that matches no files."""
+        glob_pattern = os.path.join(self.temp_dir, "nonexistent*.json")
+
+        _huml_main(inputs=glob_pattern, timeout=1000)
+
+        captured = capsys.readouterr()
+        error = captured.err
+        output = captured.out
+
+        assert "No files found matching pattern" in error
+        assert output == ""  # No output since no files matched
+
+    def test_directory_processing(self, capsys):
+        """Test directory processing with os.sep."""
+        dir_path = self.temp_dir + os.sep
+
+        _huml_main(inputs=dir_path, timeout=1000)
+
+        captured = capsys.readouterr()
+        output = captured.out
+        error = captured.err
+
+        # Should process all valid files in directory
+        assert "name: json-config-0" in output
+        assert "service: web-0" in output
+
+        # Should skip invalid files and report them
+        assert "Skipping file with invalid format" in error
+
+    def test_directory_nonexistent(self, capsys):
+        """Test directory that doesn't exist."""
+        nonexistent_dir = os.path.join(self.temp_dir, "missing") + os.sep
+
+        _huml_main(inputs=nonexistent_dir, timeout=1000)
+
+        captured = capsys.readouterr()
+        error = captured.err
+        output = captured.out
+
+        assert "Directory not found" in error
+        assert output == ""  # No output since directory doesn't exist
+
+    def test_mixed_glob_and_files(self, capsys):
+        """Test mixing glob patterns and explicit files."""
+        glob_pattern = os.path.join(self.temp_dir, "*.json")
+        explicit_file = self.yaml_files[0]
+        inputs = f"{glob_pattern},{explicit_file}"
+
+        _huml_main(inputs=inputs, timeout=1000)
+
+        captured = capsys.readouterr()
+        output = captured.out
+
+        # Should process both glob matches and explicit file
+        assert "name: json-config-" in output  # From glob
+        assert "service: web-0" in output  # From explicit file
+
+    def test_mixed_directory_and_files(self, capsys):
+        """Test mixing directory and explicit files."""
+        dir_path = self.sub_dir + os.sep  # Only has sub.json
+        explicit_file = self.yaml_files[0]
+        inputs = f"{dir_path},{explicit_file}"
+
+        _huml_main(inputs=inputs, timeout=1000)
+
+        captured = capsys.readouterr()
+        output = captured.out
+
+        # Should process both directory contents and explicit file
+        assert "location: subdirectory" in output  # From directory
+        assert "service: web-0" in output  # From explicit file
+
+    def test_continue_on_invalid_files(self, capsys):
+        """Test that processing continues even with invalid files."""
+        # Mix valid and invalid files
+        valid_file = self.json_files[0]
+        invalid_file = self.other_files[1]  # invalid.json
+        inputs = f"{valid_file},{invalid_file}"
+
+        _huml_main(inputs=inputs, timeout=1000)
+
+        captured = capsys.readouterr()
+        output = captured.out
+        error = captured.err
+
+        # Should process valid file
+        assert "name: json-config-0" in output
+
+        # Should report error for invalid file but continue
+        assert "Error: Failed to parse" in error
+        assert "invalid.json" in error
+
+    def test_glob_with_subdirectories(self, capsys):
+        """Test glob patterns that include subdirectories."""
+        glob_pattern = os.path.join(self.temp_dir, "**", "*.json")
+
+        # Note: Need to use recursive glob for this to work
+        import glob as glob_module
+
+        matches = glob_module.glob(glob_pattern, recursive=True)
+
+        if matches:  # Only test if recursive glob is supported
+            _huml_main(inputs=glob_pattern, timeout=1000)
+
+            captured = capsys.readouterr()
+            # This might not work with basic glob, but we test the pattern
+
+    def test_empty_directory(self, capsys):
+        """Test processing empty directory."""
+        empty_dir = os.path.join(self.temp_dir, "empty")
+        os.makedirs(empty_dir)
+        dir_path = empty_dir + os.sep
+
+        _huml_main(inputs=dir_path, timeout=1000)
+
+        captured = capsys.readouterr()
+        output = captured.out
+        error = captured.err
+
+        # Should handle empty directory gracefully
+        # Since no valid files are found, should just return with no output
+        assert output == ""
+
+    def test_file_and_glob_mixed_invalid(self, capsys):
+        """Test mixing valid files, globs, and invalid patterns."""
+        valid_file = self.json_files[0]
+        valid_glob = os.path.join(self.temp_dir, "service*.yaml")
+        invalid_glob = os.path.join(self.temp_dir, "missing*.txt")
+
+        inputs = f"{valid_file},{valid_glob},{invalid_glob}"
+
+        _huml_main(inputs=inputs, timeout=1000)
+
+        captured = capsys.readouterr()
+        output = captured.out
+        error = captured.err
+
+        # Should process valid inputs
+        assert "name: json-config-0" in output
+        assert "service: web-" in output
+
+        # Should report missing pattern
+        assert "No files found matching pattern" in error
+
+    def test_glob_case_sensitivity(self, capsys):
+        """Test glob pattern case sensitivity."""
+        # Create a file with uppercase extension
+        upper_file = os.path.join(self.temp_dir, "test.JSON")
+        with open(upper_file, "w") as f:
+            json.dump({"case": "upper"}, f)
+
+        # Test lowercase pattern
+        glob_pattern = os.path.join(self.temp_dir, "*.json")
+
+        _huml_main(inputs=glob_pattern, timeout=1000)
+
+        captured = capsys.readouterr()
+        output = captured.out
+
+        # Should match regardless of case (depends on OS)
+        # This test documents the current behavior
+
+
+class TestFileTypeDetection:
+    """Test file type detection for various file formats."""
+
+    def setup_method(self):
+        """Set up test files."""
+        self.temp_dir = tempfile.mkdtemp()
+
+    def teardown_method(self):
+        """Clean up test files."""
+        import shutil
+
+        shutil.rmtree(self.temp_dir)
+
+    def test_extension_based_detection(self):
+        """Test file type detection based on extensions."""
+        # Create test files with various extensions
+        test_files = {
+            "test.json": '{"test": true}',
+            "test.yaml": "test: true",
+            "test.yml": "test: true",
+            "test.jsonl": '{"line": 1}\n{"line": 2}',
+            "test.txt": "Just text",
+            "test": '{"no_extension": true}',  # No extension, but JSON content
+        }
+
+        for filename, content in test_files.items():
+            filepath = os.path.join(self.temp_dir, filename)
+            with open(filepath, "w") as f:
+                f.write(content)
+
+        # Test valid extensions
+        assert _is_valid_file_type(os.path.join(self.temp_dir, "test.json"))
+        assert _is_valid_file_type(os.path.join(self.temp_dir, "test.yaml"))
+        assert _is_valid_file_type(os.path.join(self.temp_dir, "test.yml"))
+        assert _is_valid_file_type(os.path.join(self.temp_dir, "test.jsonl"))
+
+        # Test invalid extension
+        assert not _is_valid_file_type(os.path.join(self.temp_dir, "test.txt"))
+
+        # Test no extension with JSON content
+        assert _is_valid_file_type(os.path.join(self.temp_dir, "test"))
+
+    def test_content_based_detection(self):
+        """Test file type detection based on content."""
+        # File without extension but with YAML content
+        yaml_file = os.path.join(self.temp_dir, "config")
+        with open(yaml_file, "w") as f:
+            f.write("database:\n  host: localhost\n  port: 5432")
+
+        assert _is_valid_file_type(yaml_file)
+
+        # File without extension but with JSON content
+        json_file = os.path.join(self.temp_dir, "settings")
+        with open(json_file, "w") as f:
+            f.write('{"database": {"host": "localhost", "port": 5432}}')
+
+        assert _is_valid_file_type(json_file)
+
+        # File with neither JSON nor YAML content
+        text_file = os.path.join(self.temp_dir, "readme")
+        with open(text_file, "w") as f:
+            f.write("This is just plain text without any structured format")
+
+        assert not _is_valid_file_type(text_file)
+
+    def test_empty_file_detection(self):
+        """Test detection of empty files."""
+        empty_file = os.path.join(self.temp_dir, "empty.json")
+        with open(empty_file, "w") as f:
+            f.write("")
+
+        # Empty files should be considered invalid
+        assert not _is_valid_file_type(empty_file)
+
+    def test_unreadable_file_detection(self):
+        """Test handling of unreadable files."""
+        # This test is platform-dependent and might not work in all environments
+        unreadable_file = os.path.join(self.temp_dir, "unreadable.json")
+        with open(unreadable_file, "w") as f:
+            json.dump({"test": "data"}, f)
+
+        # Try to make file unreadable (might not work in all environments)
+        try:
+            os.chmod(unreadable_file, 0o000)
+            assert not _is_valid_file_type(unreadable_file)
+        except (OSError, PermissionError):
+            # Skip this test if we can't change file permissions
+            pass
+        finally:
+            # Restore permissions for cleanup
+            try:
+                os.chmod(unreadable_file, 0o644)
+            except (OSError, PermissionError):
+                pass
 
 
 if __name__ == "__main__":

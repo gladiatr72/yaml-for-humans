@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: es-proxy-conf
+data:
+  nginx.conf: "user nginx;\nworker_processes  3;\nerror_log  /var/log/nginx/error.log;\n\
+    events {\n  worker_connections  10240;\n}\n\nstream {\n        # ES definition\n\
+    \        upstream stream_es {\n                least_conn;\n                server\
+    \ somewhere:9200;\n\
+    \        }\n\n        server {\n                listen 3080; # the port to listen\
+    \ on this server\n                proxy_pass stream_es; # forward traffic to this\
+    \ upstream group\n                proxy_timeout 30s;\n                proxy_connect_timeout\
+    \ 30s;\n        }\n        #\n        # Kibana definition\n        upstream stream_kibana\
+    \ {\n                least_conn;\n                server somewhere:5601;\n\
+    \        }\n\n        server {\n                listen 3081; # the port to listen\
+    \ on this server\n                proxy_pass stream_kibana; # forward traffic\
+    \ to this upstream group\n                proxy_timeout 30s;\n               \
+    \ proxy_connect_timeout 30s;\n        }\n}\n"

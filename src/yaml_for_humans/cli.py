@@ -8,6 +8,9 @@ Converts YAML or JSON input to human-friendly YAML output.
 import sys
 import json
 import yaml
+import os
+import glob
+from pathlib import Path
 from .dumper import dumps
 
 try:
@@ -98,8 +101,66 @@ def _huml_main(
         # Handle --inputs flag (process files)
         if inputs:
             file_paths = [path.strip() for path in inputs.split(",")]
+            expanded_file_paths = []
 
+            # Expand globs and directories
             for file_path in file_paths:
+                if not file_path:
+                    continue
+
+                # Check if path ends with os.sep (directory indicator)
+                if file_path.endswith(os.sep):
+                    # Treat as directory
+                    dir_path = file_path.rstrip(os.sep)
+                    if os.path.exists(dir_path) and os.path.isdir(dir_path):
+                        # Process all files in directory
+                        for file_name in os.listdir(dir_path):
+                            full_path = os.path.join(dir_path, file_name)
+                            if os.path.isfile(full_path):
+                                if _is_valid_file_type(full_path):
+                                    expanded_file_paths.append(full_path)
+                                else:
+                                    click.echo(
+                                        f"Skipping file with invalid format: {full_path}",
+                                        err=True,
+                                    )
+                    else:
+                        click.echo(f"Directory not found: {dir_path}", err=True)
+                        continue
+                else:
+                    # Check if it's a glob pattern or regular file
+                    if any(char in file_path for char in ["*", "?", "["]):
+                        # Handle glob pattern
+                        glob_matches = glob.glob(file_path)
+                        if glob_matches:
+                            for match in sorted(glob_matches):
+                                if os.path.isfile(match):
+                                    if _is_valid_file_type(match):
+                                        expanded_file_paths.append(match)
+                                    else:
+                                        click.echo(
+                                            f"Skipping file with invalid format: {match}",
+                                            err=True,
+                                        )
+                        else:
+                            click.echo(
+                                f"No files found matching pattern: {file_path}",
+                                err=True,
+                            )
+                    else:
+                        # Regular file path
+                        if os.path.exists(file_path) and os.path.isfile(file_path):
+                            if _is_valid_file_type(file_path):
+                                expanded_file_paths.append(file_path)
+                            else:
+                                click.echo(
+                                    f"Skipping file with invalid format: {file_path}",
+                                    err=True,
+                                )
+                        else:
+                            click.echo(f"File not found: {file_path}", err=True)
+
+            for file_path in expanded_file_paths:
                 if not file_path:
                     continue
 
@@ -205,14 +266,14 @@ def _huml_main(
                     document_sources.append({"file_path": file_path})
 
                 except FileNotFoundError:
-                    print(f"Error: File not found: {file_path}", file=sys.stderr)
-                    sys.exit(1)
+                    click.echo(f"Error: File not found: {file_path}", err=True)
+                    continue  # Continue processing other files instead of exiting
                 except (json.JSONDecodeError, yaml.YAMLError) as e:
-                    print(f"Error: Failed to parse {file_path}: {e}", file=sys.stderr)
-                    sys.exit(1)
+                    click.echo(f"Error: Failed to parse {file_path}: {e}", err=True)
+                    continue  # Continue processing other files instead of exiting
                 except Exception as e:
-                    print(f"Error: Failed to read {file_path}: {e}", file=sys.stderr)
-                    sys.exit(1)
+                    click.echo(f"Error: Failed to read {file_path}: {e}", err=True)
+                    continue  # Continue processing other files instead of exiting
 
         else:
             # Read input from stdin with timeout
@@ -278,8 +339,13 @@ def _huml_main(
 
         # Handle output
         if len(documents) == 0:
-            print("Error: No documents to process", file=sys.stderr)
-            sys.exit(1)
+            if inputs:
+                # When using --inputs flag, we might have no valid files
+                # This is not necessarily an error, just no output
+                return
+            else:
+                print("Error: No documents to process", file=sys.stderr)
+                sys.exit(1)
 
         if output:
             # Write to file/directory
@@ -408,11 +474,52 @@ def _generate_k8s_filename(document, source_file=None, stdin_position=None):
     return f"{'-'.join(parts)}.yaml"
 
 
+def _is_valid_file_type(file_path):
+    """Check if file has a valid JSON or YAML extension, or try to detect format from content."""
+    # Check common extensions first
+    if file_path.lower().endswith((".json", ".yaml", ".yml", ".jsonl")):
+        # Still need to check if file is empty or readable
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                sample = f.read(1024).strip()
+                if not sample:
+                    return False
+            return True
+        except (IOError, UnicodeDecodeError, PermissionError):
+            return False
+
+    # For files without clear extensions, try to peek at content
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            # Read first few lines to detect format
+            sample = f.read(1024).strip()
+            if not sample:
+                return False
+            # Simple heuristics for format detection
+            return _looks_like_json(sample) or _looks_like_yaml(sample)
+    except (IOError, UnicodeDecodeError, PermissionError):
+        return False
+
+
+def _looks_like_yaml(text):
+    """Simple heuristic to detect YAML input."""
+    text = text.strip()
+    # Common YAML patterns
+    yaml_indicators = [
+        ":",  # key-value pairs
+        "- ",  # list items
+        "---",  # document separator
+        "...",  # document end
+    ]
+    return any(
+        indicator in text for indicator in yaml_indicators
+    ) and not _looks_like_json(text)
+
+
 def _write_to_output(
     documents, output_path, auto=False, indent=2, document_sources=None
 ):
     """Write documents to the specified output path."""
-    import os
     from pathlib import Path
 
     # Determine if output is a directory

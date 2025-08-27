@@ -150,6 +150,7 @@ class HumanFriendlyDumper(
     Features:
     - Human-friendly sequence formatting from HumanFriendlyEmitter
     - Priority key ordering for container-related keys
+    - Multiline string formatting using literal block scalars
     - Standard PyYAML serialization, representation, and resolution
     """
 
@@ -209,6 +210,9 @@ class HumanFriendlyDumper(
         )
         yaml.resolver.Resolver.__init__(self)
 
+        # Register custom string representer for multiline formatting
+        self.add_representer(str, self.represent_str)
+
     def represent_mapping(self, tag, mapping, flow_style=None):
         """
         Override to control key ordering with priority keys first.
@@ -238,3 +242,25 @@ class HumanFriendlyDumper(
                 ordered_mapping[key] = value
 
         return super().represent_mapping(tag, ordered_mapping, flow_style)
+
+    def represent_str(self, dumper, data):
+        """
+        Override string representation to use literal block scalars for multiline strings.
+
+        This method chooses the appropriate YAML scalar style:
+        - Literal block scalar (|) for multiline strings with newlines
+        - Default representation for single-line strings
+
+        Args:
+            dumper: The dumper instance (passed by PyYAML)
+            data: The string data to represent
+
+        Returns:
+            ScalarNode with appropriate style for the string content
+        """
+        if "\n" in data:
+            # Use literal block scalar for multiline strings
+            return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
+        else:
+            # Use default representation for single-line strings
+            return dumper.represent_scalar("tag:yaml.org,2002:str", data)

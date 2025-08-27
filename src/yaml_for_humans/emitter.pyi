@@ -62,6 +62,12 @@ class HumanFriendlyDumper(
 ):
     """
     Complete YAML dumper with human-friendly formatting and priority key ordering.
+
+    Features:
+    - Human-friendly sequence formatting from HumanFriendlyEmitter
+    - Priority key ordering for container-related keys
+    - Multiline string formatting using literal block scalars
+    - Standard PyYAML serialization, representation, and resolution
     """
 
     PRIORITY_KEYS: list[str]
@@ -89,3 +95,8 @@ class HumanFriendlyDumper(
         mapping: Any,
         flow_style: Optional[bool] = ...,
     ) -> yaml.MappingNode: ...
+    def represent_str(
+        self,
+        dumper: "HumanFriendlyDumper",
+        data: str,
+    ) -> yaml.ScalarNode: ...

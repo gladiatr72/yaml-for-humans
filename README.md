@@ -152,6 +152,15 @@ kubectl get deployments -o json | huml  # Automatically splits items into docume
 # Process file inputs instead of stdin
 huml --inputs config.yaml,deploy.json
 
+# Process multiple files with glob patterns  
+huml --inputs "*.json,configs/*.yaml"
+
+# Process all files in a directory (add trailing slash)
+huml --inputs /path/to/configs/
+
+# Mix glob patterns, directories, and explicit files
+huml --inputs "*.json,/configs/,specific.yaml"
+
 # Output to file or directory
 kubectl get all -o json | huml --output ./k8s-resources/
 ```
@@ -168,7 +177,11 @@ The CLI automatically detects input format and handles:
 
 ### CLI Options
 
-- `-i, --inputs TEXT`: Comma-delimited list of JSON/YAML file paths to process
+- `-i, --inputs TEXT`: Comma-delimited list of JSON/YAML file paths to process. Supports:
+  - Explicit file paths: `config.yaml,deploy.json`
+  - Glob patterns: `*.json,configs/*.yaml`
+  - Directories: `/path/to/directory/` (must end with `/`)
+  - Mixed combinations: `*.json,/configs/,specific.yaml`
 - `-o, --output TEXT`: Output file or directory path (if ends with `/`, treated as directory)
 - `--auto`: Automatically create output directories if they don't exist
 - `--indent INTEGER`: Indentation level (default: 2)
@@ -176,6 +189,14 @@ The CLI automatically detects input format and handles:
 - `-t, --timeout INTEGER`: Stdin timeout in milliseconds (default: 50)
 - `--help`: Show help message
 - `--version`: Show version information
+
+#### Input Processing Behavior
+
+- **File Globbing**: Patterns like `*.json` and `configs/*.yaml` are expanded to match files
+- **Directory Processing**: Paths ending with `/` process all valid JSON/YAML files in the directory
+- **Invalid File Handling**: Files that can't be parsed or aren't JSON/YAML are skipped with warnings
+- **Robust Processing**: Processing continues even if some files fail, reporting errors but not stopping
+- **Format Detection**: Files are validated based on extension (`.json`, `.yaml`, `.yml`, `.jsonl`) and content analysis
 
 ## Multi-Document Support
 
@@ -197,7 +218,6 @@ print(yaml_output)
 
 Output:
 ```yaml
----
 config:
   version: '1.0'
   features:
