@@ -17,7 +17,7 @@ import yaml
 from yaml.emitter import Emitter
 
 # Type aliases for common YAML types
-YAMLObject: TypeAlias = Union[Dict[str, Any], List[Any], str, int, float, bool, None]
+YAMLObject: TypeAlias = Union[dict[str, Any], list[Any], str, int, float, bool, None]
 StreamType: TypeAlias = Union[IO[str], TextIO]
 
 class HumanFriendlyEmitter(Emitter):
@@ -64,7 +64,7 @@ class HumanFriendlyDumper(
     Complete YAML dumper with human-friendly formatting and priority key ordering.
     """
 
-    PRIORITY_KEYS: List[str]
+    PRIORITY_KEYS: list[str]
 
     def __init__(
         self,

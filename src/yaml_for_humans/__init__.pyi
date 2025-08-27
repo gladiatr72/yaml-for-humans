@@ -20,4 +20,4 @@ from .multi_document import (
 
 __version__: str
 
-__all__: List[str]
+__all__: list[str]

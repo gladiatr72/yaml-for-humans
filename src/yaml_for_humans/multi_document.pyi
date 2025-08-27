@@ -6,9 +6,9 @@ from typing import Any, Dict, List, Iterable, Union, IO, TextIO, Optional
 from typing_extensions import TypeAlias
 
 # Type aliases
-YAMLObject: TypeAlias = Union[Dict[str, Any], List[Any], str, int, float, bool, None]
+YAMLObject: TypeAlias = Union[dict[str, Any], list[Any], str, int, float, bool, None]
 StreamType: TypeAlias = Union[IO[str], TextIO]
-KubernetesResource: TypeAlias = Dict[str, Any]
+KubernetesResource: TypeAlias = dict[str, Any]
 
 class MultiDocumentDumper:
     """
@@ -16,7 +16,7 @@ class MultiDocumentDumper:
     """
 
     stream: StreamType
-    dumper_kwargs: Dict[str, Any]
+    dumper_kwargs: dict[str, Any]
 
     def __init__(
         self,
@@ -70,7 +70,7 @@ class KubernetesManifestDumper(MultiDocumentDumper):
     Specialized multi-document dumper for Kubernetes manifests.
     """
 
-    RESOURCE_ORDER: List[str]
+    RESOURCE_ORDER: list[str]
     sort_resources: bool
 
     def __init__(
