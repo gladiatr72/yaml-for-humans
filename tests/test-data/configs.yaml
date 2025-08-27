@@ -1,0 +1,65 @@
+---
+# Development Configuration
+environment: development
+database:
+  host: localhost
+  port: 5432
+  name: myapp_dev
+  user: dev_user
+  password: dev_password
+redis:
+  host: localhost
+  port: 6379
+  db: 0
+logging:
+  level: DEBUG
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+features:
+  - debug_toolbar
+  - hot_reload
+  - detailed_errors
+---
+# Production Configuration
+environment: production
+database:
+  host: prod-db.internal
+  port: 5432
+  name: myapp_prod
+  user: prod_user
+  password: ${DB_PASSWORD}
+redis:
+  host: prod-redis.internal
+  port: 6379
+  db: 0
+  cluster: true
+logging:
+  level: INFO
+  format: "%(asctime)s - %(levelname)s - %(message)s"
+  handlers:
+    - type: file
+      filename: /var/log/myapp.log
+    - type: syslog
+      facility: local0
+features:
+  - analytics
+  - monitoring
+  - rate_limiting
+---
+# Test Configuration
+environment: test
+database:
+  host: localhost
+  port: 5432
+  name: myapp_test
+  user: test_user
+  password: test_password
+redis:
+  host: localhost
+  port: 6380
+  db: 1
+logging:
+  level: WARNING
+  format: "%(levelname)s - %(message)s"
+features:
+  - test_fixtures
+  - mock_external_apis

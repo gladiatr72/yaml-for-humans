@@ -1,0 +1,1083 @@
+{
+    "apiVersion": "v1",
+    "items": [
+        {
+            "apiVersion": "apps/v1",
+            "kind": "Deployment",
+            "metadata": {
+                "annotations": {
+                    "deployment.kubernetes.io/revision": "38"
+                },
+                "creationTimestamp": "2024-11-13T16:26:31Z",
+                "generation": 39,
+                "labels": {
+                    "app": "charts",
+                    "kustomize.toolkit.fluxcd.io/name": "helm-registry",
+                    "kustomize.toolkit.fluxcd.io/namespace": "flux-system",
+                    "pickles": "trout"
+                },
+                "name": "charts",
+                "namespace": "flux-system",
+                "resourceVersion": "96843978",
+                "uid": "987860f5-b6e7-4309-8b5a-53b9122ed445"
+            },
+            "spec": {
+                "progressDeadlineSeconds": 600,
+                "replicas": 2,
+                "revisionHistoryLimit": 10,
+                "selector": {
+                    "matchLabels": {
+                        "app": "charts"
+                    }
+                },
+                "strategy": {
+                    "rollingUpdate": {
+                        "maxSurge": "100%",
+                        "maxUnavailable": "50%"
+                    },
+                    "type": "RollingUpdate"
+                },
+                "template": {
+                    "metadata": {
+                        "creationTimestamp": null,
+                        "labels": {
+                            "app": "charts"
+                        }
+                    },
+                    "spec": {
+                        "containers": [
+                            {
+                                "image": "701122064032.dkr.ecr.us-east-1.amazonaws.com/helm-registry:latest",
+                                "imagePullPolicy": "Always",
+                                "name": "helm-registry",
+                                "resources": {
+                                    "limits": {
+                                        "memory": "128Mi"
+                                    },
+                                    "requests": {
+                                        "memory": "64Mi"
+                                    }
+                                },
+                                "terminationMessagePath": "/dev/termination-log",
+                                "terminationMessagePolicy": "File"
+                            }
+                        ],
+                        "dnsPolicy": "ClusterFirst",
+                        "priorityClassName": "system-cluster-critical",
+                        "restartPolicy": "Always",
+                        "schedulerName": "default-scheduler",
+                        "securityContext": {},
+                        "terminationGracePeriodSeconds": 30,
+                        "tolerations": [
+                            {
+                                "effect": "NoSchedule",
+                                "key": "role",
+                                "operator": "Equal",
+                                "value": "util"
+                            }
+                        ]
+                    }
+                }
+            },
+            "status": {
+                "availableReplicas": 2,
+                "conditions": [
+                    {
+                        "lastTransitionTime": "2024-11-13T16:26:35Z",
+                        "lastUpdateTime": "2024-11-13T16:26:35Z",
+                        "message": "Deployment has minimum availability.",
+                        "reason": "MinimumReplicasAvailable",
+                        "status": "True",
+                        "type": "Available"
+                    },
+                    {
+                        "lastTransitionTime": "2024-11-13T16:26:31Z",
+                        "lastUpdateTime": "2025-05-02T01:44:07Z",
+                        "message": "ReplicaSet \"charts-7bdb5bf98f\" has successfully progressed.",
+                        "reason": "NewReplicaSetAvailable",
+                        "status": "True",
+                        "type": "Progressing"
+                    }
+                ],
+                "observedGeneration": 39,
+                "readyReplicas": 2,
+                "replicas": 2,
+                "updatedReplicas": 2
+            }
+        },
+        {
+            "apiVersion": "apps/v1",
+            "kind": "Deployment",
+            "metadata": {
+                "annotations": {
+                    "deployment.kubernetes.io/revision": "7"
+                },
+                "creationTimestamp": "2024-11-13T16:24:45Z",
+                "generation": 8,
+                "labels": {
+                    "app.kubernetes.io/component": "helm-controller",
+                    "app.kubernetes.io/instance": "flux-system",
+                    "app.kubernetes.io/part-of": "flux",
+                    "app.kubernetes.io/version": "v2.4.0",
+                    "control-plane": "controller",
+                    "kustomize.toolkit.fluxcd.io/name": "flux-system",
+                    "kustomize.toolkit.fluxcd.io/namespace": "flux-system"
+                },
+                "name": "helm-controller",
+                "namespace": "flux-system",
+                "resourceVersion": "36625545",
+                "uid": "f8cdba3a-67a9-4202-95d5-121e0ec7abb7"
+            },
+            "spec": {
+                "progressDeadlineSeconds": 600,
+                "replicas": 2,
+                "revisionHistoryLimit": 10,
+                "selector": {
+                    "matchLabels": {
+                        "app": "helm-controller"
+                    }
+                },
+                "strategy": {
+                    "rollingUpdate": {
+                        "maxSurge": "25%",
+                        "maxUnavailable": "25%"
+                    },
+                    "type": "RollingUpdate"
+                },
+                "template": {
+                    "metadata": {
+                        "annotations": {
+                            "prometheus.io/port": "8080",
+                            "prometheus.io/scrape": "true"
+                        },
+                        "creationTimestamp": null,
+                        "labels": {
+                            "app": "helm-controller"
+                        }
+                    },
+                    "spec": {
+                        "affinity": {
+                            "podAntiAffinity": {
+                                "requiredDuringSchedulingIgnoredDuringExecution": [
+                                    {
+                                        "labelSelector": {
+                                            "matchExpressions": [
+                                                {
+                                                    "key": "app",
+                                                    "operator": "In",
+                                                    "values": [
+                                                        "helm-controller"
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        "topologyKey": "kubernetes.io/hostname"
+                                    }
+                                ]
+                            }
+                        },
+                        "containers": [
+                            {
+                                "args": [
+                                    "--events-addr=http://notification-controller.flux-system.svc.cluster.local./",
+                                    "--watch-all-namespaces=true",
+                                    "--log-level=info",
+                                    "--log-encoding=json",
+                                    "--enable-leader-election"
+                                ],
+                                "env": [
+                                    {
+                                        "name": "RUNTIME_NAMESPACE",
+                                        "valueFrom": {
+                                            "fieldRef": {
+                                                "apiVersion": "v1",
+                                                "fieldPath": "metadata.namespace"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "GOMAXPROCS",
+                                        "valueFrom": {
+                                            "resourceFieldRef": {
+                                                "containerName": "manager",
+                                                "divisor": "0",
+                                                "resource": "limits.cpu"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "GOMEMLIMIT",
+                                        "valueFrom": {
+                                            "resourceFieldRef": {
+                                                "containerName": "manager",
+                                                "divisor": "0",
+                                                "resource": "limits.memory"
+                                            }
+                                        }
+                                    }
+                                ],
+                                "image": "ghcr.io/fluxcd/helm-controller:v1.1.0",
+                                "imagePullPolicy": "IfNotPresent",
+                                "livenessProbe": {
+                                    "failureThreshold": 3,
+                                    "httpGet": {
+                                        "path": "/healthz",
+                                        "port": "healthz",
+                                        "scheme": "HTTP"
+                                    },
+                                    "periodSeconds": 10,
+                                    "successThreshold": 1,
+                                    "timeoutSeconds": 1
+                                },
+                                "name": "manager",
+                                "ports": [
+                                    {
+                                        "containerPort": 8080,
+                                        "name": "http-prom",
+                                        "protocol": "TCP"
+                                    },
+                                    {
+                                        "containerPort": 9440,
+                                        "name": "healthz",
+                                        "protocol": "TCP"
+                                    }
+                                ],
+                                "readinessProbe": {
+                                    "failureThreshold": 3,
+                                    "httpGet": {
+                                        "path": "/readyz",
+                                        "port": "healthz",
+                                        "scheme": "HTTP"
+                                    },
+                                    "periodSeconds": 10,
+                                    "successThreshold": 1,
+                                    "timeoutSeconds": 1
+                                },
+                                "resources": {
+                                    "limits": {
+                                        "cpu": "1",
+                                        "memory": "1Gi"
+                                    },
+                                    "requests": {
+                                        "cpu": "100m",
+                                        "memory": "64Mi"
+                                    }
+                                },
+                                "securityContext": {
+                                    "allowPrivilegeEscalation": false,
+                                    "capabilities": {
+                                        "drop": [
+                                            "ALL"
+                                        ]
+                                    },
+                                    "readOnlyRootFilesystem": true,
+                                    "runAsNonRoot": true,
+                                    "seccompProfile": {
+                                        "type": "RuntimeDefault"
+                                    }
+                                },
+                                "terminationMessagePath": "/dev/termination-log",
+                                "terminationMessagePolicy": "File",
+                                "volumeMounts": [
+                                    {
+                                        "mountPath": "/tmp",
+                                        "name": "temp"
+                                    }
+                                ]
+                            }
+                        ],
+                        "dnsPolicy": "ClusterFirst",
+                        "nodeSelector": {
+                            "eks.amazonaws.com/nodegroup": "util",
+                            "kubernetes.io/os": "linux"
+                        },
+                        "priorityClassName": "system-cluster-critical",
+                        "restartPolicy": "Always",
+                        "schedulerName": "default-scheduler",
+                        "securityContext": {
+                            "fsGroup": 1337
+                        },
+                        "serviceAccount": "helm-controller",
+                        "serviceAccountName": "helm-controller",
+                        "terminationGracePeriodSeconds": 600,
+                        "tolerations": [
+                            {
+                                "effect": "NoSchedule",
+                                "key": "role",
+                                "operator": "Equal",
+                                "value": "util"
+                            }
+                        ],
+                        "volumes": [
+                            {
+                                "emptyDir": {},
+                                "name": "temp"
+                            }
+                        ]
+                    }
+                }
+            },
+            "status": {
+                "availableReplicas": 2,
+                "conditions": [
+                    {
+                        "lastTransitionTime": "2025-01-17T19:22:03Z",
+                        "lastUpdateTime": "2025-01-17T19:22:03Z",
+                        "message": "Deployment has minimum availability.",
+                        "reason": "MinimumReplicasAvailable",
+                        "status": "True",
+                        "type": "Available"
+                    },
+                    {
+                        "lastTransitionTime": "2024-11-13T17:59:39Z",
+                        "lastUpdateTime": "2025-01-17T20:12:19Z",
+                        "message": "ReplicaSet \"helm-controller-7d6789df45\" has successfully progressed.",
+                        "reason": "NewReplicaSetAvailable",
+                        "status": "True",
+                        "type": "Progressing"
+                    }
+                ],
+                "observedGeneration": 8,
+                "readyReplicas": 2,
+                "replicas": 2,
+                "updatedReplicas": 2
+            }
+        },
+        {
+            "apiVersion": "apps/v1",
+            "kind": "Deployment",
+            "metadata": {
+                "annotations": {
+                    "deployment.kubernetes.io/revision": "1"
+                },
+                "creationTimestamp": "2024-11-13T16:12:47Z",
+                "generation": 2,
+                "labels": {
+                    "app.kubernetes.io/component": "kustomize-controller",
+                    "app.kubernetes.io/instance": "flux-system",
+                    "app.kubernetes.io/part-of": "flux",
+                    "app.kubernetes.io/version": "v2.4.0",
+                    "control-plane": "controller",
+                    "kustomize.toolkit.fluxcd.io/name": "flux-system",
+                    "kustomize.toolkit.fluxcd.io/namespace": "flux-system"
+                },
+                "name": "kustomize-controller",
+                "namespace": "flux-system",
+                "resourceVersion": "11182193",
+                "uid": "93878d2b-2097-4194-b9c1-7dd4a4f03610"
+            },
+            "spec": {
+                "progressDeadlineSeconds": 600,
+                "replicas": 2,
+                "revisionHistoryLimit": 10,
+                "selector": {
+                    "matchLabels": {
+                        "app": "kustomize-controller"
+                    }
+                },
+                "strategy": {
+                    "rollingUpdate": {
+                        "maxSurge": "25%",
+                        "maxUnavailable": "25%"
+                    },
+                    "type": "RollingUpdate"
+                },
+                "template": {
+                    "metadata": {
+                        "annotations": {
+                            "prometheus.io/port": "8080",
+                            "prometheus.io/scrape": "true"
+                        },
+                        "creationTimestamp": null,
+                        "labels": {
+                            "app": "kustomize-controller"
+                        }
+                    },
+                    "spec": {
+                        "affinity": {
+                            "podAntiAffinity": {
+                                "requiredDuringSchedulingIgnoredDuringExecution": [
+                                    {
+                                        "labelSelector": {
+                                            "matchExpressions": [
+                                                {
+                                                    "key": "app",
+                                                    "operator": "In",
+                                                    "values": [
+                                                        "kustomize-controller"
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        "topologyKey": "kubernetes.io/hostname"
+                                    }
+                                ]
+                            }
+                        },
+                        "containers": [
+                            {
+                                "args": [
+                                    "--events-addr=http://notification-controller.flux-system.svc.cluster.local./",
+                                    "--watch-all-namespaces=true",
+                                    "--log-level=debug",
+                                    "--log-encoding=json",
+                                    "--enable-leader-election",
+                                    "--requeue-dependency=10s"
+                                ],
+                                "env": [
+                                    {
+                                        "name": "RUNTIME_NAMESPACE",
+                                        "valueFrom": {
+                                            "fieldRef": {
+                                                "apiVersion": "v1",
+                                                "fieldPath": "metadata.namespace"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "GOMAXPROCS",
+                                        "valueFrom": {
+                                            "resourceFieldRef": {
+                                                "containerName": "manager",
+                                                "divisor": "0",
+                                                "resource": "limits.cpu"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "GOMEMLIMIT",
+                                        "valueFrom": {
+                                            "resourceFieldRef": {
+                                                "containerName": "manager",
+                                                "divisor": "0",
+                                                "resource": "limits.memory"
+                                            }
+                                        }
+                                    }
+                                ],
+                                "image": "ghcr.io/fluxcd/kustomize-controller:v1.4.0",
+                                "imagePullPolicy": "IfNotPresent",
+                                "livenessProbe": {
+                                    "failureThreshold": 3,
+                                    "httpGet": {
+                                        "path": "/healthz",
+                                        "port": "healthz",
+                                        "scheme": "HTTP"
+                                    },
+                                    "periodSeconds": 10,
+                                    "successThreshold": 1,
+                                    "timeoutSeconds": 1
+                                },
+                                "name": "manager",
+                                "ports": [
+                                    {
+                                        "containerPort": 8080,
+                                        "name": "http-prom",
+                                        "protocol": "TCP"
+                                    },
+                                    {
+                                        "containerPort": 9440,
+                                        "name": "healthz",
+                                        "protocol": "TCP"
+                                    }
+                                ],
+                                "readinessProbe": {
+                                    "failureThreshold": 3,
+                                    "httpGet": {
+                                        "path": "/readyz",
+                                        "port": "healthz",
+                                        "scheme": "HTTP"
+                                    },
+                                    "periodSeconds": 10,
+                                    "successThreshold": 1,
+                                    "timeoutSeconds": 1
+                                },
+                                "resources": {
+                                    "limits": {
+                                        "cpu": "1",
+                                        "memory": "1Gi"
+                                    },
+                                    "requests": {
+                                        "cpu": "100m",
+                                        "memory": "64Mi"
+                                    }
+                                },
+                                "securityContext": {
+                                    "allowPrivilegeEscalation": false,
+                                    "capabilities": {
+                                        "drop": [
+                                            "ALL"
+                                        ]
+                                    },
+                                    "readOnlyRootFilesystem": true,
+                                    "runAsNonRoot": true,
+                                    "seccompProfile": {
+                                        "type": "RuntimeDefault"
+                                    }
+                                },
+                                "terminationMessagePath": "/dev/termination-log",
+                                "terminationMessagePolicy": "File",
+                                "volumeMounts": [
+                                    {
+                                        "mountPath": "/tmp",
+                                        "name": "temp"
+                                    }
+                                ]
+                            }
+                        ],
+                        "dnsPolicy": "ClusterFirst",
+                        "nodeSelector": {
+                            "eks.amazonaws.com/nodegroup": "util",
+                            "kubernetes.io/os": "linux"
+                        },
+                        "priorityClassName": "system-cluster-critical",
+                        "restartPolicy": "Always",
+                        "schedulerName": "default-scheduler",
+                        "securityContext": {
+                            "fsGroup": 1337
+                        },
+                        "serviceAccount": "kustomize-controller",
+                        "serviceAccountName": "kustomize-controller",
+                        "terminationGracePeriodSeconds": 60,
+                        "tolerations": [
+                            {
+                                "effect": "NoSchedule",
+                                "key": "role",
+                                "operator": "Equal",
+                                "value": "util"
+                            }
+                        ],
+                        "volumes": [
+                            {
+                                "emptyDir": {},
+                                "name": "temp"
+                            }
+                        ]
+                    }
+                }
+            },
+            "status": {
+                "availableReplicas": 2,
+                "conditions": [
+                    {
+                        "lastTransitionTime": "2024-11-13T16:12:47Z",
+                        "lastUpdateTime": "2024-11-13T16:12:52Z",
+                        "message": "ReplicaSet \"kustomize-controller-686f8d667f\" has successfully progressed.",
+                        "reason": "NewReplicaSetAvailable",
+                        "status": "True",
+                        "type": "Progressing"
+                    },
+                    {
+                        "lastTransitionTime": "2024-12-03T04:39:53Z",
+                        "lastUpdateTime": "2024-12-03T04:39:53Z",
+                        "message": "Deployment has minimum availability.",
+                        "reason": "MinimumReplicasAvailable",
+                        "status": "True",
+                        "type": "Available"
+                    }
+                ],
+                "observedGeneration": 2,
+                "readyReplicas": 2,
+                "replicas": 2,
+                "updatedReplicas": 2
+            }
+        },
+        {
+            "apiVersion": "apps/v1",
+            "kind": "Deployment",
+            "metadata": {
+                "annotations": {
+                    "deployment.kubernetes.io/revision": "3"
+                },
+                "creationTimestamp": "2024-11-13T16:24:45Z",
+                "generation": 4,
+                "labels": {
+                    "app.kubernetes.io/component": "notification-controller",
+                    "app.kubernetes.io/instance": "flux-system",
+                    "app.kubernetes.io/part-of": "flux",
+                    "app.kubernetes.io/version": "v2.4.0",
+                    "control-plane": "controller",
+                    "kustomize.toolkit.fluxcd.io/name": "flux-system",
+                    "kustomize.toolkit.fluxcd.io/namespace": "flux-system"
+                },
+                "name": "notification-controller",
+                "namespace": "flux-system",
+                "resourceVersion": "11182187",
+                "uid": "f17e7818-f95b-491b-90de-014c6b78d471"
+            },
+            "spec": {
+                "progressDeadlineSeconds": 600,
+                "replicas": 2,
+                "revisionHistoryLimit": 10,
+                "selector": {
+                    "matchLabels": {
+                        "app": "notification-controller"
+                    }
+                },
+                "strategy": {
+                    "rollingUpdate": {
+                        "maxSurge": "25%",
+                        "maxUnavailable": "25%"
+                    },
+                    "type": "RollingUpdate"
+                },
+                "template": {
+                    "metadata": {
+                        "annotations": {
+                            "prometheus.io/port": "8080",
+                            "prometheus.io/scrape": "true"
+                        },
+                        "creationTimestamp": null,
+                        "labels": {
+                            "app": "notification-controller"
+                        }
+                    },
+                    "spec": {
+                        "affinity": {
+                            "podAntiAffinity": {
+                                "requiredDuringSchedulingIgnoredDuringExecution": [
+                                    {
+                                        "labelSelector": {
+                                            "matchExpressions": [
+                                                {
+                                                    "key": "app",
+                                                    "operator": "In",
+                                                    "values": [
+                                                        "notification-controller"
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        "topologyKey": "kubernetes.io/hostname"
+                                    }
+                                ]
+                            }
+                        },
+                        "containers": [
+                            {
+                                "args": [
+                                    "--watch-all-namespaces=true",
+                                    "--log-level=info",
+                                    "--log-encoding=json",
+                                    "--enable-leader-election"
+                                ],
+                                "env": [
+                                    {
+                                        "name": "RUNTIME_NAMESPACE",
+                                        "valueFrom": {
+                                            "fieldRef": {
+                                                "apiVersion": "v1",
+                                                "fieldPath": "metadata.namespace"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "GOMAXPROCS",
+                                        "valueFrom": {
+                                            "resourceFieldRef": {
+                                                "containerName": "manager",
+                                                "divisor": "0",
+                                                "resource": "limits.cpu"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "GOMEMLIMIT",
+                                        "valueFrom": {
+                                            "resourceFieldRef": {
+                                                "containerName": "manager",
+                                                "divisor": "0",
+                                                "resource": "limits.memory"
+                                            }
+                                        }
+                                    }
+                                ],
+                                "image": "ghcr.io/fluxcd/notification-controller:v1.4.0",
+                                "imagePullPolicy": "IfNotPresent",
+                                "livenessProbe": {
+                                    "failureThreshold": 3,
+                                    "httpGet": {
+                                        "path": "/healthz",
+                                        "port": "healthz",
+                                        "scheme": "HTTP"
+                                    },
+                                    "periodSeconds": 10,
+                                    "successThreshold": 1,
+                                    "timeoutSeconds": 1
+                                },
+                                "name": "manager",
+                                "ports": [
+                                    {
+                                        "containerPort": 9090,
+                                        "name": "http",
+                                        "protocol": "TCP"
+                                    },
+                                    {
+                                        "containerPort": 9292,
+                                        "name": "http-webhook",
+                                        "protocol": "TCP"
+                                    },
+                                    {
+                                        "containerPort": 8080,
+                                        "name": "http-prom",
+                                        "protocol": "TCP"
+                                    },
+                                    {
+                                        "containerPort": 9440,
+                                        "name": "healthz",
+                                        "protocol": "TCP"
+                                    }
+                                ],
+                                "readinessProbe": {
+                                    "failureThreshold": 3,
+                                    "httpGet": {
+                                        "path": "/readyz",
+                                        "port": "healthz",
+                                        "scheme": "HTTP"
+                                    },
+                                    "periodSeconds": 10,
+                                    "successThreshold": 1,
+                                    "timeoutSeconds": 1
+                                },
+                                "resources": {
+                                    "limits": {
+                                        "cpu": "1",
+                                        "memory": "1Gi"
+                                    },
+                                    "requests": {
+                                        "cpu": "100m",
+                                        "memory": "64Mi"
+                                    }
+                                },
+                                "securityContext": {
+                                    "allowPrivilegeEscalation": false,
+                                    "capabilities": {
+                                        "drop": [
+                                            "ALL"
+                                        ]
+                                    },
+                                    "readOnlyRootFilesystem": true,
+                                    "runAsNonRoot": true,
+                                    "seccompProfile": {
+                                        "type": "RuntimeDefault"
+                                    }
+                                },
+                                "terminationMessagePath": "/dev/termination-log",
+                                "terminationMessagePolicy": "File",
+                                "volumeMounts": [
+                                    {
+                                        "mountPath": "/tmp",
+                                        "name": "temp"
+                                    }
+                                ]
+                            }
+                        ],
+                        "dnsPolicy": "ClusterFirst",
+                        "nodeSelector": {
+                            "eks.amazonaws.com/nodegroup": "util",
+                            "kubernetes.io/os": "linux"
+                        },
+                        "restartPolicy": "Always",
+                        "schedulerName": "default-scheduler",
+                        "securityContext": {
+                            "fsGroup": 1337
+                        },
+                        "serviceAccount": "notification-controller",
+                        "serviceAccountName": "notification-controller",
+                        "terminationGracePeriodSeconds": 10,
+                        "tolerations": [
+                            {
+                                "effect": "NoSchedule",
+                                "key": "role",
+                                "operator": "Equal",
+                                "value": "util"
+                            }
+                        ],
+                        "volumes": [
+                            {
+                                "emptyDir": {},
+                                "name": "temp"
+                            }
+                        ]
+                    }
+                }
+            },
+            "status": {
+                "availableReplicas": 2,
+                "conditions": [
+                    {
+                        "lastTransitionTime": "2024-11-13T16:24:45Z",
+                        "lastUpdateTime": "2024-11-13T16:34:49Z",
+                        "message": "ReplicaSet \"notification-controller-7c884cbc7\" has successfully progressed.",
+                        "reason": "NewReplicaSetAvailable",
+                        "status": "True",
+                        "type": "Progressing"
+                    },
+                    {
+                        "lastTransitionTime": "2024-12-03T04:39:53Z",
+                        "lastUpdateTime": "2024-12-03T04:39:53Z",
+                        "message": "Deployment has minimum availability.",
+                        "reason": "MinimumReplicasAvailable",
+                        "status": "True",
+                        "type": "Available"
+                    }
+                ],
+                "observedGeneration": 4,
+                "readyReplicas": 2,
+                "replicas": 2,
+                "updatedReplicas": 2
+            }
+        },
+        {
+            "apiVersion": "apps/v1",
+            "kind": "Deployment",
+            "metadata": {
+                "annotations": {
+                    "deployment.kubernetes.io/revision": "3"
+                },
+                "creationTimestamp": "2024-11-13T16:12:47Z",
+                "generation": 4,
+                "labels": {
+                    "app.kubernetes.io/component": "source-controller",
+                    "app.kubernetes.io/instance": "flux-system",
+                    "app.kubernetes.io/part-of": "flux",
+                    "app.kubernetes.io/version": "v2.4.0",
+                    "control-plane": "controller",
+                    "kustomize.toolkit.fluxcd.io/name": "flux-system",
+                    "kustomize.toolkit.fluxcd.io/namespace": "flux-system"
+                },
+                "name": "source-controller",
+                "namespace": "flux-system",
+                "resourceVersion": "11182189",
+                "uid": "66329b58-169f-4cfd-b392-d85494784158"
+            },
+            "spec": {
+                "progressDeadlineSeconds": 600,
+                "replicas": 1,
+                "revisionHistoryLimit": 10,
+                "selector": {
+                    "matchLabels": {
+                        "app": "source-controller"
+                    }
+                },
+                "strategy": {
+                    "type": "Recreate"
+                },
+                "template": {
+                    "metadata": {
+                        "annotations": {
+                            "prometheus.io/port": "8080",
+                            "prometheus.io/scrape": "true"
+                        },
+                        "creationTimestamp": null,
+                        "labels": {
+                            "app": "source-controller"
+                        }
+                    },
+                    "spec": {
+                        "affinity": {
+                            "podAntiAffinity": {
+                                "requiredDuringSchedulingIgnoredDuringExecution": [
+                                    {
+                                        "labelSelector": {
+                                            "matchLabels": {
+                                                "app": "source-controller"
+                                            }
+                                        },
+                                        "topologyKey": "kubernetes.io/hostname"
+                                    }
+                                ]
+                            }
+                        },
+                        "containers": [
+                            {
+                                "args": [
+                                    "--events-addr=http://notification-controller.flux-system.svc.cluster.local./",
+                                    "--watch-all-namespaces=true",
+                                    "--log-level=info",
+                                    "--log-encoding=json",
+                                    "--enable-leader-election",
+                                    "--storage-path=/data",
+                                    "--storage-adv-addr=source-controller.$(RUNTIME_NAMESPACE).svc.cluster.local."
+                                ],
+                                "env": [
+                                    {
+                                        "name": "RUNTIME_NAMESPACE",
+                                        "valueFrom": {
+                                            "fieldRef": {
+                                                "apiVersion": "v1",
+                                                "fieldPath": "metadata.namespace"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "TUF_ROOT",
+                                        "value": "/tmp/.sigstore"
+                                    },
+                                    {
+                                        "name": "GOMAXPROCS",
+                                        "valueFrom": {
+                                            "resourceFieldRef": {
+                                                "containerName": "manager",
+                                                "divisor": "0",
+                                                "resource": "limits.cpu"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "GOMEMLIMIT",
+                                        "valueFrom": {
+                                            "resourceFieldRef": {
+                                                "containerName": "manager",
+                                                "divisor": "0",
+                                                "resource": "limits.memory"
+                                            }
+                                        }
+                                    }
+                                ],
+                                "image": "ghcr.io/fluxcd/source-controller:v1.4.1",
+                                "imagePullPolicy": "IfNotPresent",
+                                "livenessProbe": {
+                                    "failureThreshold": 3,
+                                    "httpGet": {
+                                        "path": "/healthz",
+                                        "port": "healthz",
+                                        "scheme": "HTTP"
+                                    },
+                                    "periodSeconds": 10,
+                                    "successThreshold": 1,
+                                    "timeoutSeconds": 1
+                                },
+                                "name": "manager",
+                                "ports": [
+                                    {
+                                        "containerPort": 9090,
+                                        "name": "http",
+                                        "protocol": "TCP"
+                                    },
+                                    {
+                                        "containerPort": 8080,
+                                        "name": "http-prom",
+                                        "protocol": "TCP"
+                                    },
+                                    {
+                                        "containerPort": 9440,
+                                        "name": "healthz",
+                                        "protocol": "TCP"
+                                    }
+                                ],
+                                "readinessProbe": {
+                                    "failureThreshold": 3,
+                                    "httpGet": {
+                                        "path": "/",
+                                        "port": "http",
+                                        "scheme": "HTTP"
+                                    },
+                                    "periodSeconds": 10,
+                                    "successThreshold": 1,
+                                    "timeoutSeconds": 1
+                                },
+                                "resources": {
+                                    "limits": {
+                                        "cpu": "1",
+                                        "memory": "1Gi"
+                                    },
+                                    "requests": {
+                                        "cpu": "50m",
+                                        "memory": "64Mi"
+                                    }
+                                },
+                                "securityContext": {
+                                    "allowPrivilegeEscalation": false,
+                                    "capabilities": {
+                                        "drop": [
+                                            "ALL"
+                                        ]
+                                    },
+                                    "readOnlyRootFilesystem": true,
+                                    "runAsNonRoot": true,
+                                    "seccompProfile": {
+                                        "type": "RuntimeDefault"
+                                    }
+                                },
+                                "terminationMessagePath": "/dev/termination-log",
+                                "terminationMessagePolicy": "File",
+                                "volumeMounts": [
+                                    {
+                                        "mountPath": "/data",
+                                        "name": "data"
+                                    },
+                                    {
+                                        "mountPath": "/tmp",
+                                        "name": "tmp"
+                                    }
+                                ]
+                            }
+                        ],
+                        "dnsPolicy": "ClusterFirst",
+                        "nodeSelector": {
+                            "eks.amazonaws.com/nodegroup": "util",
+                            "kubernetes.io/os": "linux"
+                        },
+                        "priorityClassName": "system-cluster-critical",
+                        "restartPolicy": "Always",
+                        "schedulerName": "default-scheduler",
+                        "securityContext": {
+                            "fsGroup": 1337
+                        },
+                        "serviceAccount": "source-controller",
+                        "serviceAccountName": "source-controller",
+                        "terminationGracePeriodSeconds": 10,
+                        "tolerations": [
+                            {
+                                "effect": "NoSchedule",
+                                "key": "role",
+                                "operator": "Equal",
+                                "value": "util"
+                            }
+                        ],
+                        "volumes": [
+                            {
+                                "emptyDir": {},
+                                "name": "data"
+                            },
+                            {
+                                "emptyDir": {},
+                                "name": "tmp"
+                            }
+                        ]
+                    }
+                }
+            },
+            "status": {
+                "availableReplicas": 1,
+                "conditions": [
+                    {
+                        "lastTransitionTime": "2024-11-13T16:12:47Z",
+                        "lastUpdateTime": "2024-11-13T16:25:39Z",
+                        "message": "ReplicaSet \"source-controller-6b6cdd8cfb\" has successfully progressed.",
+                        "reason": "NewReplicaSetAvailable",
+                        "status": "True",
+                        "type": "Progressing"
+                    },
+                    {
+                        "lastTransitionTime": "2024-12-03T04:39:53Z",
+                        "lastUpdateTime": "2024-12-03T04:39:53Z",
+                        "message": "Deployment has minimum availability.",
+                        "reason": "MinimumReplicasAvailable",
+                        "status": "True",
+                        "type": "Available"
+                    }
+                ],
+                "observedGeneration": 4,
+                "readyReplicas": 1,
+                "replicas": 1,
+                "updatedReplicas": 1
+            }
+        }
+    ],
+    "kind": "List",
+    "metadata": {
+        "resourceVersion": ""
+    }
+}

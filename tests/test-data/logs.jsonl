@@ -1,0 +1,4 @@
+{"timestamp": "2025-01-15T10:30:00Z", "level": "INFO", "message": "Application started", "service": "web-api"}
+{"timestamp": "2025-01-15T10:30:15Z", "level": "DEBUG", "message": "Database connection established", "service": "web-api", "details": {"host": "db.internal", "port": 5432}}
+{"timestamp": "2025-01-15T10:31:00Z", "level": "WARN", "message": "High memory usage detected", "service": "worker", "metrics": {"memory_mb": 512, "cpu_percent": 75}}
+{"timestamp": "2025-01-15T10:31:30Z", "level": "ERROR", "message": "Failed to process job", "service": "worker", "error": {"code": "TIMEOUT", "details": "Job exceeded 30s limit"}}

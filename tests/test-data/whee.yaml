@@ -1,0 +1,204 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "15"
+  creationTimestamp: "2025-08-15T19:01:00Z"
+  generation: 16
+  labels:
+    app: ab-test
+    component: django
+    env: prod
+    kustomize.toolkit.fluxcd.io/name: ab-test
+    kustomize.toolkit.fluxcd.io/namespace: flux-system
+  name: ab-test
+  namespace: prod-ab-test
+  resourceVersion: "159866116"
+  uid: 2b912544-cb25-4401-b28d-47c1bf591cfe
+spec:
+  minReadySeconds: 5
+  progressDeadlineSeconds: 600
+  replicas: 3
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: ab-test
+      component: django
+      env: prod
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: ab-test
+        component: django
+        env: prod
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - envFrom:
+        - secretRef:
+            name: env-b24d694c67
+        - configMapRef:
+            name: env-ftmft8927h
+        image: registry.gitlab.com/lldev-team/ab-testing-interactive:v3.3.2
+        imagePullPolicy: IfNotPresent
+        name: main
+        resources:
+          limits:
+            memory: 640Mi
+          requests:
+            cpu: 450m
+            memory: 640Mi
+        securityContext:
+          capabilities:
+            drop:
+            - ALL
+          runAsGroup: 1000
+          runAsUser: 1000
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /run
+          name: run
+        - mountPath: /app/staticfiles
+          name: static
+      - env:
+        - name: NGINX_ENTRYPOINT_QUIET_LOGS
+          value: "true"
+        image: nginx:1.27.4
+        imagePullPolicy: IfNotPresent
+        name: nginx
+        ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            memory: 128Mi
+          requests:
+            cpu: 25m
+            memory: 128Mi
+        securityContext:
+          capabilities:
+            drop:
+            - ALL
+          runAsGroup: 101
+          runAsUser: 101
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /var/cache/nginx
+          name: cache
+        - mountPath: /run
+          name: run
+        - mountPath: /etc/nginx/nginx.conf
+          name: proxy-config
+          subPath: nginx.conf
+        - mountPath: /app/staticfiles
+          name: static
+      dnsPolicy: ClusterFirst
+      enableServiceLinks: false
+      imagePullSecrets:
+      - name: registry.gitlab.com
+      initContainers:
+      - args:
+        - collectstatic
+        - --noinput
+        command:
+        - django-admin
+        envFrom:
+        - secretRef:
+            name: env-b24d694c67
+        - configMapRef:
+            name: env-ftmft8927h
+        image: registry.gitlab.com/lldev-team/ab-testing-interactive:v3.3.2
+        imagePullPolicy: IfNotPresent
+        name: collectstatic
+        resources:
+          limits:
+            memory: 128Mi
+          requests:
+            cpu: 200m
+            memory: 128Mi
+        securityContext:
+          capabilities:
+            drop:
+            - ALL
+          runAsGroup: 1000
+          runAsUser: 1000
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /app/staticfiles
+          name: static
+      - args:
+        - migrate
+        - --no-input
+        command:
+        - django-admin
+        envFrom:
+        - secretRef:
+            name: env-b24d694c67
+        - configMapRef:
+            name: env-ftmft8927h
+        image: registry.gitlab.com/lldev-team/ab-testing-interactive:v3.3.2
+        imagePullPolicy: IfNotPresent
+        name: migrate
+        resources:
+          limits:
+            memory: 128Mi
+          requests:
+            cpu: 200m
+            memory: 128Mi
+        securityContext:
+          capabilities:
+            drop:
+            - ALL
+          runAsGroup: 1000
+          runAsUser: 1000
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      priorityClassName: django
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        fsGroup: 101
+        runAsGroup: 101
+        runAsUser: 101
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - emptyDir: {}
+        name: cache
+      - configMap:
+          defaultMode: 416
+          name: proxy-config-96k6c7c8mm
+          optional: false
+        name: proxy-config
+      - emptyDir: {}
+        name: run
+      - emptyDir: {}
+        name: static
+status:
+  availableReplicas: 3
+  conditions:
+  - lastTransitionTime: "2025-08-18T16:04:55Z"
+    lastUpdateTime: "2025-08-18T16:04:55Z"
+    message: Deployment has minimum availability.
+    reason: MinimumReplicasAvailable
+    status: "True"
+    type: Available
+  - lastTransitionTime: "2025-08-15T19:01:00Z"
+    lastUpdateTime: "2025-08-18T17:30:11Z"
+    message: ReplicaSet "ab-test-bcff664b5" has successfully progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
+  observedGeneration: 16
+  readyReplicas: 3
+  replicas: 3
+  updatedReplicas: 3

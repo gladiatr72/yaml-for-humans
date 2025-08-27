@@ -1,0 +1,10 @@
+{
+  "category": "colors",
+  "description": "Primary and secondary colors",
+  "items": ["red", "blue", "green", "yellow", "purple", "orange"],
+  "count": 6,
+  "metadata": {
+    "created": "2025-01-15",
+    "version": "1.0"
+  }
+}

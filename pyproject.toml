@@ -1,0 +1,48 @@
+[project]
+name = "yaml-for-humans"
+version = "1.0.0"
+description = "Human-friendly YAML formatting with intelligent sequence handling and priority key ordering"
+readme = "README.md"
+authors = [
+    { name = "Stephen D. Spencer", email = "stephen@revsys.com" }
+]
+requires-python = ">=3.8"
+dependencies = [
+    "PyYAML>=6.0"
+]
+keywords = ["yaml", "formatting", "kubernetes", "devops", "configuration"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Systems Administration",
+    "Topic :: Text Processing :: Markup",
+]
+
+[project.optional-dependencies]
+cli = [
+    "click>=8.0.0"
+]
+
+[project.scripts]
+huml = "yaml_for_humans.cli:huml"
+
+
+[build-system]
+requires = ["uv_build>=0.8.3,<0.9.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "black>=24.8.0",
+    "pytest>=8.3.5",
+]
