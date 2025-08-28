@@ -134,8 +134,8 @@ kubectl get deployment -o yaml | huml
 # Process multi-document YAML (auto-detected)
 cat manifests.yaml | huml
 
-# Specify input format explicitly
-echo '{"containers": [...]}' | huml --format json
+# Process JSON input (automatic detection)
+echo '{"containers": [...]}' | huml
 
 # Custom indentation
 cat config.yaml | huml --indent 4
@@ -173,7 +173,7 @@ The CLI automatically detects input format and handles:
 - **JSON Lines**: Multiple JSON objects, one per line  
 - **YAML documents**: Single or multi-document with `---` separators
 - **Kubernetes API responses**: Objects with `items` arrays are split into separate documents
-- **Format detection**: Automatic detection or explicit format specification with `--format`
+- **Format detection**: Automatic detection based on content analysis
 
 ### CLI Options
 
@@ -185,7 +185,6 @@ The CLI automatically detects input format and handles:
 - `-o, --output TEXT`: Output file or directory path (if ends with `/`, treated as directory)
 - `--auto`: Automatically create output directories if they don't exist
 - `--indent INTEGER`: Indentation level (default: 2)
-- `-f, --format [yaml|json|auto]`: Input format (default: auto-detect)
 - `-t, --timeout INTEGER`: Stdin timeout in milliseconds (default: 50)
 - `--help`: Show help message
 - `--version`: Show version information

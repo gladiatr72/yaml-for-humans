@@ -76,7 +76,6 @@ def _read_stdin_with_timeout(timeout_ms=50):
 
 def _huml_main(
     indent=2,
-    format="auto",
     timeout=50,
     inputs=None,
     output=None,
@@ -89,7 +88,7 @@ def _huml_main(
 
     Examples:
         cat config.yaml | huml
-        echo '{"name": "web", "ports": [80, 443]}' | huml -f json
+        echo '{"name": "web", "ports": [80, 443]}' | huml
         kubectl get deployment -o yaml | huml
     """
     _check_cli_dependencies()
@@ -287,8 +286,8 @@ def _huml_main(
                 print("Error: No input provided", file=sys.stderr)
                 sys.exit(1)
 
-            # Parse input based on format with auto-detection
-            if format == "json" or (format == "auto" and _looks_like_json(input_text)):
+            # Auto-detect input format and parse accordingly
+            if _looks_like_json(input_text):
                 # Check for JSON Lines format (multiple JSON objects, one per line)
                 if _is_json_lines(input_text):
                     for line_num, line in enumerate(input_text.split("\n"), 1):
@@ -319,7 +318,8 @@ def _huml_main(
                     else:
                         documents.append(data)
                         document_sources.append({"stdin_position": 0})
-            elif format == "yaml" or format == "auto":
+            else:
+                # Assume YAML format for non-JSON input
                 # Auto-detect multi-document YAML (like file processing does)
                 if _is_multi_document_yaml(input_text):
                     docs = list(yaml.safe_load_all(input_text))
@@ -333,9 +333,6 @@ def _huml_main(
                     data = yaml.safe_load(input_text)
                     documents.append(data)
                     document_sources.append({"stdin_position": 0})
-            else:
-                print("Error: Unable to determine input format", file=sys.stderr)
-                sys.exit(1)
 
         # Handle output
         if len(documents) == 0:
@@ -602,13 +599,6 @@ def huml():
         "--indent", default=2, type=int, help="Indentation level (default: 2)"
     )
     @click.option(
-        "--format",
-        "-f",
-        type=click.Choice(["yaml", "json", "auto"]),
-        default="auto",
-        help="Input format (default: auto-detect)",
-    )
-    @click.option(
         "--timeout",
         "-t",
         default=50,
@@ -633,7 +623,7 @@ def huml():
         help="Automatically create output directories if they don't exist",
     )
     @click.version_option()
-    def cli_main(indent, format, timeout, inputs, output, auto):
+    def cli_main(indent, timeout, inputs, output, auto):
         """
         Convert YAML or JSON input to human-friendly YAML.
 
@@ -641,10 +631,10 @@ def huml():
 
         Examples:
             cat config.yaml | huml
-            echo '{"name": "web", "ports": [80, 443]}' | huml -f json
+            echo '{"name": "web", "ports": [80, 443]}' | huml
             kubectl get deployment -o yaml | huml
         """
-        _huml_main(indent, format, timeout, inputs, output, auto)
+        _huml_main(indent, timeout, inputs, output, auto)
 
     cli_main()
 

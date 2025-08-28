@@ -155,7 +155,7 @@ class TestCLIFunctionality:
         with patch(
             "yaml_for_humans.cli._read_stdin_with_timeout", return_value=test_input
         ):
-            _huml_main(format="json", timeout=1000)
+            _huml_main(timeout=1000)
 
         captured = capsys.readouterr()
         output = captured.out
@@ -176,7 +176,7 @@ containers:
         with patch(
             "yaml_for_humans.cli._read_stdin_with_timeout", return_value=test_input
         ):
-            _huml_main(format="yaml", timeout=1000)
+            _huml_main(timeout=1000)
 
         captured = capsys.readouterr()
         output = captured.out
@@ -193,7 +193,7 @@ containers:
         with patch(
             "yaml_for_humans.cli._read_stdin_with_timeout", return_value=json_input
         ):
-            _huml_main(format="auto", timeout=1000)  # Should detect JSON
+            _huml_main(timeout=1000)  # Should detect JSON
 
         captured = capsys.readouterr()
         assert "type: json" in captured.out
@@ -208,7 +208,7 @@ items: [x, y, z]"""
         with patch(
             "yaml_for_humans.cli._read_stdin_with_timeout", return_value=test_input
         ):
-            _huml_main(format="yaml", timeout=1000)
+            _huml_main(timeout=1000)
 
         captured = capsys.readouterr()
         output = captured.out
@@ -249,7 +249,7 @@ items: [x, y, z]"""
             return_value='{"invalid": json}',
         ):
             with pytest.raises(SystemExit):
-                _huml_main(format="json", timeout=1000)
+                _huml_main(timeout=1000)
 
         captured = capsys.readouterr()
         assert "Error: Invalid JSON input" in captured.err
@@ -265,7 +265,7 @@ items: [x, y, z]"""
             "yaml_for_humans.cli._read_stdin_with_timeout", return_value=invalid_yaml
         ):
             with pytest.raises(SystemExit):
-                _huml_main(format="yaml", timeout=1000)
+                _huml_main(timeout=1000)
 
         captured = capsys.readouterr()
         assert "Error: Invalid YAML input" in captured.err
@@ -277,7 +277,7 @@ items: [x, y, z]"""
         with patch(
             "yaml_for_humans.cli._read_stdin_with_timeout", return_value=test_input
         ):
-            _huml_main(indent=4, format="json", timeout=1000)
+            _huml_main(indent=4, timeout=1000)
 
         captured = capsys.readouterr()
         output = captured.out
@@ -840,7 +840,7 @@ class TestOutputFlag:
         with patch(
             "yaml_for_humans.cli._read_stdin_with_timeout", return_value=test_input
         ):
-            _huml_main(format="json", timeout=1000, output=output_file)
+            _huml_main(timeout=1000, output=output_file)
 
         # Check that file was created
         assert os.path.exists(output_file)
@@ -865,7 +865,7 @@ class TestOutputFlag:
         with patch(
             "yaml_for_humans.cli._read_stdin_with_timeout", return_value=k8s_input
         ):
-            _huml_main(format="json", timeout=1000, output=output_dir, auto=True)
+            _huml_main(timeout=1000, output=output_dir, auto=True)
 
         captured = capsys.readouterr()
         assert "Created directory:" in captured.err
@@ -940,7 +940,7 @@ class TestOutputFlag:
             "yaml_for_humans.cli._read_stdin_with_timeout", return_value=test_input
         ):
             with pytest.raises(SystemExit):
-                _huml_main(format="json", timeout=1000, output=output_dir, auto=False)
+                _huml_main(timeout=1000, output=output_dir, auto=False)
 
         captured = capsys.readouterr()
         assert "Error: Directory does not exist:" in captured.err
@@ -953,7 +953,7 @@ class TestOutputFlag:
         with patch(
             "yaml_for_humans.cli._read_stdin_with_timeout", return_value=test_input
         ):
-            _huml_main(format="json", timeout=1000, output=nested_file, auto=True)
+            _huml_main(timeout=1000, output=nested_file, auto=True)
 
         captured = capsys.readouterr()
         assert "Created parent directories" in captured.err
@@ -1056,7 +1056,7 @@ class TestOutputFlag:
         with patch(
             "yaml_for_humans.cli._read_stdin_with_timeout", return_value=test_input
         ):
-            _huml_main(format="json", timeout=1000, output=output_dir, auto=True)
+            _huml_main(timeout=1000, output=output_dir, auto=True)
 
         expected_file = os.path.join(output_dir.rstrip(os.sep), "stdin-0.yaml")
         assert os.path.exists(expected_file)

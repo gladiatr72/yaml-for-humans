@@ -2,37 +2,33 @@
 Type stubs for CLI module.
 """
 
-from typing import Literal, Optional, Any, Dict, List
+from typing import Optional, Any, Dict, List
 
 def huml(
     indent: int = ...,
-    format: Literal["yaml", "json", "auto"] = ...,
 ) -> None:
     """
     Convert YAML or JSON input to human-friendly YAML.
 
-    Reads from stdin and writes to stdout.
+    Reads from stdin and writes to stdout with automatic format detection.
 
     Args:
         indent: Indentation level (default: 2)
-        format: Input format (default: auto-detect)
     """
     ...
 
 def _huml_main(
     indent: int = ...,
-    format: str = ...,
     timeout: int = ...,
     inputs: Optional[str] = ...,
     output: Optional[str] = ...,
     auto: bool = ...,
 ) -> None:
     """
-    Main CLI functionality for processing YAML/JSON input.
+    Main CLI functionality for processing YAML/JSON input with automatic format detection.
 
     Args:
         indent: Indentation level
-        format: Input format (yaml, json, auto)
         timeout: Stdin timeout in milliseconds
         inputs: Comma-delimited file paths
         output: Output file or directory path
