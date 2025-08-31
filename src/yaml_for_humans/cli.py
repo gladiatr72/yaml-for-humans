@@ -10,7 +10,6 @@ import json
 import yaml
 import os
 import glob
-from pathlib import Path
 from .dumper import dumps
 
 try:
@@ -601,7 +600,7 @@ def huml():
     @click.option(
         "--timeout",
         "-t",
-        default=50,
+        default=500,
         type=int,
         help="Stdin timeout in milliseconds (default: 50)",
     )
