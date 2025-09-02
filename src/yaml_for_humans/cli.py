@@ -5,17 +5,22 @@ Command-line interface for YAML for Humans.
 Converts YAML or JSON input to human-friendly YAML output.
 """
 
-import sys
-import json
-import yaml
-import os
 import glob
+import json
+import os
+import sys
+
+import yaml
+
 from .dumper import dumps
 
 try:
     import click
 except ImportError:
     click = None
+
+
+DEFAULT_TIMEOUT_MS = 2000
 
 
 def _check_cli_dependencies():
@@ -600,9 +605,10 @@ def huml():
     @click.option(
         "--timeout",
         "-t",
-        default=500,
+        default=DEFAULT_TIMEOUT_MS,
         type=int,
-        help="Stdin timeout in milliseconds (default: 50)",
+        envvar=["HUML_STDIN_TIMEOUT", "HUML_TIMEOUT_STDIN"],
+        help="Stdin timeout in milliseconds (default: 500)",
     )
     @click.option(
         "--inputs",
