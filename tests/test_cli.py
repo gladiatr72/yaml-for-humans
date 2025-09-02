@@ -1091,7 +1091,7 @@ number: 3"""
 
             with open(expected_file, "r") as f:
                 content = f.read()
-            assert f"config: value{i+1}" in content
+            assert f"config: value{i + 1}" in content
 
     def test_filename_fallback_mixed_k8s_and_non_k8s(self, capsys):
         """Test filename fallback behavior with mixed k8s and non-k8s documents."""

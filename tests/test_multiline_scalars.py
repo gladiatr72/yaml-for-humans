@@ -30,13 +30,7 @@ def test_multiline_string_uses_literal_block():
 def test_complex_multiline_formatting():
     """Test that complex multiline content uses readable literal block format."""
     data = {
-        "config": (
-            "line 1\n"
-            "line 2 with spaces\n"
-            "line 3\n"
-            "  indented content\n"
-            "line 5\n"
-        )
+        "config": ("line 1\nline 2 with spaces\nline 3\n  indented content\nline 5\n")
     }
 
     result = dumps(data)

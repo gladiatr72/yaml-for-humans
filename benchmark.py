@@ -227,7 +227,7 @@ def benchmark_serialization():
 
         # Format performance comparison correctly
         if ratio < 0.98:  # Significantly faster (>2% improvement)
-            perf_display = f"{1/ratio:5.2f}x faster"
+            perf_display = f"{1 / ratio:5.2f}x faster"
         elif ratio > 1.02:  # Significantly slower (>2% degradation)
             perf_display = f"{ratio:5.2f}x slower"
         else:  # Within 2% - essentially equivalent
