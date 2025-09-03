@@ -50,6 +50,11 @@ Serialize Kubernetes manifests to stream with resource ordering.
 ### `HumanFriendlyDumper`
 Complete YAML dumper class with human-friendly formatting.
 
+**Priority Keys:** The following keys appear first in mappings when present:
+- `apiVersion`, `kind`, `metadata` (Kubernetes resource identification)
+- `name`, `image`, `imagePullPolicy` (Container identification)  
+- `env`, `envFrom`, `command`, `args` (Container configuration)
+
 ### `HumanFriendlyEmitter`
 Core emitter class that handles the sequence formatting logic.
 
@@ -58,3 +63,28 @@ Dumper for multiple YAML documents with human-friendly formatting.
 
 ### `KubernetesManifestDumper`
 Specialized dumper for Kubernetes manifests with resource ordering.
+
+## CLI Security Options
+
+The command-line interface supports both safe and unsafe YAML loading:
+
+**Safe Loading (Default):**
+- Uses `yaml.SafeLoader` 
+- Prevents arbitrary Python object instantiation
+- Rejects YAML with Python-specific tags like `!!python/dict`
+- Recommended for untrusted input
+
+**Unsafe Loading (`--unsafe-inputs`):**
+- Uses `yaml.Loader`
+- Allows arbitrary Python object instantiation
+- Processes Python-specific YAML tags
+- **Use with caution** - only for trusted input
+
+**Example:**
+```bash
+# Safe (default) - will reject Python objects
+cat untrusted.yaml | huml
+
+# Unsafe - allows Python objects  
+cat trusted-with-python-objects.yaml | huml --unsafe-inputs
+```

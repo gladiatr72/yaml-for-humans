@@ -83,7 +83,7 @@ containers:
 ## Key Differences
 
 1. **Indented sequences**: Dashes are indented under parent containers for better hierarchy visualization
-2. **Priority key ordering**: Container-related keys (`name`, `image`, `imagePullPolicy`, `env`, `envFrom`, `command`, `args`) appear first
+2. **Priority key ordering**: Important keys (`apiVersion`, `kind`, `metadata`, `name`, `image`, `imagePullPolicy`, `env`, `envFrom`, `command`, `args`) appear first
 3. **Smart formatting**: Complex objects use separate lines, simple strings stay inline
 4. **Consistent indentation**: Maintains visual hierarchy throughout the document
 

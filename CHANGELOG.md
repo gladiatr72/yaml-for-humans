@@ -2,6 +2,30 @@
 
 All notable changes to yaml-for-humans will be documented in this file.
 
+## [1.0.2] - 2025-01-03
+
+### Changed
+- Improved CLI help formatting with better examples and security information
+- Enhanced CLI documentation with more comprehensive usage examples
+
+## [1.0.1] - 2025-01-03
+
+### Added
+- CLI support for unsafe YAML loading with `--unsafe-inputs` / `-u` flag
+- Security options allowing choice between `yaml.SafeLoader` (default) and `yaml.Loader`
+- Utility functions `_load_yaml()` and `_load_all_yaml()` for configurable loading
+- Enhanced priority key ordering with `apiVersion`, `kind`, and `metadata` keys
+
+### Changed
+- Updated priority keys list to include Kubernetes resource identification keys
+- All YAML loading in CLI now uses configurable loader based on safety flag
+- Improved documentation with security warnings and usage examples
+
+### Security
+- Default behavior remains safe (uses `yaml.SafeLoader`)
+- Unsafe loading requires explicit opt-in with `--unsafe-inputs` flag
+- Added comprehensive documentation about security implications
+
 ## [1.0.0] - 2025-01-XX
 
 ### Added
