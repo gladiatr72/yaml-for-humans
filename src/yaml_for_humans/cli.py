@@ -23,6 +23,22 @@ except ImportError:
 DEFAULT_TIMEOUT_MS = 2000
 
 
+def _load_yaml(content, unsafe=False):
+    """Load YAML content using safe or unsafe loader."""
+    if unsafe:
+        return yaml.load(content, Loader=yaml.Loader)
+    else:
+        return yaml.safe_load(content)
+
+
+def _load_all_yaml(content, unsafe=False):
+    """Load all YAML documents using safe or unsafe loader."""
+    if unsafe:
+        return yaml.load_all(content, Loader=yaml.Loader)
+    else:
+        return yaml.safe_load_all(content)
+
+
 def _check_cli_dependencies():
     """Check if CLI dependencies are available."""
     if click is None:
@@ -84,6 +100,7 @@ def _huml_main(
     inputs=None,
     output=None,
     auto=False,
+    unsafe_inputs=False,
 ):
     """
     Convert YAML or JSON input to human-friendly YAML.
@@ -94,6 +111,11 @@ def _huml_main(
         cat config.yaml | huml
         echo '{"name": "web", "ports": [80, 443]}' | huml
         kubectl get deployment -o yaml | huml
+        
+    Security:
+        By default, uses yaml.SafeLoader for parsing YAML input.
+        Use --unsafe-inputs to enable yaml.Loader which allows
+        arbitrary Python object instantiation (use with caution).
     """
     _check_cli_dependencies()
 
@@ -210,7 +232,7 @@ def _huml_main(
                     elif file_path.lower().endswith((".yaml", ".yml")):
                         # Always check for multi-document YAML (detect automatically)
                         if _is_multi_document_yaml(file_content):
-                            docs = list(yaml.safe_load_all(file_content))
+                            docs = list(_load_all_yaml(file_content, unsafe=unsafe_inputs))
                             # Filter out None/empty documents
                             docs = [doc for doc in docs if doc is not None]
                             documents.extend(docs)
@@ -219,7 +241,7 @@ def _huml_main(
                             )
                             continue
                         else:
-                            data = yaml.safe_load(file_content)
+                            data = _load_yaml(file_content, unsafe=unsafe_inputs)
                     else:
                         # Auto-detect format for files without clear extensions
                         if _looks_like_json(file_content):
@@ -255,7 +277,7 @@ def _huml_main(
                                     continue
                         else:
                             if _is_multi_document_yaml(file_content):
-                                docs = list(yaml.safe_load_all(file_content))
+                                docs = list(_load_all_yaml(file_content, unsafe=unsafe_inputs))
                                 docs = [doc for doc in docs if doc is not None]
                                 documents.extend(docs)
                                 document_sources.extend(
@@ -263,7 +285,7 @@ def _huml_main(
                                 )
                                 continue
                             else:
-                                data = yaml.safe_load(file_content)
+                                data = _load_yaml(file_content, unsafe=unsafe_inputs)
 
                     documents.append(data)
                     document_sources.append({"file_path": file_path})
@@ -326,7 +348,7 @@ def _huml_main(
                 # Assume YAML format for non-JSON input
                 # Auto-detect multi-document YAML (like file processing does)
                 if _is_multi_document_yaml(input_text):
-                    docs = list(yaml.safe_load_all(input_text))
+                    docs = list(_load_all_yaml(input_text, unsafe=unsafe_inputs))
                     # Filter out None/empty documents
                     docs = [doc for doc in docs if doc is not None]
                     documents.extend(docs)
@@ -334,7 +356,7 @@ def _huml_main(
                         [{"stdin_position": i} for i in range(len(docs))]
                     )
                 else:
-                    data = yaml.safe_load(input_text)
+                    data = _load_yaml(input_text, unsafe=unsafe_inputs)
                     documents.append(data)
                     document_sources.append({"stdin_position": 0})
 
@@ -627,8 +649,14 @@ def huml():
         is_flag=True,
         help="Automatically create output directories if they don't exist",
     )
+    @click.option(
+        "--unsafe-inputs",
+        "-u",
+        is_flag=True,
+        help="Use unsafe YAML loader (yaml.Loader) instead of safe loader (default: false, uses yaml.SafeLoader)",
+    )
     @click.version_option()
-    def cli_main(indent, timeout, inputs, output, auto):
+    def cli_main(indent, timeout, inputs, output, auto, unsafe_inputs):
         """
         Convert YAML or JSON input to human-friendly YAML.
 
@@ -639,7 +667,7 @@ def huml():
             echo '{"name": "web", "ports": [80, 443]}' | huml
             kubectl get deployment -o yaml | huml
         """
-        _huml_main(indent, timeout, inputs, output, auto)
+        _huml_main(indent, timeout, inputs, output, auto, unsafe_inputs)
 
     cli_main()
 

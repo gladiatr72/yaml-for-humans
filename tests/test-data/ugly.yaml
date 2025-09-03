@@ -1,0 +1,88 @@
+---
+!!str "why_would_anyone_do_this":
+  - !!map
+    terrible: !!str "yes"
+    mixed: !!str "but valid"
+    nested: &anchor !!map
+      ugly: !!bool true
+      spaces:    !!str "everywhere"
+  - *anchor
+  - !!str "more items"
+
+!!int 42: !!str "number as key"
+!!bool true: !!str "boolean as key" 
+!!str "normal": !!str "but tagged anyway"
+
+# Comment in weird place  
+"tuple_like_key": !!str "no actual tuples in safe mode"
+
+deeply_nested:
+  !!str "level1":
+    level2:
+      level3: !!str "deeply buried"
+    also_level2:
+      - flow_in_seq: !!str "terrible"
+      - more: !!str "pain"
+
+'single_quotes': "mixed with double quotes"
+"escaped_mess": 'He said "this is awful"'
+
+folded_text: >-
+  This could be one line
+  but instead it spans multiple
+  lines for no reason
+
+literal_text: |-
+  Line 1 of literal block
+  Line 2 with spaces    
+  Line 3
+
+"   spaces_in_key   ": !!str "why"
+
+more_refs: &ref
+  data: !!str "here"
+  nested:
+    value: !!str "deep"
+ref_copy: *ref
+
+unicode_pain: "¿Why do this? 🤮"
+
+final_horror:
+  - single: !!str "line"
+    with:
+      nested:
+        flow: !!str "syntax"
+  - and: 
+      - !!str "mixed"
+      - !!str "types" 
+      - everywhere: !!bool true
+
+!!null null: !!str "null key"
+
+ordered_map_horror: !!omap
+  - first: !!int 1
+  - second: !!int 2
+  - third: !!int 3
+
+set_data: !!set
+  ? !!str "item1"
+  ? !!str "item2" 
+  ? !!int 42
+
+binary_waste: !!binary |
+  iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==
+
+merge_madness: 
+  <<: &merge_anchor
+    merged: !!str "content"
+    other: !!str "stuff"
+  additional: !!str "data"
+
+merged_ref: *merge_anchor
+
+python_specific: !!python/dict
+  key1: !!str "value1"
+  key2: !!int 42
+
+python_list: !!python/list [!!str "item1", !!str "item2", !!int 3]
+...

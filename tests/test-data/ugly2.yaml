@@ -1,0 +1,212 @@
+---
+!!str "root_level_horror":
+  !!str "level_1": &level1_anchor
+    !!int 42:
+      !!str "level_2":
+        !!bool true:
+          !!str "level_3":
+            !!null null:
+              !!str "level_4": &deep_anchor
+                'single_quotes':
+                  "double_quotes":
+                    bare_key:
+                      !!str "level_5":
+                        - !!map
+                          !!str "sequence_item_1":
+                            nested_in_sequence:
+                              !!str "level_6":
+                                more_nesting: &really_deep
+                                  !!str "level_7":
+                                    even_deeper:
+                                      !!str "level_8":
+                                        keep_going:
+                                          !!str "level_9":
+                                            almost_there:
+                                              !!str "level_10":
+                                                final_level: !!str "you made it!"
+                                                but_wait: !!str "there's more..."
+                                                extra_nested:
+                                                  - !!str "list_in_level_10"
+                                                  - !!map
+                                                    !!str "map_in_list_in_level_10":
+                                                      recursive_madness: *really_deep
+                        - !!str "sequence_item_2"
+                        - !!map
+                          complex_key: !!str "simple_value"
+                          !!str "another_deep_dive":
+                            !!str "level_6_again":
+                              !!str "level_7_again": 
+                                folded_text: >-
+                                  This folded text is buried
+                                  so deep in the structure
+                                  that finding it requires
+                                  a map and a prayer
+                                literal_text: |-
+                                  Line 1 buried deep
+                                  Line 2 even deeper
+                                  Line 3 deepest of all
+
+!!str "parallel_nightmare":
+  !!str "branch_a":
+    !!str "sub_branch_1":
+      !!str "sub_sub_branch_1":
+        !!str "leaf_data": !!str "found me!"
+        !!str "more_branches":
+          - !!str "item_1"
+          - !!map
+            !!str "nested_map_key":
+              !!str "deeply_buried":
+                !!str "treasure": !!str "gold"
+                !!str "more_treasure": &treasure_anchor
+                  gems: !!str "diamonds"
+                  coins: !!int 1000
+                  magic_items:
+                    - staff: !!str "of power"
+                      enchantment: !!str "+5"
+                      nested_properties:
+                        durability: !!int 100
+                        weight: !!float 2.5
+                        origin:
+                          created_by: !!str "ancient wizard"
+                          date: !!str "year 1247"
+                          location:
+                            continent: !!str "Mystoria"
+                            country: !!str "Eldoria"
+                            city: !!str "Arcanum"
+                            district: !!str "Mage Quarter"
+                            building:
+                              name: !!str "Tower of Infinite Wisdom"
+                              floor: !!int 13
+                              room: !!str "Crystal Chamber"
+                              exact_position:
+                                x: !!float 127.5
+                                y: !!float 89.2
+                                z: !!float 45.7
+                                metadata:
+                                  recorded_by: !!str "Scribe Eldwin"
+                                  timestamp: !!str "1247-03-15T14:30:00Z"
+                                  accuracy: !!str "pinpoint"
+                                  notes: !!str "Created during the Great Enchantment"
+  !!str "branch_b": *level1_anchor
+
+!!str "configuration_hell":
+  !!str "database":
+    !!str "connections":
+      !!str "primary":
+        !!str "host": !!str "db.example.com"
+        !!str "settings":
+          !!str "performance":
+            !!str "cache":
+              !!str "levels":
+                !!str "l1_cache":
+                  !!str "type": !!str "memory"
+                  !!str "config":
+                    !!str "max_size": !!str "512MB"
+                    !!str "policies":
+                      !!str "eviction":
+                        !!str "algorithm": !!str "LRU"
+                        !!str "parameters":
+                          !!str "max_age": !!str "3600s"
+                          !!str "priority_weights":
+                            !!str "high": !!float 0.8
+                            !!str "medium": !!float 0.5
+                            !!str "low": !!float 0.2
+                            !!str "batch_processing":
+                              !!str "enabled": !!bool true
+                              !!str "batch_size": !!int 1000
+                              !!str "parallel_workers":
+                                !!str "worker_pool":
+                                  !!str "min_workers": !!int 4
+                                  !!str "max_workers": !!int 32
+                                  !!str "scaling_policy":
+                                    !!str "metrics":
+                                      !!str "cpu_threshold": !!float 0.8
+                                      !!str "memory_threshold": !!float 0.9
+                                      !!str "queue_length_threshold": !!int 100
+                                      !!str "response_time_threshold": !!str "500ms"
+                                      !!str "custom_metrics":
+                                        !!str "business_logic":
+                                          !!str "transaction_rate": !!str "high"
+                                          !!str "error_rate": !!str "low" 
+                                          !!str "user_satisfaction":
+                                            !!str "surveys":
+                                              !!str "nps_score": !!float 8.5
+                                              !!str "detailed_feedback":
+                                                !!str "categories":
+                                                  !!str "performance":
+                                                    !!str "loading_times": !!str "acceptable"
+                                                    !!str "responsiveness": !!str "good"
+                                                  !!str "usability":
+                                                    !!str "navigation": !!str "excellent"
+                                                    !!str "accessibility": !!str "needs_improvement"
+
+!!str "integration_nightmare": 
+  !!str "third_party_apis":
+    !!str "payment_processor":
+      !!str "primary": *treasure_anchor
+      !!str "fallbacks":
+        - !!str "service_1"
+        - !!map
+          !!str "service_2":
+            !!str "config": *deep_anchor
+            !!str "additional_settings":
+              !!str "timeout_nested":
+                !!str "connection": !!str "30s"
+                !!str "read": !!str "60s"
+                !!str "retry_policy":
+                  !!str "max_attempts": !!int 3
+                  !!str "backoff":
+                    !!str "strategy": !!str "exponential"
+                    !!str "base_delay": !!str "1s"
+                    !!str "max_delay": !!str "30s"
+                    !!str "jitter": !!bool true
+                    !!str "circuit_breaker":
+                      !!str "failure_threshold": !!int 5
+                      !!str "recovery_timeout": !!str "60s"
+                      !!str "monitoring":
+                        !!str "metrics_collection":
+                          !!str "enabled": !!bool true
+                          !!str "interval": !!str "10s"
+                          !!str "storage":
+                            !!str "backend": !!str "time_series_db"
+                            !!str "retention_policy":
+                              !!str "raw_data": !!str "7d"
+                              !!str "aggregated": !!str "30d" 
+                              !!str "alerts":
+                                !!str "channels":
+                                  - !!str "email"
+                                  - !!str "slack"
+                                  - !!map
+                                    !!str "webhook":
+                                      !!str "url": !!str "https://hooks.example.com/alert"
+                                      !!str "headers":
+                                        !!str "Authorization": !!str "Bearer token123"
+                                        !!str "Content-Type": !!str "application/json"
+                                      !!str "payload_template":
+                                        !!str "message": !!str "Alert: {{alert.name}}"
+                                        !!str "severity": !!str "{{alert.level}}"
+                                        !!str "details":
+                                          !!str "service": !!str "{{service.name}}"
+                                          !!str "environment": !!str "{{env}}"
+                                          !!str "timestamp": !!str "{{timestamp}}"
+                                          !!str "metadata":
+                                            !!str "correlation_id": !!str "{{correlation_id}}"
+                                            !!str "trace_id": !!str "{{trace_id}}"
+                                            !!str "span_id": !!str "{{span_id}}"
+
+!!str "the_final_boss": 
+  !!str "unicode_madness": "🎭🤮💀👹🔥💣⚡🌪️"
+  !!str "binary_buried_deep": !!binary |
+    R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7
+  !!str "merge_keys_in_the_depths":
+    <<: *deep_anchor
+    !!str "additional_chaos": !!str "because why not"
+    !!str "set_data_deep": !!set
+      ? !!str "deeply_nested_item_1"  
+      ? !!str "deeply_nested_item_2"
+      ? !!int 42
+    !!str "ordered_map_deep": !!omap
+      - !!str "first_deep": !!str "value1"  
+      - !!str "second_deep": !!str "value2"
+      - !!str "third_deep": !!int 999
+...

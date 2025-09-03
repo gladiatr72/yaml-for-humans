@@ -140,8 +140,11 @@ echo '{"containers": [...]}' | huml
 # Custom indentation
 cat config.yaml | huml --indent 4
 
-# Custom stdin timeout (default: 50ms)
+# Custom stdin timeout (default: 2000ms)
 cat config.yaml | huml --timeout 100
+
+# Use unsafe YAML loader (allows arbitrary Python objects - use with caution)
+cat config-with-python-objects.yaml | huml --unsafe-inputs
 
 # Process JSON Lines format (one JSON object per line)
 cat logs.jsonl | huml
@@ -185,7 +188,8 @@ The CLI automatically detects input format and handles:
 - `-o, --output TEXT`: Output file or directory path (if ends with `/`, treated as directory)
 - `--auto`: Automatically create output directories if they don't exist
 - `--indent INTEGER`: Indentation level (default: 2)
-- `-t, --timeout INTEGER`: Stdin timeout in milliseconds (default: 50)
+- `-t, --timeout INTEGER`: Stdin timeout in milliseconds (default: 2000)
+- `-u, --unsafe-inputs`: Use unsafe YAML loader (allows arbitrary Python objects, use with caution)
 - `--help`: Show help message
 - `--version`: Show version information
 
