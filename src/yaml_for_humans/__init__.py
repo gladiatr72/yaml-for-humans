@@ -22,7 +22,7 @@ from .multi_document import (
     dumps_kubernetes_manifests,
 )
 
-__version__ = "1.0.2"
+__version__ = "1.0.3"
 __all__ = [
     "HumanFriendlyEmitter",
     "HumanFriendlyDumper",
