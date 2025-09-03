@@ -28,6 +28,9 @@ classifiers = [
     "Topic :: Text Processing :: Markup",
 ]
 
+[project.urls]
+Repository = "https://github.com/gladiatr72/yaml-for-humans"
+
 [project.optional-dependencies]
 cli = [
     "click>=8.0.0"
