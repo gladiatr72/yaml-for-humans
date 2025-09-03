@@ -156,6 +156,9 @@ class HumanFriendlyDumper(
 
     # Container-related keys that should appear first in mappings
     PRIORITY_KEYS = [
+        "apiVersion",
+        "kind",
+        "metadata",
         "name",
         "image",
         "imagePullPolicy",

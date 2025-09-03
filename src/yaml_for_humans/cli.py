@@ -111,7 +111,7 @@ def _huml_main(
         cat config.yaml | huml
         echo '{"name": "web", "ports": [80, 443]}' | huml
         kubectl get deployment -o yaml | huml
-        
+
     Security:
         By default, uses yaml.SafeLoader for parsing YAML input.
         Use --unsafe-inputs to enable yaml.Loader which allows
@@ -232,7 +232,9 @@ def _huml_main(
                     elif file_path.lower().endswith((".yaml", ".yml")):
                         # Always check for multi-document YAML (detect automatically)
                         if _is_multi_document_yaml(file_content):
-                            docs = list(_load_all_yaml(file_content, unsafe=unsafe_inputs))
+                            docs = list(
+                                _load_all_yaml(file_content, unsafe=unsafe_inputs)
+                            )
                             # Filter out None/empty documents
                             docs = [doc for doc in docs if doc is not None]
                             documents.extend(docs)
@@ -277,7 +279,9 @@ def _huml_main(
                                     continue
                         else:
                             if _is_multi_document_yaml(file_content):
-                                docs = list(_load_all_yaml(file_content, unsafe=unsafe_inputs))
+                                docs = list(
+                                    _load_all_yaml(file_content, unsafe=unsafe_inputs)
+                                )
                                 docs = [doc for doc in docs if doc is not None]
                                 documents.extend(docs)
                                 document_sources.extend(
@@ -662,10 +666,31 @@ def huml():
 
         Reads from stdin and writes to stdout.
 
+        \b
         Examples:
-            cat config.yaml | huml
-            echo '{"name": "web", "ports": [80, 443]}' | huml
-            kubectl get deployment -o yaml | huml
+          # Convert YAML to human-friendly format
+          cat config.yaml | huml
+
+          # Convert JSON to human-friendly YAML
+          echo '{"name": "web", "ports": [80, 443]}' | huml
+
+          # Process Kubernetes resources
+          kubectl get deployment -o yaml | huml
+
+          # Process files with custom indentation
+          cat config.yaml | huml --indent 4
+
+          # Process multiple files to directory
+          huml --inputs "*.yaml" --output ./formatted/
+
+          # Use unsafe loader for Python objects
+          cat complex.yaml | huml --unsafe-inputs
+
+        \b
+        Security:
+          By default, uses yaml.SafeLoader for parsing YAML input.
+          Use --unsafe-inputs to enable yaml.Loader which allows
+          arbitrary Python object instantiation (use with caution).
         """
         _huml_main(indent, timeout, inputs, output, auto, unsafe_inputs)
 

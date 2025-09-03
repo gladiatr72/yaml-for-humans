@@ -1,0 +1,196 @@
+---
+!!str "safe_but_disgusting":
+  !!str "unnecessary_tags_everywhere": !!str "because we can"
+  !!int 42: !!str "number key with string value"
+  !!bool true: !!str "boolean key why not"
+  !!bool false: !!int 999
+  !!null null: !!str "null key with string value"
+
+!!str "mixed_quote_nightmare":
+  'single_quoted_key': "double_quoted_value"
+  "double_quoted_key": 'single_quoted_value'
+  bare_key: !!str "tagged_for_no_reason"
+  'mixed"quotes"in"key': !!str "this should be illegal"
+  "mixed'quotes'in'key": !!str "but it's not"
+
+!!str "spacing_disasters":
+  "   leading_spaces   ": !!str "trailing_spaces   "
+  "tabs\tare\tbad": !!str "but spaces are worse    "
+  !!str "key_with_unnecessary_tag":    !!str "value_with_unnecessary_tag"
+
+!!str "deeply_nested_madness":
+  !!str "level_1": &anchor_1
+    !!str "level_2":
+      !!str "level_3":
+        !!str "level_4": &deep_anchor
+          !!str "level_5":
+            !!str "level_6":
+              !!str "level_7":
+                !!str "level_8":
+                  !!str "final_level": !!str "you found it!"
+                  !!str "but_theres_more":
+                    - !!str "sequence_item_1"
+                    - !!map
+                      !!str "nested_map_in_sequence":
+                        !!str "even_deeper": !!str "inception vibes"
+                        !!str "reference_madness": *deep_anchor
+                    - !!str "sequence_item_2"
+
+!!str "block_scalar_abuse":
+  !!str "folded_scalar": >-
+    This text could easily fit on one line
+    but instead we spread it across multiple lines
+    because apparently readability is overrated
+    and we enjoy making maintainers suffer
+    by forcing them to scroll horizontally
+    through unnecessarily verbose configurations
+    
+  !!str "literal_scalar": |-
+    Line 1 of literal block text
+    Line 2 with trailing whitespace    
+    Line 3 with more text
+    
+    Line 5 after blank line because chaos
+    
+  !!str "folded_with_keep": >+
+    This folded scalar keeps final newlines
+    which is probably not what you expect
+    but here we are anyway
+    
+  !!str "literal_with_strip": |
+    This literal scalar strips final newlines
+    even though you might not want it to
+    surprise!
+
+!!str "reference_nightmare":
+  !!str "anchor_source": &ref_anchor
+    !!str "shared_data": !!str "this will be copied"
+    !!str "nested_data":
+      !!str "deep_value": !!int 123
+      !!str "more_nesting":
+        - !!str "item_in_shared_data"
+        - !!int 456
+        - !!bool true
+  !!str "reference_1": *ref_anchor
+  !!str "reference_2": *ref_anchor
+  !!str "reference_3": *ref_anchor
+
+!!str "merge_key_madness":
+  !!str "base_config": &base_settings
+    !!str "setting_1": !!str "value_1"
+    !!str "setting_2": !!int 42
+    !!str "nested_settings":
+      !!str "debug": !!bool true
+      !!str "verbose": !!bool false
+  !!str "derived_config":
+    <<: *base_settings
+    !!str "override_setting": !!str "new_value"
+    !!str "additional_setting": !!str "extra"
+
+!!str "ordered_map_horror": !!omap
+  - !!str "first_key": !!str "first_value"
+  - !!str "second_key": !!int 999
+  - !!str "third_key": !!bool true
+  - !!str "fourth_key": 
+    - !!str "nested_list_in_omap"
+    - !!int 123
+    - !!map
+      !!str "nested_map_in_omap": !!str "why"
+
+!!str "set_data_chaos": !!set
+  ? !!str "unique_item_1"
+  ? !!str "unique_item_2" 
+  ? !!int 42
+  ? !!bool true
+  ? !!str "more_unique_items"
+
+!!str "binary_data_for_no_reason": !!binary |
+  iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==
+
+!!str "unicode_chaos": "¡¿Por qué hacemos esto‽ 🤮💀👹🔥💣⚡🌪️🎭"
+
+!!str "number_string_confusion":
+  !!str "string_that_looks_like_number": !!str "42"
+  !!str "actual_number": !!int 42
+  !!str "string_that_looks_like_float": !!str "3.14159"
+  !!str "actual_float": !!float 3.14159
+  !!str "string_that_looks_like_bool": !!str "true"
+  !!str "actual_bool": !!bool true
+
+!!str "sequence_madness":
+  !!str "mixed_sequence":
+    - !!str "string_item"
+    - !!int 123
+    - !!bool false
+    - !!null null
+    - !!map
+      !!str "map_in_sequence": !!str "nested"
+      !!str "more_nesting":
+        - !!str "sequence_in_map_in_sequence"
+        - !!map
+          !!str "map_in_sequence_in_map": !!str "inception"
+    - !!str "back_to_simple_items"
+    - !!float 99.99
+
+!!str "configuration_nightmare":
+  !!str "database":
+    !!str "host": !!str "localhost"
+    !!str "port": !!int 5432
+    !!str "credentials": &db_creds
+      !!str "username": !!str "admin"
+      !!str "password": !!str "super_secret_password"
+      !!str "encrypted": !!bool false
+    !!str "connection_pool":
+      !!str "min_connections": !!int 5
+      !!str "max_connections": !!int 50
+      !!str "timeout": !!str "30s"
+      !!str "retry_policy":
+        !!str "max_retries": !!int 3
+        !!str "backoff_strategy": !!str "exponential"
+        !!str "initial_delay": !!str "1s"
+        !!str "max_delay": !!str "10s"
+  !!str "backup_database":
+    <<: *db_creds
+    !!str "host": !!str "backup.localhost"
+    !!str "read_only": !!bool true
+
+!!str "nested_references_hell":
+  !!str "level_1": &level1
+    !!str "data": !!str "level_1_data"
+    !!str "level_2": &level2
+      !!str "data": !!str "level_2_data"  
+      !!str "level_3": &level3
+        !!str "data": !!str "level_3_data"
+        !!str "reference_to_level_1": *level1
+  !!str "circular_reference_attempt": *level2
+  !!str "another_reference": *level3
+
+!!str "final_boss_section":
+  !!str "everything_together":
+    <<: *anchor_1
+    !!str "additional_chaos":
+      - !!str "item_1"
+      - !!map
+        !!str "nested_ordered_map": !!omap
+          - !!str "omap_key_1": !!str "omap_value_1"
+          - !!str "omap_key_2": !!int 999
+        !!str "nested_set": !!set
+          ? !!str "set_item_1"
+          ? !!str "set_item_2"
+        !!str "nested_binary": !!binary |
+          R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7
+      - !!str "item_3"
+    !!str "literal_block_finale": |
+      This is the end of our YAML nightmare
+      If you've made it this far, congratulations
+      You have witnessed maximum YAML ugliness
+      While still remaining SafeLoader compatible
+      
+      No Python-specific tags were harmed
+      in the making of this monstrosity
+      
+      May your future YAML be cleaner than this
+      (It couldn't possibly be worse)
+
+!!str "the_absolute_end": !!str "🎭 fin 🎭"
+...
