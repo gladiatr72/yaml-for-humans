@@ -407,7 +407,7 @@ wheels = [
 
 [[package]]
 name = "yaml-for-humans"
-version = "1.0.3"
+version = "1.0.4"
 source = { editable = "." }
 dependencies = [
     { name = "pyyaml" },

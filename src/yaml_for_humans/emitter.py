@@ -215,6 +215,11 @@ class HumanFriendlyDumper(
 
         # Register custom string representer for multiline formatting
         self.add_representer(str, self.represent_str)
+        
+        # Register representers for FormattingAware objects (render as regular structures)
+        from .formatting_aware import FormattingAwareDict, FormattingAwareList
+        self.add_representer(FormattingAwareDict, self.represent_formatting_aware_dict)
+        self.add_representer(FormattingAwareList, self.represent_formatting_aware_list)
 
     def represent_mapping(self, tag, mapping, flow_style=None):
         """
@@ -232,19 +237,27 @@ class HumanFriendlyDumper(
             return super().represent_mapping(tag, mapping, flow_style)
 
         # Create ordered mapping with priority keys first
-        ordered_mapping = {}
-
-        # Add priority keys that exist in the mapping
-        for priority_key in self.PRIORITY_KEYS:
-            if priority_key in mapping:
-                ordered_mapping[priority_key] = mapping[priority_key]
-
-        # Add remaining keys in original order
-        for key, value in mapping.items():
-            if key not in self.PRIORITY_KEYS:
-                ordered_mapping[key] = value
+        priority_items = {
+            key: mapping[key] for key in self.PRIORITY_KEYS
+            if key in mapping
+        }
+        
+        remaining_items = {
+            key: value for key, value in mapping.items()
+            if key not in self.PRIORITY_KEYS
+        }
+        
+        ordered_mapping = {**priority_items, **remaining_items}
 
         return super().represent_mapping(tag, ordered_mapping, flow_style)
+
+    def represent_formatting_aware_dict(self, dumper, data):
+        """Represent FormattingAwareDict as a regular mapping (no empty line preservation)."""
+        return self.represent_mapping("tag:yaml.org,2002:map", dict(data))
+    
+    def represent_formatting_aware_list(self, dumper, data):
+        """Represent FormattingAwareList as a regular sequence."""
+        return self.represent_sequence("tag:yaml.org,2002:seq", list(data))
 
     def represent_str(self, dumper, data):
         """

@@ -12,7 +12,9 @@ Features:
 """
 
 from .emitter import HumanFriendlyEmitter, HumanFriendlyDumper
-from .dumper import dumps, dump
+from .dumper import dumps, dump, load_with_formatting
+from .formatting_aware import FormattingAwareLoader
+from .formatting_emitter import FormattingAwareDumper
 from .multi_document import (
     MultiDocumentDumper,
     KubernetesManifestDumper,
@@ -28,6 +30,9 @@ __all__ = [
     "HumanFriendlyDumper",
     "dumps",
     "dump",
+    "load_with_formatting",
+    "FormattingAwareLoader",
+    "FormattingAwareDumper",
     "MultiDocumentDumper",
     "KubernetesManifestDumper",
     "dump_all",

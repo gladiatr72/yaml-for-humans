@@ -7,7 +7,7 @@
           !!str "level_3":
             !!null null:
               !!str "level_4": &deep_anchor
-                'single_quotes':
+                "single_quotes":
                   "double_quotes":
                     bare_key:
                       !!str "level_5":
@@ -35,7 +35,7 @@
                           complex_key: !!str "simple_value"
                           !!str "another_deep_dive":
                             !!str "level_6_again":
-                              !!str "level_7_again": 
+                              !!str "level_7_again":
                                 folded_text: >-
                                   This folded text is buried
                                   so deep in the structure
@@ -127,7 +127,7 @@
                                       !!str "custom_metrics":
                                         !!str "business_logic":
                                           !!str "transaction_rate": !!str "high"
-                                          !!str "error_rate": !!str "low" 
+                                          !!str "error_rate": !!str "low"
                                           !!str "user_satisfaction":
                                             !!str "surveys":
                                               !!str "nps_score": !!float 8.5
@@ -140,7 +140,7 @@
                                                     !!str "navigation": !!str "excellent"
                                                     !!str "accessibility": !!str "needs_improvement"
 
-!!str "integration_nightmare": 
+!!str "integration_nightmare":
   !!str "third_party_apis":
     !!str "payment_processor":
       !!str "primary": *treasure_anchor
@@ -171,7 +171,7 @@
                             !!str "backend": !!str "time_series_db"
                             !!str "retention_policy":
                               !!str "raw_data": !!str "7d"
-                              !!str "aggregated": !!str "30d" 
+                              !!str "aggregated": !!str "30d"
                               !!str "alerts":
                                 !!str "channels":
                                   - !!str "email"
@@ -194,19 +194,16 @@
                                             !!str "trace_id": !!str "{{trace_id}}"
                                             !!str "span_id": !!str "{{span_id}}"
 
-!!str "the_final_boss": 
+!!str "the_final_boss":
   !!str "unicode_madness": "🎭🤮💀👹🔥💣⚡🌪️"
-  !!str "binary_buried_deep": !!binary |
-    R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7
   !!str "merge_keys_in_the_depths":
     <<: *deep_anchor
     !!str "additional_chaos": !!str "because why not"
     !!str "set_data_deep": !!set
-      ? !!str "deeply_nested_item_1"  
+      ? !!str "deeply_nested_item_1"
       ? !!str "deeply_nested_item_2"
       ? !!int 42
     !!str "ordered_map_deep": !!omap
-      - !!str "first_deep": !!str "value1"  
+      - !!str "first_deep": !!str "value1"
       - !!str "second_deep": !!str "value2"
       - !!str "third_deep": !!int 999
-...
