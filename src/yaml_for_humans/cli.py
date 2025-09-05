@@ -235,7 +235,11 @@ def _huml_main(
                         # Always check for multi-document YAML (detect automatically)
                         if _is_multi_document_yaml(file_content):
                             docs = list(
-                                _load_all_yaml(file_content, unsafe=unsafe_inputs, preserve_empty_lines=preserve_empty_lines)
+                                _load_all_yaml(
+                                    file_content,
+                                    unsafe=unsafe_inputs,
+                                    preserve_empty_lines=preserve_empty_lines,
+                                )
                             )
                             # Filter out None/empty documents
                             docs = [doc for doc in docs if doc is not None]
@@ -245,7 +249,11 @@ def _huml_main(
                             )
                             continue
                         else:
-                            data = _load_yaml(file_content, unsafe=unsafe_inputs, preserve_empty_lines=preserve_empty_lines)
+                            data = _load_yaml(
+                                file_content,
+                                unsafe=unsafe_inputs,
+                                preserve_empty_lines=preserve_empty_lines,
+                            )
                     else:
                         # Auto-detect format for files without clear extensions
                         if _looks_like_json(file_content):
@@ -282,7 +290,11 @@ def _huml_main(
                         else:
                             if _is_multi_document_yaml(file_content):
                                 docs = list(
-                                    _load_all_yaml(file_content, unsafe=unsafe_inputs, preserve_empty_lines=preserve_empty_lines)
+                                    _load_all_yaml(
+                                        file_content,
+                                        unsafe=unsafe_inputs,
+                                        preserve_empty_lines=preserve_empty_lines,
+                                    )
                                 )
                                 docs = [doc for doc in docs if doc is not None]
                                 documents.extend(docs)
@@ -291,7 +303,11 @@ def _huml_main(
                                 )
                                 continue
                             else:
-                                data = _load_yaml(file_content, unsafe=unsafe_inputs, preserve_empty_lines=preserve_empty_lines)
+                                data = _load_yaml(
+                                    file_content,
+                                    unsafe=unsafe_inputs,
+                                    preserve_empty_lines=preserve_empty_lines,
+                                )
 
                     documents.append(data)
                     document_sources.append({"file_path": file_path})
@@ -354,7 +370,13 @@ def _huml_main(
                 # Assume YAML format for non-JSON input
                 # Auto-detect multi-document YAML (like file processing does)
                 if _is_multi_document_yaml(input_text):
-                    docs = list(_load_all_yaml(input_text, unsafe=unsafe_inputs, preserve_empty_lines=preserve_empty_lines))
+                    docs = list(
+                        _load_all_yaml(
+                            input_text,
+                            unsafe=unsafe_inputs,
+                            preserve_empty_lines=preserve_empty_lines,
+                        )
+                    )
                     # Filter out None/empty documents
                     docs = [doc for doc in docs if doc is not None]
                     documents.extend(docs)
@@ -362,7 +384,11 @@ def _huml_main(
                         [{"stdin_position": i} for i in range(len(docs))]
                     )
                 else:
-                    data = _load_yaml(input_text, unsafe=unsafe_inputs, preserve_empty_lines=preserve_empty_lines)
+                    data = _load_yaml(
+                        input_text,
+                        unsafe=unsafe_inputs,
+                        preserve_empty_lines=preserve_empty_lines,
+                    )
                     documents.append(data)
                     document_sources.append({"stdin_position": 0})
 
@@ -378,7 +404,9 @@ def _huml_main(
 
         if output:
             # Write to file/directory
-            _write_to_output(documents, output, auto, indent, document_sources, preserve_empty_lines)
+            _write_to_output(
+                documents, output, auto, indent, document_sources, preserve_empty_lines
+            )
         else:
             # Write to stdout (existing behavior)
             if len(documents) > 1:
@@ -386,7 +414,11 @@ def _huml_main(
 
                 output_str = dumps_all(documents, indent=indent)
             else:
-                output_str = dumps(documents[0], indent=indent, preserve_empty_lines=preserve_empty_lines)
+                output_str = dumps(
+                    documents[0],
+                    indent=indent,
+                    preserve_empty_lines=preserve_empty_lines,
+                )
 
             print(output_str, end="")
 
@@ -471,10 +503,7 @@ def _generate_k8s_filename(document, source_file=None, stdin_position=None):
     name = metadata.get("name", "") if isinstance(metadata, dict) else ""
 
     # Build filename parts
-    parts = [
-        value.lower() for value in [kind, doc_type, name]
-        if value
-    ]
+    parts = [value.lower() for value in [kind, doc_type, name] if value]
 
     # If we have no identifying information, use fallback naming
     if not parts:
@@ -535,7 +564,12 @@ def _looks_like_yaml(text):
 
 
 def _write_to_output(
-    documents, output_path, auto=False, indent=2, document_sources=None, preserve_empty_lines=True
+    documents,
+    output_path,
+    auto=False,
+    indent=2,
+    document_sources=None,
+    preserve_empty_lines=True,
 ):
     """Write documents to the specified output path."""
     from pathlib import Path
@@ -567,7 +601,13 @@ def _write_to_output(
             )
             file_path = dir_path / filename
             with open(file_path, "w", encoding="utf-8") as f:
-                f.write(dumps(documents[0], indent=indent, preserve_empty_lines=preserve_empty_lines))
+                f.write(
+                    dumps(
+                        documents[0],
+                        indent=indent,
+                        preserve_empty_lines=preserve_empty_lines,
+                    )
+                )
         else:
             # Multiple documents - each gets its own file
             for i, doc in enumerate(documents):
@@ -590,7 +630,13 @@ def _write_to_output(
                     counter += 1
 
                 with open(file_path, "w", encoding="utf-8") as f:
-                    f.write(dumps(doc, indent=indent, preserve_empty_lines=preserve_empty_lines))
+                    f.write(
+                        dumps(
+                            doc,
+                            indent=indent,
+                            preserve_empty_lines=preserve_empty_lines,
+                        )
+                    )
     else:
         # Handle single file output
         file_path = Path(output_path)
@@ -607,7 +653,13 @@ def _write_to_output(
 
                 f.write(dumps_all(documents, indent=indent))
             else:
-                f.write(dumps(documents[0], indent=indent, preserve_empty_lines=preserve_empty_lines))
+                f.write(
+                    dumps(
+                        documents[0],
+                        indent=indent,
+                        preserve_empty_lines=preserve_empty_lines,
+                    )
+                )
 
 
 def huml():
@@ -656,7 +708,9 @@ def huml():
         help="Preserve empty lines from original YAML (default: true)",
     )
     @click.version_option()
-    def cli_main(indent, timeout, inputs, output, auto, unsafe_inputs, preserve_empty_lines):
+    def cli_main(
+        indent, timeout, inputs, output, auto, unsafe_inputs, preserve_empty_lines
+    ):
         """
         Convert YAML or JSON input to human-friendly YAML.
 
@@ -668,7 +722,9 @@ def huml():
           Use --unsafe-inputs to enable yaml.Loader which allows
           arbitrary Python object instantiation (use with caution).
         """
-        _huml_main(indent, timeout, inputs, output, auto, unsafe_inputs, preserve_empty_lines)
+        _huml_main(
+            indent, timeout, inputs, output, auto, unsafe_inputs, preserve_empty_lines
+        )
 
     cli_main()
 

@@ -215,9 +215,10 @@ class HumanFriendlyDumper(
 
         # Register custom string representer for multiline formatting
         self.add_representer(str, self.represent_str)
-        
+
         # Register representers for FormattingAware objects (render as regular structures)
         from .formatting_aware import FormattingAwareDict, FormattingAwareList
+
         self.add_representer(FormattingAwareDict, self.represent_formatting_aware_dict)
         self.add_representer(FormattingAwareList, self.represent_formatting_aware_list)
 
@@ -238,15 +239,15 @@ class HumanFriendlyDumper(
 
         # Create ordered mapping with priority keys first
         priority_items = {
-            key: mapping[key] for key in self.PRIORITY_KEYS
-            if key in mapping
+            key: mapping[key] for key in self.PRIORITY_KEYS if key in mapping
         }
-        
+
         remaining_items = {
-            key: value for key, value in mapping.items()
+            key: value
+            for key, value in mapping.items()
             if key not in self.PRIORITY_KEYS
         }
-        
+
         ordered_mapping = {**priority_items, **remaining_items}
 
         return super().represent_mapping(tag, ordered_mapping, flow_style)
@@ -254,7 +255,7 @@ class HumanFriendlyDumper(
     def represent_formatting_aware_dict(self, dumper, data):
         """Represent FormattingAwareDict as a regular mapping (no empty line preservation)."""
         return self.represent_mapping("tag:yaml.org,2002:map", dict(data))
-    
+
     def represent_formatting_aware_list(self, dumper, data):
         """Represent FormattingAwareList as a regular sequence."""
         return self.represent_sequence("tag:yaml.org,2002:seq", list(data))
