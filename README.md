@@ -4,6 +4,7 @@ Human-friendly YAML formatting for PyYAML that makes YAML more readable and intu
 
 ## Features
 
+- **Empty line preservation**: Maintains empty lines from original YAML for better readability
 - **Intelligent sequence formatting**: Strings on same line as dash (`- value`), objects on separate lines
 - **Indented sequences**: Dashes are properly indented under their parent containers
 - **Priority key ordering**: Important keys like `name`, `image`, `command` appear first in mappings
@@ -15,7 +16,7 @@ Human-friendly YAML formatting for PyYAML that makes YAML more readable and intu
 ## Quick Start
 
 ```python
-from yaml_for_humans import dumps, dump
+from yaml_for_humans import dumps, dump, load_with_formatting
 
 # Your data
 data = {
@@ -32,6 +33,10 @@ data = {
 # Generate human-friendly YAML
 yaml_output = dumps(data)
 print(yaml_output)
+
+# Or load existing YAML with formatting preservation
+formatted_data = load_with_formatting('existing-config.yaml')
+preserved_output = dumps(formatted_data, preserve_empty_lines=True)
 ```
 
 Output:
@@ -87,6 +92,50 @@ containers:
 3. **Smart formatting**: Complex objects use separate lines, simple strings stay inline
 4. **Consistent indentation**: Maintains visual hierarchy throughout the document
 
+## Empty Line Preservation
+
+YAML for Humans can preserve empty lines from the original YAML to maintain document structure and readability:
+
+```python
+from yaml_for_humans import load_with_formatting, dumps
+
+# Load YAML with formatting metadata
+original_yaml = """
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: my-config
+  namespace: default
+
+data:
+  config.yaml: |
+    setting: value
+"""
+
+data = load_with_formatting(original_yaml)
+
+# Dump with empty line preservation (default: True)
+preserved_output = dumps(data, preserve_empty_lines=True)
+print(preserved_output)
+
+# Or disable empty line preservation
+compact_output = dumps(data, preserve_empty_lines=False)
+print(compact_output)
+```
+
+### CLI Empty Line Preservation
+
+The command-line tool preserves empty lines by default:
+
+```bash
+# Preserves empty lines (default behavior)
+cat kustomization.yaml | huml
+
+# Disable empty line preservation
+cat kustomization.yaml | huml --no-preserve-empty-lines
+```
+
 ## Installation
 
 Install the core library:
@@ -114,7 +163,7 @@ uv pip install -e .[cli]
 Then import and use:
 
 ```python
-from yaml_for_humans import dumps, dump
+from yaml_for_humans import dumps, dump, load_with_formatting
 ```
 
 ## Command Line Interface (Optional)
@@ -190,6 +239,7 @@ The CLI automatically detects input format and handles:
 - `--indent INTEGER`: Indentation level (default: 2)
 - `-t, --timeout INTEGER`: Stdin timeout in milliseconds (default: 2000)
 - `-u, --unsafe-inputs`: Use unsafe YAML loader (allows arbitrary Python objects, use with caution)
+- `--preserve-empty-lines/--no-preserve-empty-lines`: Preserve empty lines from original YAML (default: true)
 - `--help`: Show help message
 - `--version`: Show version information
 
