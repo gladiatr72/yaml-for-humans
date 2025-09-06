@@ -6,6 +6,7 @@ Converts YAML or JSON input to human-friendly YAML output.
 """
 
 import glob
+import io
 import json
 import os
 import sys
@@ -67,37 +68,48 @@ def _read_stdin_with_timeout(timeout_ms=50):
     Raises:
         TimeoutError: If no input is received within the timeout period
     """
-    import threading
-
+    import select
+    
     timeout_sec = timeout_ms / 1000.0
+    
+    # Use select() for efficient I/O multiplexing instead of threads
+    # Fall back to threading if stdin doesn't have a file descriptor (e.g., in tests)
+    try:
+        ready, _, _ = select.select([sys.stdin], [], [], timeout_sec)
+        
+        if not ready:
+            raise TimeoutError(f"No input received within {timeout_ms}ms")
+        
+        return sys.stdin.read()
+    except (io.UnsupportedOperation, AttributeError):
+        # Fallback to thread-based approach for environments without real stdin
+        import threading
+        
+        input_data = []
+        exception_data = []
 
-    input_data = []
-    exception_data = []
+        def read_input():
+            try:
+                data = sys.stdin.read()
+                input_data.append(data)
+            except Exception as e:
+                exception_data.append(e)
 
-    def read_input():
-        try:
-            data = sys.stdin.read()
-            input_data.append(data)
-        except Exception as e:
-            exception_data.append(e)
+        thread = threading.Thread(target=read_input)
+        thread.daemon = True
+        thread.start()
+        thread.join(timeout_sec)
 
-    # Start reading in a separate thread
-    thread = threading.Thread(target=read_input)
-    thread.daemon = True
-    thread.start()
-    thread.join(timeout_sec)
+        if thread.is_alive():
+            raise TimeoutError(f"No input received within {timeout_ms}ms")
 
-    if thread.is_alive():
-        # Thread is still running, meaning no input was received
-        raise TimeoutError(f"No input received within {timeout_ms}ms")
+        if exception_data:
+            raise exception_data[0]
 
-    if exception_data:
-        raise exception_data[0]
+        if not input_data:
+            raise TimeoutError(f"No input received within {timeout_ms}ms")
 
-    if not input_data:
-        raise TimeoutError(f"No input received within {timeout_ms}ms")
-
-    return input_data[0]
+        return input_data[0]
 
 
 def _huml_main(
