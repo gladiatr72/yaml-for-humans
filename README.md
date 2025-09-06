@@ -129,11 +129,11 @@ print(compact_output)
 The command-line tool preserves empty lines by default:
 
 ```bash
-# Preserves empty lines (default behavior)
+# Default behavior (no empty line preservation)
 cat kustomization.yaml | huml
 
-# Disable empty line preservation
-cat kustomization.yaml | huml --no-preserve-empty-lines
+# Preserve empty lines
+cat kustomization.yaml | huml -P
 ```
 
 ## Installation
@@ -239,7 +239,7 @@ The CLI automatically detects input format and handles:
 - `--indent INTEGER`: Indentation level (default: 2)
 - `-t, --timeout INTEGER`: Stdin timeout in milliseconds (default: 2000)
 - `-u, --unsafe-inputs`: Use unsafe YAML loader (allows arbitrary Python objects, use with caution)
-- `--preserve-empty-lines/--no-preserve-empty-lines`: Preserve empty lines from original YAML (default: true)
+- `-P, --preserve-empty-lines`: Preserve empty lines from original YAML (default: false)
 - `--help`: Show help message
 - `--version`: Show version information
 

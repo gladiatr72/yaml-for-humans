@@ -115,17 +115,17 @@ Complete YAML loader that preserves formatting information during parsing.
 ## CLI Options
 
 ### Empty Line Preservation
-The CLI preserves empty lines from original YAML by default:
+The CLI can preserve empty lines from original YAML when the `-P` flag is used:
 
-**Flag:** `--preserve-empty-lines/--no-preserve-empty-lines` (default: true)
+**Flag:** `-P, --preserve-empty-lines` (default: false)
 
 **Examples:**
 ```bash
-# Preserve empty lines (default behavior)
+# Default behavior (no empty line preservation)
 cat kustomization.yaml | huml
 
-# Disable empty line preservation  
-cat kustomization.yaml | huml --no-preserve-empty-lines
+# Preserve empty lines
+cat kustomization.yaml | huml -P
 ```
 
 ### Security Options

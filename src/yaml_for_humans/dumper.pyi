@@ -12,6 +12,7 @@ StreamType: TypeAlias = Union[IO[str], TextIO]
 def dump(
     data: YAMLObject,
     stream: StreamType,
+    preserve_empty_lines: bool = ...,
     *,
     Dumper: Optional[type] = ...,
     default_flow_style: Optional[bool] = ...,
@@ -25,12 +26,14 @@ def dump(
     Args:
         data: Python object to serialize
         stream: File-like object to write to
-        **kwargs: Additional arguments passed to HumanFriendlyDumper
+        preserve_empty_lines: If True, preserve empty lines from FormattingAware objects
+        **kwargs: Additional arguments passed to the dumper
     """
     ...
 
 def dumps(
     data: YAMLObject,
+    preserve_empty_lines: bool = ...,
     *,
     Dumper: Optional[type] = ...,
     default_flow_style: Optional[bool] = ...,
@@ -43,9 +46,22 @@ def dumps(
 
     Args:
         data: Python object to serialize
-        **kwargs: Additional arguments passed to HumanFriendlyDumper
+        preserve_empty_lines: If True, preserve empty lines from FormattingAware objects
+        **kwargs: Additional arguments passed to the dumper
 
     Returns:
         YAML representation of the data
+    """
+    ...
+
+def load_with_formatting(stream: Union[str, StreamType]) -> Any:
+    """
+    Load YAML with formatting metadata preservation.
+
+    Args:
+        stream: Input stream, file path string, or YAML string
+
+    Returns:
+        Python object with formatting metadata attached
     """
     ...

@@ -23,6 +23,8 @@ def _huml_main(
     inputs: Optional[str] = ...,
     output: Optional[str] = ...,
     auto: bool = ...,
+    unsafe_inputs: bool = ...,
+    preserve_empty_lines: bool = ...,
 ) -> None:
     """
     Main CLI functionality for processing YAML/JSON input with automatic format detection.
@@ -33,6 +35,8 @@ def _huml_main(
         inputs: Comma-delimited file paths
         output: Output file or directory path
         auto: Auto-create output directories
+        unsafe_inputs: Use unsafe YAML loader
+        preserve_empty_lines: Preserve empty lines from original YAML
     """
     ...
 
@@ -87,19 +91,21 @@ def _read_stdin_with_timeout(timeout_ms: int = ...) -> str:
 
 def _write_to_output(
     documents: List[Any],
-    output: str,
-    auto: bool,
-    indent: int,
-    document_sources: List[Dict[str, Any]],
+    output_path: str,
+    auto: bool = ...,
+    indent: int = ...,
+    document_sources: Optional[List[Dict[str, Any]]] = ...,
+    preserve_empty_lines: bool = ...,
 ) -> None:
     """
     Write documents to output file or directory.
 
     Args:
         documents: List of parsed documents
-        output: Output path
+        output_path: Output path
         auto: Whether to auto-create directories
         indent: YAML indentation level
         document_sources: Source information for each document
+        preserve_empty_lines: Preserve empty lines from original YAML
     """
     ...

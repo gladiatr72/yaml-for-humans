@@ -24,7 +24,12 @@ from .multi_document import (
     dumps_kubernetes_manifests,
 )
 
-__version__ = "1.0.3"
+try:
+    import importlib.metadata
+    __version__ = importlib.metadata.version("yaml-for-humans")
+except (importlib.metadata.PackageNotFoundError, ImportError):
+    # Fallback for development installs
+    __version__ = "1.0.4"
 __all__ = [
     "HumanFriendlyEmitter",
     "HumanFriendlyDumper",

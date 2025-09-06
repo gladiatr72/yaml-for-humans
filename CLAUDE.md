@@ -13,3 +13,4 @@ before testing the cli:
   - run `uv pip uninstall yaml-for-humans`
   - run `uv pip install .`
 
+when interacting with tasks from TODO.md, mark them complete when they have been signed off by the user

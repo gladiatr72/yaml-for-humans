@@ -703,9 +703,11 @@ def huml():
         help="Use unsafe YAML loader (yaml.Loader) instead of safe loader (default: false, uses yaml.SafeLoader)",
     )
     @click.option(
-        "--preserve-empty-lines/--no-preserve-empty-lines",
-        default=True,
-        help="Preserve empty lines from original YAML (default: true)",
+        "-P",
+        "--preserve-empty-lines",
+        is_flag=True,
+        default=False,
+        help="Preserve empty lines from original YAML",
     )
     @click.version_option()
     def cli_main(
