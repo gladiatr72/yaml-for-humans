@@ -26,11 +26,12 @@ from .multi_document import (
 
 try:
     import importlib.metadata
-    __version__ = importlib.metadata.version("yaml-for-humans")
+
+    __version__: str = importlib.metadata.version("yaml-for-humans")
 except (importlib.metadata.PackageNotFoundError, ImportError):
     # Fallback for development installs
-    __version__ = "1.0.4"
-__all__ = [
+    __version__: str = "1.0.4"
+__all__: list[str] = [
     "HumanFriendlyEmitter",
     "HumanFriendlyDumper",
     "dumps",

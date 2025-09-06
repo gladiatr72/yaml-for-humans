@@ -7,6 +7,7 @@ for sequences and key ordering.
 """
 
 from io import StringIO
+from typing import Any, TextIO, Iterable
 
 import yaml
 from .emitter import HumanFriendlyDumper
@@ -20,7 +21,7 @@ class MultiDocumentDumper:
     while applying human-friendly formatting to each document.
     """
 
-    def __init__(self, stream=None, **dumper_kwargs):
+    def __init__(self, stream: TextIO | None = None, **dumper_kwargs: Any) -> None:
         """
         Initialize the multi-document dumper.
 
@@ -39,7 +40,7 @@ class MultiDocumentDumper:
         }
         self._first_document = True
 
-    def dump_document(self, data):
+    def dump_document(self, data: Any) -> None:
         """
         Dump a single document to the stream.
 
@@ -61,7 +62,7 @@ class MultiDocumentDumper:
             dumper_kwargs["explicit_start"] = False
             yaml.dump(data, self.stream, Dumper=HumanFriendlyDumper, **dumper_kwargs)
 
-    def dump_all(self, documents):
+    def dump_all(self, documents: Iterable[Any]) -> None:
         """
         Dump multiple documents to the stream.
 
@@ -71,7 +72,7 @@ class MultiDocumentDumper:
         for document in documents:
             self.dump_document(document)
 
-    def getvalue(self):
+    def getvalue(self) -> str:
         """
         Get the dumped YAML as a string (only works if stream is StringIO).
 
@@ -84,7 +85,7 @@ class MultiDocumentDumper:
             raise ValueError("Stream does not support getvalue()")
 
 
-def dump_all(documents, stream, **kwargs):
+def dump_all(documents: Iterable[Any], stream: TextIO, **kwargs: Any) -> None:
     """
     Serialize multiple Python objects to YAML documents in a stream.
 
@@ -106,7 +107,7 @@ def dump_all(documents, stream, **kwargs):
     dumper.dump_all(documents)
 
 
-def dumps_all(documents, **kwargs):
+def dumps_all(documents: Iterable[Any], **kwargs: Any) -> str:
     """
     Serialize multiple Python objects to a multi-document YAML string.
 
@@ -174,7 +175,7 @@ class KubernetesManifestDumper(MultiDocumentDumper):
         super().__init__(stream, **kwargs)
         self.sort_resources = sort_resources
 
-    def dump_all(self, documents):
+    def dump_all(self, documents: Iterable[Any]) -> None:
         """
         Dump Kubernetes manifests with optional resource ordering.
 
@@ -196,6 +197,7 @@ class KubernetesManifestDumper(MultiDocumentDumper):
         Returns:
             List of sorted documents
         """
+
         def get_kind_priority(doc):
             """Get sorting priority for a document based on its kind."""
             kind = doc.get("kind", "Unknown")

@@ -3,6 +3,11 @@ persona:
  - you are an experienced, low-level python expert with a specialty in algorithmic analysis.  
    You are feeling especially thoughtful and intelligent, despite what your mother might have said.
 
+do not add `.git/` to your context unless instructed
+
+code analysis:
+  - start in src/
+
 when running tests:
   - if .venv does not exist, run `uv venv .venv --seed`
   - always run `. .venv/bin/activate`
@@ -17,7 +22,7 @@ testing:
 
 todo tracking:
   - track todo items in TODO.md
-  - mark them complete when they are signed off on by the user
+  - mark them complete when they are signed off on by the user and move them to TODO-COMPLETE.md
 
 when benchmarking:
   - run benchmark with `uv run ./benchmark.py`
@@ -25,3 +30,5 @@ when benchmarking:
   - document benchmarks in BENCHMARKS.md
     - always include system, cpu and python information
 
+when updating typestubs:
+  - do not use an Any type unless there is not other option

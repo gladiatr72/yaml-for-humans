@@ -95,8 +95,3 @@ class HumanFriendlyDumper(
         mapping: Any,
         flow_style: Optional[bool] = ...,
     ) -> yaml.MappingNode: ...
-    def represent_str(
-        self,
-        dumper: "HumanFriendlyDumper",
-        data: str,
-    ) -> yaml.ScalarNode: ...

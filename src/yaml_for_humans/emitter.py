@@ -9,6 +9,7 @@ This module provides custom emitters that produce more readable YAML output by:
 """
 
 import yaml
+from typing import Any
 from yaml.emitter import Emitter
 from yaml.events import (
     ScalarEvent,
@@ -30,11 +31,11 @@ class HumanFriendlyEmitter(Emitter):
     - Proper indentation hierarchy throughout
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._in_sequence_item = False
 
-    def expect_block_sequence(self):
+    def expect_block_sequence(self) -> None:
         """
         Override to force indented sequences instead of indentless ones.
 
@@ -45,7 +46,7 @@ class HumanFriendlyEmitter(Emitter):
         self.increase_indent(flow=False, indentless=False)
         self.state = self.expect_first_block_sequence_item
 
-    def expect_block_sequence_item(self, first=False):
+    def expect_block_sequence_item(self, first: bool = False) -> None:
         """
         Handle sequence items with intelligent formatting:
         - Scalar values (strings, numbers) on same line as dash
@@ -77,7 +78,7 @@ class HumanFriendlyEmitter(Emitter):
             self.states.append(self.expect_block_sequence_item)
             self.expect_node(sequence=True)
 
-    def _is_empty_container(self):
+    def _is_empty_container(self) -> bool:
         """
         Check if the current event is for an empty mapping or sequence.
         """
@@ -98,7 +99,7 @@ class HumanFriendlyEmitter(Emitter):
             )
         return False
 
-    def expect_scalar(self):
+    def expect_scalar(self) -> None:
         """
         Handle scalar values with proper sequence-aware indentation.
         """
@@ -114,7 +115,7 @@ class HumanFriendlyEmitter(Emitter):
 
         super().expect_scalar()
 
-    def expect_block_mapping(self):
+    def expect_block_mapping(self) -> None:
         """
         Handle mappings with proper sequence context awareness.
         """
@@ -128,7 +129,7 @@ class HumanFriendlyEmitter(Emitter):
 
         self.state = self.expect_first_block_mapping_key
 
-    def expect_block_mapping_simple_value(self):
+    def expect_block_mapping_simple_value(self) -> None:
         """
         Handle mapping values using default behavior for correct empty dict handling.
 
@@ -155,21 +156,23 @@ class HumanFriendlyDumper(
     """
 
     # Container-related keys that should appear first in mappings
-    PRIORITY_KEYS = frozenset([
-        "apiVersion",
-        "kind",
-        "metadata",
-        "name",
-        "image",
-        "imagePullPolicy",
-        "env",
-        "envFrom",
-        "command",
-        "args",
-    ])
-    
+    PRIORITY_KEYS: frozenset[str] = frozenset(
+        [
+            "apiVersion",
+            "kind",
+            "metadata",
+            "name",
+            "image",
+            "imagePullPolicy",
+            "env",
+            "envFrom",
+            "command",
+            "args",
+        ]
+    )
+
     # Priority ordering for efficient single-pass sorting
-    PRIORITY_ORDER = {
+    PRIORITY_ORDER: dict[str, int] = {
         "apiVersion": 0,
         "kind": 1,
         "metadata": 2,
@@ -255,7 +258,7 @@ class HumanFriendlyDumper(
         def get_sort_key(item):
             key = item[0]
             return self.PRIORITY_ORDER.get(key, 999)
-        
+
         ordered_items = sorted(mapping.items(), key=get_sort_key)
         ordered_mapping = dict(ordered_items)
 

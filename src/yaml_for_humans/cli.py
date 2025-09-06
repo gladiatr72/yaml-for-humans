@@ -10,10 +10,16 @@ import io
 import json
 import os
 import sys
+from typing import Any, Iterator, TextIO
 
 import yaml
 
 from .dumper import dumps, load_with_formatting
+from .document_processors import (
+    process_json_lines,
+    process_multi_document_yaml,
+    process_items_array,
+)
 
 try:
     import click
@@ -21,10 +27,10 @@ except ImportError:
     click = None
 
 
-DEFAULT_TIMEOUT_MS = 2000
+DEFAULT_TIMEOUT_MS: int = 2000
 
 
-def _load_yaml(content, unsafe=False, preserve_empty_lines=False):
+def _load_yaml(content: str, unsafe: bool = False, preserve_empty_lines: bool = False) -> Any:
     """Load YAML content using safe or unsafe loader."""
     if preserve_empty_lines and not unsafe:
         # Use formatting-aware loader for empty line preservation
@@ -36,7 +42,7 @@ def _load_yaml(content, unsafe=False, preserve_empty_lines=False):
         return yaml.safe_load(content)
 
 
-def _load_all_yaml(content, unsafe=False, preserve_empty_lines=False):
+def _load_all_yaml(content: str, unsafe: bool = False, preserve_empty_lines: bool = False) -> Iterator[Any]:
     """Load all YAML documents using safe or unsafe loader."""
     # Note: Empty line preservation not yet supported for multi-document YAML
     # TODO: Implement multi-document formatting-aware loading
@@ -46,7 +52,7 @@ def _load_all_yaml(content, unsafe=False, preserve_empty_lines=False):
         return yaml.safe_load_all(content)
 
 
-def _check_cli_dependencies():
+def _check_cli_dependencies() -> None:
     """Check if CLI dependencies are available."""
     if click is None:
         print("Error: CLI functionality requires the 'cli' extra.", file=sys.stderr)
@@ -55,7 +61,7 @@ def _check_cli_dependencies():
         sys.exit(1)
 
 
-def _read_stdin_with_timeout(timeout_ms=50):
+def _read_stdin_with_timeout(timeout_ms: int = 50) -> str:
     """
     Read from stdin with a timeout.
 
@@ -69,22 +75,22 @@ def _read_stdin_with_timeout(timeout_ms=50):
         TimeoutError: If no input is received within the timeout period
     """
     import select
-    
+
     timeout_sec = timeout_ms / 1000.0
-    
+
     # Use select() for efficient I/O multiplexing instead of threads
     # Fall back to threading if stdin doesn't have a file descriptor (e.g., in tests)
     try:
         ready, _, _ = select.select([sys.stdin], [], [], timeout_sec)
-        
+
         if not ready:
             raise TimeoutError(f"No input received within {timeout_ms}ms")
-        
+
         return sys.stdin.read()
     except (io.UnsupportedOperation, AttributeError):
         # Fallback to thread-based approach for environments without real stdin
         import threading
-        
+
         input_data = []
         exception_data = []
 
@@ -113,14 +119,14 @@ def _read_stdin_with_timeout(timeout_ms=50):
 
 
 def _huml_main(
-    indent=2,
-    timeout=50,
-    inputs=None,
-    output=None,
-    auto=False,
-    unsafe_inputs=False,
-    preserve_empty_lines=True,
-):
+    indent: int = 2,
+    timeout: int = 50,
+    inputs: str | None = None,
+    output: str | None = None,
+    auto: bool = False,
+    unsafe_inputs: bool = False,
+    preserve_empty_lines: bool = True,
+) -> None:
     """
     Convert YAML or JSON input to human-friendly YAML.
 
@@ -214,51 +220,34 @@ def _huml_main(
                     if file_path.lower().endswith(".json"):
                         # Check for JSON Lines format (multiple JSON objects, one per line)
                         if _is_json_lines(file_content):
-                            for line_num, line in enumerate(
-                                file_content.split("\n"), 1
-                            ):
-                                line = line.strip()
-                                if line:
-                                    try:
-                                        data = json.loads(line)
-                                        documents.append(data)
-                                        document_sources.append(
-                                            {"file_path": file_path}
-                                        )
-                                    except json.JSONDecodeError as e:
-                                        print(
-                                            f"Error: Invalid JSON on line {line_num} in {file_path}: {e}",
-                                            file=sys.stderr,
-                                        )
-                                        sys.exit(1)
+                            docs, sources = process_json_lines(
+                                file_content, lambda: {"file_path": file_path}
+                            )
+                            documents.extend(docs)
+                            document_sources.extend(sources)
                             continue
                         else:
                             data = json.loads(file_content)
                             # Check if JSON has an 'items' array that should be processed as separate documents
                             if _has_items_array(data):
-                                items = data["items"]
-                                # Add each item as a separate document
-                                documents.extend(items)
-                                document_sources.extend(
-                                    [{"file_path": file_path}] * len(items)
+                                items, sources = process_items_array(
+                                    data, lambda: {"file_path": file_path}
                                 )
+                                documents.extend(items)
+                                document_sources.extend(sources)
                                 continue
                     elif file_path.lower().endswith((".yaml", ".yml")):
                         # Always check for multi-document YAML (detect automatically)
                         if _is_multi_document_yaml(file_content):
-                            docs = list(
-                                _load_all_yaml(
-                                    file_content,
-                                    unsafe=unsafe_inputs,
-                                    preserve_empty_lines=preserve_empty_lines,
-                                )
+                            docs, sources = process_multi_document_yaml(
+                                file_content,
+                                lambda: {"file_path": file_path},
+                                unsafe=unsafe_inputs,
+                                preserve_empty_lines=preserve_empty_lines,
+                                _load_all_yaml_func=_load_all_yaml,
                             )
-                            # Filter out None/empty documents
-                            docs = [doc for doc in docs if doc is not None]
                             documents.extend(docs)
-                            document_sources.extend(
-                                [{"file_path": file_path}] * len(docs)
-                            )
+                            document_sources.extend(sources)
                             continue
                         else:
                             data = _load_yaml(
@@ -270,49 +259,33 @@ def _huml_main(
                         # Auto-detect format for files without clear extensions
                         if _looks_like_json(file_content):
                             if _is_json_lines(file_content):
-                                for line_num, line in enumerate(
-                                    file_content.split("\n"), 1
-                                ):
-                                    line = line.strip()
-                                    if line:
-                                        try:
-                                            data = json.loads(line)
-                                            documents.append(data)
-                                            document_sources.append(
-                                                {"file_path": file_path}
-                                            )
-                                        except json.JSONDecodeError as e:
-                                            print(
-                                                f"Error: Invalid JSON on line {line_num} in {file_path}: {e}",
-                                                file=sys.stderr,
-                                            )
-                                            sys.exit(1)
+                                docs, sources = process_json_lines(
+                                    file_content, lambda: {"file_path": file_path}
+                                )
+                                documents.extend(docs)
+                                document_sources.extend(sources)
                                 continue
                             else:
                                 data = json.loads(file_content)
                                 # Check if JSON has an 'items' array that should be processed as separate documents
                                 if _has_items_array(data):
-                                    items = data["items"]
-                                    # Add each item as a separate document
-                                    documents.extend(items)
-                                    document_sources.extend(
-                                        [{"file_path": file_path}] * len(items)
+                                    items, sources = process_items_array(
+                                        data, lambda: {"file_path": file_path}
                                     )
+                                    documents.extend(items)
+                                    document_sources.extend(sources)
                                     continue
                         else:
                             if _is_multi_document_yaml(file_content):
-                                docs = list(
-                                    _load_all_yaml(
-                                        file_content,
-                                        unsafe=unsafe_inputs,
-                                        preserve_empty_lines=preserve_empty_lines,
-                                    )
+                                docs, sources = process_multi_document_yaml(
+                                    file_content,
+                                    lambda: {"file_path": file_path},
+                                    unsafe=unsafe_inputs,
+                                    preserve_empty_lines=preserve_empty_lines,
+                                    _load_all_yaml_func=_load_all_yaml,
                                 )
-                                docs = [doc for doc in docs if doc is not None]
                                 documents.extend(docs)
-                                document_sources.extend(
-                                    [{"file_path": file_path}] * len(docs)
-                                )
+                                document_sources.extend(sources)
                                 continue
                             else:
                                 data = _load_yaml(
@@ -350,31 +323,30 @@ def _huml_main(
             if _looks_like_json(input_text):
                 # Check for JSON Lines format (multiple JSON objects, one per line)
                 if _is_json_lines(input_text):
-                    for line_num, line in enumerate(input_text.split("\n"), 1):
-                        line = line.strip()
-                        if line:
-                            try:
-                                data = json.loads(line)
-                                documents.append(data)
-                                document_sources.append(
-                                    {"stdin_position": len(documents) - 1}
-                                )
-                            except json.JSONDecodeError as e:
-                                print(
-                                    f"Error: Invalid JSON on line {line_num}: {e}",
-                                    file=sys.stderr,
-                                )
-                                sys.exit(1)
+                    counter = [0]  # Use list to create mutable counter
+
+                    def stdin_factory():
+                        result = {"stdin_position": counter[0]}
+                        counter[0] += 1
+                        return result
+
+                    docs, sources = process_json_lines(input_text, stdin_factory)
+                    documents.extend(docs)
+                    document_sources.extend(sources)
                 else:
                     data = json.loads(input_text)
                     # Check if JSON has an 'items' array that should be processed as separate documents
                     if _has_items_array(data):
-                        items = data["items"]
-                        # Add each item as a separate document
+                        counter = [0]  # Use list to create mutable counter
+
+                        def stdin_factory():
+                            result = {"stdin_position": counter[0]}
+                            counter[0] += 1
+                            return result
+
+                        items, sources = process_items_array(data, stdin_factory)
                         documents.extend(items)
-                        document_sources.extend(
-                            [{"stdin_position": i} for i in range(len(items))]
-                        )
+                        document_sources.extend(sources)
                     else:
                         documents.append(data)
                         document_sources.append({"stdin_position": 0})
@@ -382,19 +354,22 @@ def _huml_main(
                 # Assume YAML format for non-JSON input
                 # Auto-detect multi-document YAML (like file processing does)
                 if _is_multi_document_yaml(input_text):
-                    docs = list(
-                        _load_all_yaml(
-                            input_text,
-                            unsafe=unsafe_inputs,
-                            preserve_empty_lines=preserve_empty_lines,
-                        )
+                    counter = [0]  # Use list to create mutable counter
+
+                    def stdin_factory():
+                        result = {"stdin_position": counter[0]}
+                        counter[0] += 1
+                        return result
+
+                    docs, sources = process_multi_document_yaml(
+                        input_text,
+                        stdin_factory,
+                        unsafe=unsafe_inputs,
+                        preserve_empty_lines=preserve_empty_lines,
+                        _load_all_yaml_func=_load_all_yaml,
                     )
-                    # Filter out None/empty documents
-                    docs = [doc for doc in docs if doc is not None]
                     documents.extend(docs)
-                    document_sources.extend(
-                        [{"stdin_position": i} for i in range(len(docs))]
-                    )
+                    document_sources.extend(sources)
                 else:
                     data = _load_yaml(
                         input_text,
@@ -445,7 +420,7 @@ def _huml_main(
         sys.exit(1)
 
 
-def _looks_like_json(text):
+def _looks_like_json(text: str) -> bool:
     """Simple heuristic to detect JSON input."""
     text = text.strip()
     return (text.startswith("{") and text.endswith("}")) or (
@@ -453,7 +428,7 @@ def _looks_like_json(text):
     )
 
 
-def _is_multi_document_yaml(text):
+def _is_multi_document_yaml(text: str) -> bool:
     """Check if text contains multi-document YAML."""
     # Look for document separator at start of line
     lines = text.split("\n")
@@ -463,7 +438,7 @@ def _is_multi_document_yaml(text):
     return separator_count > 0
 
 
-def _is_json_lines(text):
+def _is_json_lines(text: str) -> bool:
     """Check if text is in JSON Lines format (one JSON object per line)."""
     lines = [line.strip() for line in text.split("\n") if line.strip()]
 
@@ -475,7 +450,7 @@ def _is_json_lines(text):
     return all(_looks_like_json(line) for line in lines)
 
 
-def _has_items_array(data):
+def _has_items_array(data: Any) -> bool:
     """Check if JSON data has an 'items' array that should be processed as separate documents."""
     if not isinstance(data, dict):
         return False

@@ -8,21 +8,23 @@ that use the HumanFriendlyDumper by default, with optional empty line preservati
 import re
 import threading
 from io import StringIO
+from typing import Any, TextIO, Pattern
 from .emitter import HumanFriendlyDumper
 from .formatting_emitter import FormattingAwareDumper
 from .formatting_aware import FormattingAwareLoader
 
 # Pre-compiled regex pattern for empty line markers
-_EMPTY_LINE_PATTERN = re.compile(r"__EMPTY_LINES_(\d+)__")
+_EMPTY_LINE_PATTERN: Pattern[str] = re.compile(r"__EMPTY_LINES_(\d+)__")
 
 # Thread-local buffer pool for StringIO reuse
-_local = threading.local()
+_local: threading.local = threading.local()
 
-def _get_buffer():
+
+def _get_buffer() -> StringIO:
     """Get a reusable StringIO buffer for current thread."""
-    if not hasattr(_local, 'buffer_pool'):
+    if not hasattr(_local, "buffer_pool"):
         _local.buffer_pool = []
-    
+
     if _local.buffer_pool:
         buffer = _local.buffer_pool.pop()
         buffer.seek(0)
@@ -31,17 +33,19 @@ def _get_buffer():
     else:
         return StringIO()
 
-def _return_buffer(buffer):
+
+def _return_buffer(buffer: StringIO) -> None:
     """Return buffer to pool for reuse."""
-    if not hasattr(_local, 'buffer_pool'):
+    if not hasattr(_local, "buffer_pool"):
         _local.buffer_pool = []
-    
+
     if len(_local.buffer_pool) < 5:  # Limit pool size
         _local.buffer_pool.append(buffer)
 
 
-def _process_empty_line_markers(yaml_text):
+def _process_empty_line_markers(yaml_text: str) -> str:
     """Convert empty line markers to actual empty lines."""
+
     def process_line(line):
         if "__EMPTY_LINES_" in line:
             # Extract the number of empty lines needed
@@ -55,12 +59,13 @@ def _process_empty_line_markers(yaml_text):
             return iter((line,))
 
     return "\n".join(
-        line for original_line in yaml_text.split("\n")
+        line
+        for original_line in yaml_text.split("\n")
         for line in process_line(original_line)
     )
 
 
-def dump(data, stream, preserve_empty_lines=False, **kwargs):
+def dump(data: Any, stream: TextIO, preserve_empty_lines: bool = False, **kwargs: Any) -> None:
     """
     Serialize Python object to YAML with human-friendly formatting.
 
@@ -133,7 +138,7 @@ def dump(data, stream, preserve_empty_lines=False, **kwargs):
         return yaml.dump(data, stream, **defaults)
 
 
-def dumps(data, preserve_empty_lines=False, **kwargs):
+def dumps(data: Any, preserve_empty_lines: bool = False, **kwargs: Any) -> str:
     """
     Serialize Python object to YAML string with human-friendly formatting.
 
@@ -161,7 +166,7 @@ def dumps(data, preserve_empty_lines=False, **kwargs):
         _return_buffer(stream)
 
 
-def load_with_formatting(stream):
+def load_with_formatting(stream: str | TextIO) -> Any:
     """
     Load YAML with formatting metadata preservation.
 

@@ -9,13 +9,13 @@ from .emitter import HumanFriendlyEmitter
 class FormattingAwareEmitter(HumanFriendlyEmitter):
     """
     Emitter that uses the HumanFriendlyEmitter as base.
-    
+
     The actual empty line logic is handled by the FormattingAwareDumper's
     representer which injects empty line markers.
     """
-    
+
     preserve_empty_lines: bool
-    
+
     def __init__(
         self,
         stream: Union[IO[str], TextIO],
@@ -35,14 +35,14 @@ class FormattingAwareDumper(
 ):
     """
     Complete YAML dumper with empty line preservation.
-    
+
     Combines FormattingAwareEmitter with the existing HumanFriendlyDumper
     functionality for priority key ordering and multiline string formatting.
     """
-    
+
     PRIORITY_KEYS: List[str]
     preserve_empty_lines: bool
-    
+
     def __init__(
         self,
         stream: Union[IO[str], TextIO],
@@ -67,11 +67,6 @@ class FormattingAwareDumper(
         mapping: Any,
         flow_style: Optional[bool] = ...,
     ) -> yaml.MappingNode: ...
-    def represent_str(
-        self,
-        dumper: "FormattingAwareDumper",
-        data: str,
-    ) -> yaml.ScalarNode: ...
     def represent_formatting_aware_dict(
         self,
         dumper: "FormattingAwareDumper",
@@ -79,6 +74,6 @@ class FormattingAwareDumper(
     ) -> yaml.MappingNode: ...
     def represent_formatting_aware_list(
         self,
-        dumper: "FormattingAwareDumper", 
+        dumper: "FormattingAwareDumper",
         data: Any,
     ) -> yaml.SequenceNode: ...
