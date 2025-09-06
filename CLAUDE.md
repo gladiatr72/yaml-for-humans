@@ -6,7 +6,7 @@ when running tests:
   - to run the tests: `uv run pytest -v`
   - to test the cli, first run `uv sync`
 
-use generator comprehension whenever practical
+- use generator, dictionary and set comprehension whenever practical
 
 before testing the cli:
   - always run `. .venv/bin/activate`
@@ -14,3 +14,9 @@ before testing the cli:
   - run `uv pip install .`
 
 when interacting with tasks from TODO.md, mark them complete when they have been signed off by the user
+
+
+when benchmarking:
+  - careful analysis will never show this module to outperform pyYAML.  
+  - store benchmark results in BENCHMARK.md
+

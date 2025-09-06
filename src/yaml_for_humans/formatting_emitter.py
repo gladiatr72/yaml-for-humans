@@ -46,7 +46,7 @@ class FormattingAwareDumper(
     """
 
     # Container-related keys that should appear first in mappings
-    PRIORITY_KEYS = [
+    PRIORITY_KEYS = frozenset([
         "apiVersion",
         "kind",
         "metadata",
@@ -57,7 +57,21 @@ class FormattingAwareDumper(
         "envFrom",
         "command",
         "args",
-    ]
+    ])
+    
+    # Priority ordering for efficient single-pass sorting
+    PRIORITY_ORDER = {
+        "apiVersion": 0,
+        "kind": 1,
+        "metadata": 2,
+        "name": 3,
+        "image": 4,
+        "imagePullPolicy": 5,
+        "env": 6,
+        "envFrom": 7,
+        "command": 8,
+        "args": 9,
+    }
 
     def __init__(
         self,
@@ -119,18 +133,13 @@ class FormattingAwareDumper(
         if not isinstance(mapping, dict):
             return super().represent_mapping(tag, mapping, flow_style)
 
-        # Create ordered mapping with priority keys first (only for regular dicts)
-        priority_items = {
-            key: mapping[key] for key in self.PRIORITY_KEYS if key in mapping
-        }
-
-        remaining_items = {
-            key: value
-            for key, value in mapping.items()
-            if key not in self.PRIORITY_KEYS
-        }
-
-        ordered_mapping = {**priority_items, **remaining_items}
+        # Single-pass sorting with priority-aware key function (only for regular dicts)
+        def get_sort_key(item):
+            key = item[0]
+            return self.PRIORITY_ORDER.get(key, 999)
+        
+        ordered_items = sorted(mapping.items(), key=get_sort_key)
+        ordered_mapping = dict(ordered_items)
 
         return super().represent_mapping(tag, ordered_mapping, flow_style)
 
