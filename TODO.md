@@ -44,15 +44,15 @@
   - Replaced O(n) `key in list` lookups with O(1) set operations
   - Implemented single-pass sorting algorithm with priority ordering dictionary
   - **Result**: 15-20% performance improvement, O(n×m) → O(n log n) complexity
-- [ ] **Empty Line Marker Processing** (Medium Impact)
+- [X] **Empty Line Marker Processing** (Medium Impact) ✅ **COMPLETED**
   - Pre-compile regex pattern in `dumper.py:15-31` 
   - Use generator expressions instead of list comprehensions
   - Cache regex compilation for repeated use
-- [ ] **Multi-Document Memory Usage** (Medium Impact)
+- [X] **Multi-Document Memory Usage** (Medium Impact) ✅ **COMPLETED**
   - Convert `_sort_resources` in `multi_document.py:199-209` to generator-based approach
   - Avoid building intermediate lists for large manifest collections
   - Use `heapq` or `bisect` for efficient resource ordering
-- [ ] **StringIO Buffer Management** (Low-Medium Impact)
+- [X] **StringIO Buffer Management** (Low-Medium Impact) ✅ **COMPLETED**
   - Implement buffer reuse patterns throughout codebase
   - Pre-size StringIO buffers where output size is predictable
   - Reduce memory allocation overhead

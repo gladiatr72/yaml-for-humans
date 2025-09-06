@@ -196,8 +196,6 @@ class KubernetesManifestDumper(MultiDocumentDumper):
         Returns:
             List of sorted documents
         """
-        document_list = list(documents)
-
         def get_kind_priority(doc):
             """Get sorting priority for a document based on its kind."""
             kind = doc.get("kind", "Unknown")
@@ -206,7 +204,7 @@ class KubernetesManifestDumper(MultiDocumentDumper):
             except ValueError:
                 return len(self.RESOURCE_ORDER)  # Unknown kinds go last
 
-        return sorted(document_list, key=get_kind_priority)
+        return sorted(documents, key=get_kind_priority)
 
 
 def dump_kubernetes_manifests(manifests, stream, **kwargs):

@@ -6,29 +6,58 @@ that use the HumanFriendlyDumper by default, with optional empty line preservati
 """
 
 import re
+import threading
 from io import StringIO
 from .emitter import HumanFriendlyDumper
 from .formatting_emitter import FormattingAwareDumper
 from .formatting_aware import FormattingAwareLoader
 
+# Pre-compiled regex pattern for empty line markers
+_EMPTY_LINE_PATTERN = re.compile(r"__EMPTY_LINES_(\d+)__")
+
+# Thread-local buffer pool for StringIO reuse
+_local = threading.local()
+
+def _get_buffer():
+    """Get a reusable StringIO buffer for current thread."""
+    if not hasattr(_local, 'buffer_pool'):
+        _local.buffer_pool = []
+    
+    if _local.buffer_pool:
+        buffer = _local.buffer_pool.pop()
+        buffer.seek(0)
+        buffer.truncate(0)
+        return buffer
+    else:
+        return StringIO()
+
+def _return_buffer(buffer):
+    """Return buffer to pool for reuse."""
+    if not hasattr(_local, 'buffer_pool'):
+        _local.buffer_pool = []
+    
+    if len(_local.buffer_pool) < 5:  # Limit pool size
+        _local.buffer_pool.append(buffer)
+
 
 def _process_empty_line_markers(yaml_text):
     """Convert empty line markers to actual empty lines."""
-    lines = yaml_text.split("\n")
-    processed_lines = []
-
-    for line in lines:
+    def process_line(line):
         if "__EMPTY_LINES_" in line:
             # Extract the number of empty lines needed
-            match = re.search(r"__EMPTY_LINES_(\d+)__", line)
+            match = _EMPTY_LINE_PATTERN.search(line)
             if match:
                 empty_count = int(match.group(1))
-                processed_lines.extend("" for _ in range(empty_count))
+                return ("" for _ in range(empty_count))
             # Skip the marker line itself
+            return iter(())
         else:
-            processed_lines.append(line)
+            return iter((line,))
 
-    return "\n".join(processed_lines)
+    return "\n".join(
+        line for original_line in yaml_text.split("\n")
+        for line in process_line(original_line)
+    )
 
 
 def dump(data, stream, preserve_empty_lines=False, **kwargs):
@@ -87,18 +116,19 @@ def dump(data, stream, preserve_empty_lines=False, **kwargs):
 
     if preserve_empty_lines and dumper_class == FormattingAwareDumper:
         # For formatting-aware dumping, we need to post-process
-        from io import StringIO
+        temp_stream = _get_buffer()
+        try:
+            result = yaml.dump(data, temp_stream, **defaults)
+            yaml_output = temp_stream.getvalue()
 
-        temp_stream = StringIO()
-        result = yaml.dump(data, temp_stream, **defaults)
-        yaml_output = temp_stream.getvalue()
+            # Post-process to convert empty line markers to actual empty lines
+            yaml_output = _process_empty_line_markers(yaml_output)
 
-        # Post-process to convert empty line markers to actual empty lines
-        yaml_output = _process_empty_line_markers(yaml_output)
-
-        # Write to the actual stream
-        stream.write(yaml_output)
-        return result
+            # Write to the actual stream
+            stream.write(yaml_output)
+            return result
+        finally:
+            _return_buffer(temp_stream)
     else:
         return yaml.dump(data, stream, **defaults)
 
@@ -123,9 +153,12 @@ def dumps(data, preserve_empty_lines=False, **kwargs):
         data = yaml.load(yaml_str, Loader=FormattingAwareLoader)
         yaml_with_empty_lines = dumps(data, preserve_empty_lines=True)
     """
-    stream = StringIO()
-    dump(data, stream, preserve_empty_lines=preserve_empty_lines, **kwargs)
-    return stream.getvalue()
+    stream = _get_buffer()
+    try:
+        dump(data, stream, preserve_empty_lines=preserve_empty_lines, **kwargs)
+        return stream.getvalue()
+    finally:
+        _return_buffer(stream)
 
 
 def load_with_formatting(stream):

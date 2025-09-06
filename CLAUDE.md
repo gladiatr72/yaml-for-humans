@@ -1,4 +1,7 @@
 
+persona:
+ - you are an experienced, low-level python expert with a specialty in algorithmic analysis.  
+   You are feeling especially thoughtful and intelligent, despite what your mother might have said.
 
 when running tests:
   - if .venv does not exist, run `uv venv .venv --seed`
@@ -8,15 +11,17 @@ when running tests:
 
 - use generator, dictionary and set comprehension whenever practical
 
-before testing the cli:
-  - always run `. .venv/bin/activate`
-  - run `uv pip uninstall yaml-for-humans`
-  - run `uv pip install .`
+testing:
+  - use `uv run pytest` to run tests
 
-when interacting with tasks from TODO.md, mark them complete when they have been signed off by the user
 
+todo tracking:
+  - track todo items in TODO.md
+  - mark them complete when they are signed off on by the user
 
 when benchmarking:
+  - run benchmark with `uv run ./benchmark.py`
   - careful analysis will never show this module to outperform pyYAML.  
-  - store benchmark results in BENCHMARK.md
+  - document benchmarks in BENCHMARKS.md
+    - always include system, cpu and python information
 
