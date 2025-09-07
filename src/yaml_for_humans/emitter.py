@@ -9,7 +9,7 @@ This module provides custom emitters that produce more readable YAML output by:
 """
 
 import yaml
-from typing import Any
+from typing import Any, Union
 from yaml.emitter import Emitter
 from yaml.events import (
     ScalarEvent,
@@ -53,25 +53,23 @@ class HumanFriendlyEmitter(Emitter):
         - Empty mappings/sequences ({}, []) on same line as dash
         - Complex structures (non-empty mappings, nested sequences) on separate lines
         """
-        if not first and isinstance(self.event, SequenceEndEvent):
+        event = self.event
+        if not first and isinstance(event, SequenceEndEvent):
             self._in_sequence_item = False
             self.indent = self.indents.pop()
             self.state = self.states.pop()
         else:
-            # Write dash at current indent level
             self.write_indent()
-            if isinstance(self.event, ScalarEvent):
-                # For scalars, write "- " with exactly one space
+            
+            is_scalar = isinstance(event, ScalarEvent)
+            if is_scalar:
                 self.write_indicator("-", True, whitespace=False)
                 self._in_sequence_item = False
-            elif self._is_empty_container():
-                # For empty containers, write "- " and keep inline
+            elif self._is_empty_container_fast(event):
                 self.write_indicator("-", True, whitespace=False)
                 self._in_sequence_item = False
             else:
-                # For complex structures, just write dash
                 self.write_indicator("-", False, indention=False)
-                # Complex structure: use separate line
                 self.write_line_break()
                 self._in_sequence_item = True
 
@@ -82,21 +80,20 @@ class HumanFriendlyEmitter(Emitter):
         """
         Check if the current event is for an empty mapping or sequence.
         """
-        if isinstance(self.event, MappingStartEvent):
-            # Look ahead to see if the mapping is empty
-            # We need to check if the next event is MappingEndEvent
-            return (
-                hasattr(self, "events")
-                and len(self.events) > 0
-                and isinstance(self.events[0], MappingEndEvent)
-            )
-        elif isinstance(self.event, SequenceStartEvent):
-            # Look ahead to see if the sequence is empty
-            return (
-                hasattr(self, "events")
-                and len(self.events) > 0
-                and isinstance(self.events[0], SequenceEndEvent)
-            )
+        return self._is_empty_container_fast(self.event)
+    
+    def _is_empty_container_fast(self, event: Any) -> bool:
+        """
+        Optimized empty container check with cached event type and consolidated conditions.
+        """
+        events = getattr(self, 'events', None)
+        if not events:
+            return False
+            
+        if isinstance(event, MappingStartEvent):
+            return events and isinstance(events[0], MappingEndEvent)
+        elif isinstance(event, SequenceStartEvent):
+            return events and isinstance(events[0], SequenceEndEvent)
         return False
 
     def expect_scalar(self) -> None:

@@ -22,7 +22,7 @@ testing:
 
 todo-list:
   - write the results of code analysis requests to TODO.md
-  - move completed todo entries to TODO-COMPLETE.md
+  - move completed tasks to TODO-COMPLETE.md  but only when the task has been implemented
 
 when benchmarking:
   - run benchmark with `uv run ./benchmark.py`
