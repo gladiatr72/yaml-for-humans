@@ -162,6 +162,10 @@ class KubernetesManifestDumper(MultiDocumentDumper):
         "CronJob",
         "Pod",
     ]
+    
+    # Precomputed priorities for O(1) lookups instead of O(n) list.index()
+    RESOURCE_PRIORITIES = {kind: i for i, kind in enumerate(RESOURCE_ORDER)}
+    UNKNOWN_PRIORITY = len(RESOURCE_ORDER)
 
     def __init__(self, stream=None, sort_resources=True, **kwargs):
         """
@@ -201,10 +205,7 @@ class KubernetesManifestDumper(MultiDocumentDumper):
         def get_kind_priority(doc):
             """Get sorting priority for a document based on its kind."""
             kind = doc.get("kind", "Unknown")
-            try:
-                return self.RESOURCE_ORDER.index(kind)
-            except ValueError:
-                return len(self.RESOURCE_ORDER)  # Unknown kinds go last
+            return self.RESOURCE_PRIORITIES.get(kind, self.UNKNOWN_PRIORITY)
 
         return sorted(documents, key=get_kind_priority)
 
