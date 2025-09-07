@@ -32,3 +32,5 @@ when benchmarking:
 
 when updating typestubs:
   - do not use an Any type unless there is not other option
+
+always update type stubs when adding, deleting or modifying a runable thing

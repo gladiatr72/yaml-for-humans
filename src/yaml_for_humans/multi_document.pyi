@@ -71,6 +71,8 @@ class KubernetesManifestDumper(MultiDocumentDumper):
     """
 
     RESOURCE_ORDER: list[str]
+    RESOURCE_PRIORITIES: dict[str, int]
+    UNKNOWN_PRIORITY: int
     sort_resources: bool
 
     def __init__(

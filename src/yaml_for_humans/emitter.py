@@ -60,7 +60,7 @@ class HumanFriendlyEmitter(Emitter):
             self.state = self.states.pop()
         else:
             self.write_indent()
-            
+
             is_scalar = isinstance(event, ScalarEvent)
             if is_scalar:
                 self.write_indicator("-", True, whitespace=False)
@@ -81,15 +81,15 @@ class HumanFriendlyEmitter(Emitter):
         Check if the current event is for an empty mapping or sequence.
         """
         return self._is_empty_container_fast(self.event)
-    
+
     def _is_empty_container_fast(self, event: Any) -> bool:
         """
         Optimized empty container check with cached event type and consolidated conditions.
         """
-        events = getattr(self, 'events', None)
+        events = getattr(self, "events", None)
         if not events:
             return False
-            
+
         if isinstance(event, MappingStartEvent):
             return events and isinstance(events[0], MappingEndEvent)
         elif isinstance(event, SequenceStartEvent):

@@ -25,6 +25,13 @@ class FormattingMetadata:
 class FormattingAwareComposer(Composer):
     """Composer that captures empty line information in nodes."""
 
+    def __init__(self):
+        super().__init__()
+        # Cache for memoized end line calculations
+        self._end_line_cache = {}
+        # Object pool for metadata to reduce allocations
+        self._metadata_pool = []
+
     def compose_mapping_node(self, anchor):
         """Compose mapping node with empty line metadata."""
         node = super().compose_mapping_node(anchor)
@@ -38,106 +45,112 @@ class FormattingAwareComposer(Composer):
         return node
 
     def _add_mapping_formatting_metadata(self, node):
-        """Add formatting metadata to mapping nodes."""
+        """Add formatting metadata to mapping nodes with optimized single-pass processing."""
         if not node.value:
             return
 
-        # Calculate empty lines between mapping items
+        # Pre-calculate all end lines in single pass to avoid redundant calculations
+        end_lines = [self._get_node_end_line(value) for _, value in node.value]
+
         previous_end_line = node.start_mark.line - 1
 
-        for i, (key_node, value_node) in enumerate(node.value):
+        for i, ((key_node, value_node), current_end_line) in enumerate(
+            zip(node.value, end_lines)
+        ):
             current_start_line = key_node.start_mark.line
 
+            # Process empty lines before current item
             if i > 0:  # Skip first item
                 empty_lines = current_start_line - previous_end_line - 1
                 if empty_lines > 0:
-                    key_node._formatting_metadata = FormattingMetadata(
-                        empty_lines_before=empty_lines
+                    self._set_metadata(key_node, empty_lines_before=empty_lines)
+
+            # Process structural empty lines after current item (combined with main loop)
+            if i + 1 < len(node.value):
+                next_key_node, _ = node.value[i + 1]
+                next_start_line = next_key_node.start_mark.line
+                empty_lines_after = next_start_line - current_end_line - 1
+
+                if empty_lines_after > 0:
+                    self._set_metadata(
+                        next_key_node, empty_lines_before=empty_lines_after
                     )
 
-            # Update previous end line based on value node
-            previous_end_line = self._get_node_end_line(value_node)
-
-            # Check for empty lines after this key-value pair (structural empty lines)
-            # This handles empty lines that appear after sequences/mappings end
-            self._check_structural_empty_lines_after(key_node, value_node, i, node)
-
-    def _check_structural_empty_lines_after(
-        self, key_node, value_node, index, parent_node
-    ):
-        """Check for structural empty lines after sequences/mappings within a parent mapping."""
-        # Only check if there's a next mapping item to compare against
-        if index + 1 < len(parent_node.value):
-            next_key_node, next_value_node = parent_node.value[index + 1]
-
-            # Get the actual content end line of the current value
-            value_end_line = self._get_node_end_line(value_node)
-
-            # Get the start line of the next key
-            next_start_line = next_key_node.start_mark.line
-
-            # Calculate empty lines between the end of this value and start of next key
-            empty_lines_after = next_start_line - value_end_line - 1
-
-            if empty_lines_after > 0:
-                # Store as empty_lines_before for the next key (this is how we preserve it)
-                if hasattr(next_key_node, "_formatting_metadata"):
-                    # Add to existing metadata
-                    next_key_node._formatting_metadata.empty_lines_before = (
-                        empty_lines_after
-                    )
-                else:
-                    # Create new metadata
-                    next_key_node._formatting_metadata = FormattingMetadata(
-                        empty_lines_before=empty_lines_after
-                    )
+            previous_end_line = current_end_line
 
     def _add_sequence_formatting_metadata(self, node):
-        """Add formatting metadata to sequence nodes."""
+        """Add formatting metadata to sequence nodes with optimized processing."""
         if not node.value:
             return
 
-        # Calculate empty lines between sequence items
+        # Pre-calculate all end lines in single pass
+        end_lines = [self._get_node_end_line(item) for item in node.value]
+
         previous_end_line = node.start_mark.line - 1
 
-        for i, item_node in enumerate(node.value):
+        for i, (item_node, current_end_line) in enumerate(zip(node.value, end_lines)):
             current_start_line = item_node.start_mark.line
 
             if i > 0:  # Skip first item
                 empty_lines = current_start_line - previous_end_line - 1
                 if empty_lines > 0:
-                    item_node._formatting_metadata = FormattingMetadata(
-                        empty_lines_before=empty_lines
-                    )
+                    self._set_metadata(item_node, empty_lines_before=empty_lines)
 
-            # Update previous end line
-            previous_end_line = self._get_node_end_line(item_node)
+            previous_end_line = current_end_line
 
     def _get_node_end_line(self, node):
-        """Get the actual content end line of a node, not the structural end line."""
-        # For scalar nodes, use the end mark directly
+        """Get the actual content end line of a node with caching."""
+        node_id = id(node)
+        if node_id not in self._end_line_cache:
+            self._end_line_cache[node_id] = self._calculate_end_line(node)
+        return self._end_line_cache[node_id]
+
+    def _calculate_end_line(self, node):
+        """Non-recursive end line calculation using iterative approach."""
         if isinstance(node, yaml.ScalarNode):
             return node.end_mark.line if node.end_mark else node.start_mark.line
 
-        # For sequence nodes, find the last item's content end line
-        elif isinstance(node, yaml.SequenceNode):
-            if not node.value:
-                return node.start_mark.line
-            # Recursively get the end line of the last item
-            last_item = node.value[-1]
-            return self._get_node_end_line(last_item)
+        # Use iterative stack-based traversal instead of recursion
+        stack = [node]
+        max_end_line = node.start_mark.line
 
-        # For mapping nodes, find the last value's content end line
-        elif isinstance(node, yaml.MappingNode):
-            if not node.value:
-                return node.start_mark.line
-            # Get the last key-value pair and find the value's end line
-            last_key, last_value = node.value[-1]
-            return self._get_node_end_line(last_value)
+        while stack:
+            current = stack.pop()
+            if isinstance(current, yaml.ScalarNode):
+                end_line = (
+                    current.end_mark.line
+                    if current.end_mark
+                    else current.start_mark.line
+                )
+                max_end_line = max(max_end_line, end_line)
+            elif isinstance(current, yaml.SequenceNode) and current.value:
+                stack.extend(current.value)
+            elif isinstance(current, yaml.MappingNode) and current.value:
+                for key, value in current.value:
+                    stack.extend([key, value])
 
-        # Fallback to start line for unknown node types
+        return max_end_line
+
+    def _get_metadata_object(self, **kwargs):
+        """Get pooled metadata object to reduce allocations."""
+        if self._metadata_pool:
+            metadata = self._metadata_pool.pop()
+            # Reset all attributes to defaults first
+            metadata.empty_lines_before = 0
+            metadata.empty_lines_after = 0
+            # Set provided values
+            for key, value in kwargs.items():
+                setattr(metadata, key, value)
+            return metadata
+        return FormattingMetadata(**kwargs)
+
+    def _set_metadata(self, node, **kwargs):
+        """Efficiently set metadata on node."""
+        if hasattr(node, "_formatting_metadata"):
+            for key, value in kwargs.items():
+                setattr(node._formatting_metadata, key, value)
         else:
-            return node.start_mark.line
+            node._formatting_metadata = self._get_metadata_object(**kwargs)
 
 
 class FormattingAwareConstructor(SafeConstructor):

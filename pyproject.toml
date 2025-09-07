@@ -1,6 +1,6 @@
 [project]
 name = "yaml-for-humans"
-version = "1.1.0"
+version = "1.1.1"
 description = "Human-friendly YAML formatting with intelligent sequence handling and priority key ordering"
 readme = "README.md"
 authors = [

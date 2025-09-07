@@ -16,26 +16,45 @@ from yaml_for_humans.dumper import dumps
 from yaml_for_humans.multi_document import dumps_all
 
 
-def time_operation(func, iterations=1000, warmup=10):
+def time_operation(func, iterations=1000, warmup=50):
     """Time an operation over multiple iterations with warmup."""
-    # Warmup runs to stabilize performance
+    import gc
+    
+    # Force garbage collection before starting
+    gc.collect()
+    
+    # Extended warmup to stabilize JIT/caching effects
     for _ in range(warmup):
         func()
+    
+    # Force GC again after warmup
+    gc.collect()
 
-    # Actual timing runs
+    # Actual timing runs with periodic GC
     times = []
-    for _ in range(iterations):
+    for i in range(iterations):
+        # Force GC every 100 iterations to reduce noise
+        if i % 100 == 0:
+            gc.collect()
+            
         start = time.perf_counter()
         func()
         end = time.perf_counter()
         times.append((end - start) * 1000)  # Convert to ms
 
+    # Remove outliers (top/bottom 5%) for more stable results
+    sorted_times = sorted(times)
+    outlier_count = max(1, len(times) // 20)  # 5%
+    trimmed_times = sorted_times[outlier_count:-outlier_count] if len(times) > 20 else times
+
     return {
-        "mean": statistics.mean(times),
-        "median": statistics.median(times),
-        "stdev": statistics.stdev(times) if len(times) > 1 else 0,
-        "min": min(times),
-        "max": max(times),
+        "mean": statistics.mean(trimmed_times),
+        "median": statistics.median(trimmed_times),
+        "stdev": statistics.stdev(trimmed_times) if len(trimmed_times) > 1 else 0,
+        "min": min(trimmed_times),
+        "max": max(trimmed_times),
+        "raw_samples": len(times),
+        "trimmed_samples": len(trimmed_times),
     }
 
 
@@ -174,14 +193,10 @@ def benchmark_serialization():
     test_data = create_test_data()
 
     def pyyaml_single(data):
-        stream = StringIO()
-        yaml.dump(data, stream, default_flow_style=False, sort_keys=False)
-        return stream.getvalue()
+        return yaml.dump(data, default_flow_style=False, sort_keys=False)
 
     def pyyaml_multi(docs):
-        stream = StringIO()
-        yaml.dump_all(docs, stream, default_flow_style=False, sort_keys=False)
-        return stream.getvalue()
+        return yaml.dump_all(docs, default_flow_style=False, sort_keys=False)
 
     results = []
 
@@ -189,18 +204,31 @@ def benchmark_serialization():
         print(f"{test_name}:")
         print(f"  Testing with {iterations:,} iterations...")
 
-        # Choose appropriate functions
+        # Create bound functions to eliminate lambda overhead and capture issues
         if test_name == "Multi-document":
-            pyyaml_func = lambda: pyyaml_multi(data)
-            huml_func = lambda: dumps_all(data)
+            def pyyaml_func():
+                return pyyaml_multi(data)
+            def huml_func():
+                return dumps_all(data)
         else:
-            pyyaml_func = lambda: pyyaml_single(data)
-            huml_func = lambda: dumps(data)
+            def pyyaml_func():
+                return pyyaml_single(data)
+            def huml_func():
+                return dumps(data)
 
+        # Verify both functions produce valid output (sanity check)
+        pyyaml_output = pyyaml_func()
+        huml_output = huml_func()
+        
+        # Basic validation that both produced non-empty strings
+        if not pyyaml_output or not huml_output:
+            print(f"    ERROR: One library produced empty output, skipping {test_name}")
+            continue
+            
         # Benchmark PyYAML
         pyyaml_stats = time_operation(pyyaml_func, iterations=iterations)
 
-        # Benchmark YAML for Humans
+        # Benchmark YAML for Humans  
         huml_stats = time_operation(huml_func, iterations=iterations)
 
         # Calculate performance ratio
@@ -225,24 +253,18 @@ def benchmark_serialization():
             f"    YAML4Humans:     {huml_stats['mean']:6.3f} ms/op (±{huml_stats['stdev']:5.3f})"
         )
 
-        # Format performance comparison correctly
-        if ratio < 0.98:  # Significantly faster (>2% improvement)
+        # Format performance comparison with proper statistical significance
+        # Use 10% threshold to account for measurement noise and system variability
+        if ratio < 0.90:  # Significantly faster (>10% improvement)
             perf_display = f"{1 / ratio:5.2f}x faster"
-        elif ratio > 1.02:  # Significantly slower (>2% degradation)
+        elif ratio > 1.10:  # Significantly slower (>10% degradation) 
             perf_display = f"{ratio:5.2f}x slower"
-        else:  # Within 2% - essentially equivalent
-            perf_display = "equivalent performance"
+        else:  # Within 10% - not statistically significant
+            perf_display = "equivalent performance (within measurement error)"
 
         print(f"    Performance:     {perf_display}")
 
-        # Calculate output size difference (for interest)
-        if test_name != "Multi-document":
-            pyyaml_output = pyyaml_single(data)
-            huml_output = dumps(data)
-        else:
-            pyyaml_output = pyyaml_multi(data)
-            huml_output = dumps_all(data)
-
+        # Calculate output size difference (using already generated output)
         size_ratio = len(huml_output) / len(pyyaml_output)
         print(
             f"    Output size:     {size_ratio:5.2f}x larger ({len(pyyaml_output)} → {len(huml_output)} chars)"
@@ -268,9 +290,9 @@ def benchmark_serialization():
     print(f"Range:                       {min(ratios):4.2f}x - {max(ratios):4.2f}x")
     print()
 
-    # Provide interpretation of ratios
-    faster_count = sum(1 for r in ratios if r < 0.98)
-    slower_count = sum(1 for r in ratios if r > 1.02)
+    # Provide interpretation of ratios with statistical significance
+    faster_count = sum(1 for r in ratios if r < 0.90)
+    slower_count = sum(1 for r in ratios if r > 1.10) 
     equiv_count = len(ratios) - faster_count - slower_count
 
     print(f"Test cases where YAML4Humans is faster:      {faster_count}")
@@ -278,26 +300,24 @@ def benchmark_serialization():
     print(f"Test cases with equivalent performance:      {equiv_count}")
     print()
 
-    # Overall assessment
-    if avg_ratio < 0.95:
-        assessment = "Excellent - YAML4Humans is consistently faster"
-    elif avg_ratio < 1.05:
+    # Overall assessment with realistic expectations
+    if avg_ratio < 0.85:
+        assessment = "Unexpected - YAML4Humans appears faster (verify results)"
+    elif avg_ratio < 1.15:
         assessment = "Excellent - performance is essentially equivalent"
-    elif avg_ratio < 1.5:
-        assessment = "Good - minimal performance trade-off for formatting benefits"
-    elif avg_ratio < 2.5:
-        assessment = "Reasonable - moderate trade-off for human-readable output"
+    elif avg_ratio < 2.0:
+        assessment = "Good - reasonable trade-off for human-readable formatting"
+    elif avg_ratio < 4.0:
+        assessment = "Fair - moderate performance cost for formatting benefits"
     else:
-        assessment = (
-            "Significant - evaluate if formatting benefits justify the performance cost"
-        )
+        assessment = "Poor - significant performance cost, consider use case carefully"
 
     print(f"Overall Assessment: {assessment}")
     print()
-    print("Note: Performance varies by data structure complexity.")
-    print("YAML4Humans provides human-friendly formatting with minimal to")
-    print("no performance penalty in most cases, making it ideal for")
-    print("configuration files and development workflows.")
+    print("Note: Performance varies by data structure complexity and system load.")
+    print("YAML4Humans prioritizes human-readable output over raw performance.")
+    print("Results within 10% should be considered equivalent due to measurement")
+    print("variability. Claims of superior performance require verification.")
 
 
 if __name__ == "__main__":

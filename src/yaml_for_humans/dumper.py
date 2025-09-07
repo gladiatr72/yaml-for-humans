@@ -48,11 +48,11 @@ def _process_empty_line_markers(yaml_text: str) -> str:
     # Fast path: if no markers present, return original text unchanged
     if "__EMPTY_LINES_" not in yaml_text:
         return yaml_text
-    
+
     lines = yaml_text.split("\n")
     result = []
     result_extend = result.extend  # Cache method lookup for performance
-    
+
     for line in lines:
         if "__EMPTY_LINES_" in line:
             match = _EMPTY_LINE_PATTERN.search(line)
@@ -62,7 +62,7 @@ def _process_empty_line_markers(yaml_text: str) -> str:
             # Skip malformed marker lines (no else needed)
         else:
             result.append(line)
-    
+
     return "\n".join(result)
 
 

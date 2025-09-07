@@ -162,7 +162,7 @@ class KubernetesManifestDumper(MultiDocumentDumper):
         "CronJob",
         "Pod",
     ]
-    
+
     # Precomputed priorities for O(1) lookups instead of O(n) list.index()
     RESOURCE_PRIORITIES = {kind: i for i, kind in enumerate(RESOURCE_ORDER)}
     UNKNOWN_PRIORITY = len(RESOURCE_ORDER)
