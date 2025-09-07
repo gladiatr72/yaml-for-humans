@@ -13,6 +13,11 @@
 - [x] Update `represent_mapping` method to use efficient single-pass sorting ✅ **COMPLETED**
 - [x] Apply same optimization to `formatting_emitter.py` ✅ **COMPLETED**
 
+#### CLI constants consolidation ✅ **COMPLETED**
+- [x] Extract CLI magic numbers to constants (per CLAUDE.md requirements) ✅ **COMPLETED**
+- [x] Fix timeout mismatch: help text shows 500ms but DEFAULT_TIMEOUT_MS is 2000ms ✅ **COMPLETED**
+- [x] Create CLI constants namespace as specified in project instructions ✅ **COMPLETED**
+
 ### Medium Priority Completed
 
 #### Refactor duplicate code

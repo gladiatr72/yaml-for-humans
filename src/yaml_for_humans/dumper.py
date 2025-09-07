@@ -65,7 +65,9 @@ def _process_empty_line_markers(yaml_text: str) -> str:
     )
 
 
-def dump(data: Any, stream: TextIO, preserve_empty_lines: bool = False, **kwargs: Any) -> None:
+def dump(
+    data: Any, stream: TextIO, preserve_empty_lines: bool = False, **kwargs: Any
+) -> None:
     """
     Serialize Python object to YAML with human-friendly formatting.
 

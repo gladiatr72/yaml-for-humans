@@ -31,7 +31,9 @@ DEFAULT_TIMEOUT_MS: int = 2000
 DEFAULT_INDENT: int = 2
 
 
-def _load_yaml(content: str, unsafe: bool = False, preserve_empty_lines: bool = False) -> Any:
+def _load_yaml(
+    content: str, unsafe: bool = False, preserve_empty_lines: bool = False
+) -> Any:
     """Load YAML content using safe or unsafe loader."""
     if preserve_empty_lines and not unsafe:
         # Use formatting-aware loader for empty line preservation
@@ -43,7 +45,9 @@ def _load_yaml(content: str, unsafe: bool = False, preserve_empty_lines: bool = 
         return yaml.safe_load(content)
 
 
-def _load_all_yaml(content: str, unsafe: bool = False, preserve_empty_lines: bool = False) -> Iterator[Any]:
+def _load_all_yaml(
+    content: str, unsafe: bool = False, preserve_empty_lines: bool = False
+) -> Iterator[Any]:
     """Load all YAML documents using safe or unsafe loader."""
     # Note: Empty line preservation not yet supported for multi-document YAML
     # TODO: Implement multi-document formatting-aware loading
@@ -657,7 +661,10 @@ def huml():
     # Use click for proper CLI argument parsing
     @click.command()
     @click.option(
-        "--indent", default=DEFAULT_INDENT, type=int, help=f"Indentation level (default: {DEFAULT_INDENT})"
+        "--indent",
+        default=DEFAULT_INDENT,
+        type=int,
+        help=f"Indentation level (default: {DEFAULT_INDENT})",
     )
     @click.option(
         "--timeout",
