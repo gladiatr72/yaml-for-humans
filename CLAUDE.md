@@ -20,9 +20,9 @@ testing:
   - use `uv run pytest` to run tests
 
 
-todo tracking:
-  - track todo items in TODO.md
-  - mark them complete when they are signed off on by the user and move them to TODO-COMPLETE.md
+todo-list:
+  - write the results of code analysis requests to TODO.md
+  - move completed todo entries to TODO-COMPLETE.md
 
 when benchmarking:
   - run benchmark with `uv run ./benchmark.py`
