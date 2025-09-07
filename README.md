@@ -92,37 +92,146 @@ containers:
 3. **Smart formatting**: Complex objects use separate lines, simple strings stay inline
 4. **Consistent indentation**: Maintains visual hierarchy throughout the document
 
-## Empty Line Preservation
+## Whitespace Preservation
 
-YAML for Humans can preserve empty lines from the original YAML to maintain document structure and readability:
+YAML for Humans can preserve empty lines and whitespace from the original YAML to maintain document structure and readability:
 
 ```python
 from yaml_for_humans import load_with_formatting, dumps
 
-# Load YAML with formatting metadata
-original_yaml = """
-apiVersion: v1
-kind: ConfigMap
+# Load a real Kustomization file with strategic empty lines
+data = load_with_formatting('tests/test-data/kustomization-compressed.yaml')
 
-metadata:
-  name: my-config
-  namespace: default
-
-data:
-  config.yaml: |
-    setting: value
-"""
-
-data = load_with_formatting(original_yaml)
-
-# Dump with empty line preservation (default: True)
+# Preserve original whitespace structure
 preserved_output = dumps(data, preserve_empty_lines=True)
+print("With whitespace preservation:")
 print(preserved_output)
 
-# Or disable empty line preservation
+# Standard compact output  
 compact_output = dumps(data, preserve_empty_lines=False)
+print("\nCompact output:")
 print(compact_output)
 ```
+
+**With whitespace preservation:**
+```yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../.overlays/gitlab-registry-access/
+  - ../../.overlays/postgres-headless-2023/
+  - django/
+
+labels:
+  -
+    includeSelectors: true
+    pairs:
+      env: prod
+
+images:
+  -
+    name: application
+    newName: v3.3.2
+  -
+    name: nginx
+    newTag: 1.27.4
+
+configMapGenerator:
+  -
+    behavior: create
+    envs:
+      - vars.env
+    name: env
+  -
+    files:
+      - nginx.conf
+    name: proxy-config
+
+secretGenerator:
+  -
+    behavior: create
+    envs:
+      - secrets.env
+    name: env
+
+patches:
+  -
+    path: patches/sidecars/nginx-front.yaml
+    target:
+      kind: Deployment
+      labelSelector: component=django
+  -
+    path: patches/init-containers/migrate.yaml
+    target:
+      kind: Deployment
+      labelSelector: component=django
+  -
+    path: patches/init-containers/collectstatic.yaml
+    target:
+      kind: Deployment
+      labelSelector: component=django
+```
+
+**Compact output:**
+```yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../.overlays/gitlab-registry-access/
+  - ../../.overlays/postgres-headless-2023/
+  - django/
+labels:
+  -
+    includeSelectors: true
+    pairs:
+      env: prod
+images:
+  -
+    name: application
+    newName: v3.3.2
+  -
+    name: nginx
+    newTag: 1.27.4
+configMapGenerator:
+  -
+    behavior: create
+    envs:
+      - vars.env
+    name: env
+  -
+    files:
+      - nginx.conf
+    name: proxy-config
+secretGenerator:
+  -
+    behavior: create
+    envs:
+      - secrets.env
+    name: env
+patches:
+  -
+    path: patches/sidecars/nginx-front.yaml
+    target:
+      kind: Deployment
+      labelSelector: component=django
+  -
+    path: patches/init-containers/migrate.yaml
+    target:
+      kind: Deployment
+      labelSelector: component=django
+  -
+    path: patches/init-containers/collectstatic.yaml
+    target:
+      kind: Deployment
+      labelSelector: component=django
+```
+
+This feature is especially useful for:
+- **Kustomization files** where empty lines separate different resource types and configurations
+- **Kubernetes manifests** where empty lines logically group related settings  
+- **CI/CD pipelines** where empty lines help distinguish workflow stages
+- **Configuration files** where whitespace enhances visual structure and readability
 
 ### CLI Empty Line Preservation
 
