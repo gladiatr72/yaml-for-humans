@@ -180,3 +180,4 @@ pyrightconfig.json
 
 .claude/
 .claude
+.bench/

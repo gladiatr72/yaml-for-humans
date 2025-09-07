@@ -2,35 +2,7 @@
 
 ## Performance Optimization Hot Spots
 
-### 1. Optimize sequence item handling in emitter.py:49-80 (high-frequency code path) 
-- **Status**: COMPLETED
-- **Issues Identified**:
-  - Redundant `isinstance()` checks on lines 63, 67, 85, 93
-  - Inefficient empty container detection with repeated `hasattr()` and `len()` calls
-  - State management overhead with frequent stack operations
-  - Method call overhead from virtual method calls
-- **Expected Gain**: 15-25% improvement for sequence-heavy documents
-- **Implementation Summary**:
-  - ✅ Cached self.event reference to eliminate redundant property access
-  - ✅ Reordered ScalarEvent check first for better branch prediction 
-  - ✅ Created _is_empty_container_fast() method with consolidated conditions
-  - ✅ Eliminated redundant hasattr() and len() calls with single getattr() + truthiness check
-  - ✅ Maintained backward compatibility with existing _is_empty_container() method
-  - ✅ All 123 tests pass - optimization preserves functionality
 
-### 2. Optimize empty line marker processing in dumper.py:46-66 (string-heavy operations)
-- **Status**: In Progress - Analysis Complete
-- **Issues Identified**:
-  - Nested generator overhead with multiple iterator objects per line (lines 55, 57, 59)
-  - String processing inefficiency: substring search + regex + double iteration (lines 50, 52, 63)
-  - Regex pattern overhead for simple numeric extraction
-  - Memory allocation from nested generator comprehension and iterator chains
-- **Expected Gain**: 30-50% faster for documents with empty line markers, 60% less memory allocation
-- **Optimization Strategy**:
-  - Replace nested generators with direct string building and list operations
-  - Add fast path check for documents without markers
-  - Use list pre-allocation and bulk extend operations
-  - Consider direct string parsing instead of regex for fixed format markers
 
 ### 3. Optimize metadata calculation in formatting_aware.py:40-94 (line number calculations)
 - **Status**: In Progress - Analysis Complete

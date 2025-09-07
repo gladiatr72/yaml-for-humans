@@ -44,25 +44,26 @@ def _return_buffer(buffer: StringIO) -> None:
 
 
 def _process_empty_line_markers(yaml_text: str) -> str:
-    """Convert empty line markers to actual empty lines."""
-
-    def process_line(line):
+    """Convert empty line markers to actual empty lines with optimized processing."""
+    # Fast path: if no markers present, return original text unchanged
+    if "__EMPTY_LINES_" not in yaml_text:
+        return yaml_text
+    
+    lines = yaml_text.split("\n")
+    result = []
+    result_extend = result.extend  # Cache method lookup for performance
+    
+    for line in lines:
         if "__EMPTY_LINES_" in line:
-            # Extract the number of empty lines needed
             match = _EMPTY_LINE_PATTERN.search(line)
             if match:
                 empty_count = int(match.group(1))
-                return ("" for _ in range(empty_count))
-            # Skip the marker line itself
-            return iter(())
+                result_extend([""] * empty_count)  # Bulk extend operation
+            # Skip malformed marker lines (no else needed)
         else:
-            return iter((line,))
-
-    return "\n".join(
-        line
-        for original_line in yaml_text.split("\n")
-        for line in process_line(original_line)
-    )
+            result.append(line)
+    
+    return "\n".join(result)
 
 
 def dump(
