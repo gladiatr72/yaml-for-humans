@@ -28,6 +28,7 @@ except ImportError:
 
 
 DEFAULT_TIMEOUT_MS: int = 2000
+DEFAULT_INDENT: int = 2
 
 
 def _load_yaml(content: str, unsafe: bool = False, preserve_empty_lines: bool = False) -> Any:
@@ -61,7 +62,7 @@ def _check_cli_dependencies() -> None:
         sys.exit(1)
 
 
-def _read_stdin_with_timeout(timeout_ms: int = 50) -> str:
+def _read_stdin_with_timeout(timeout_ms: int = DEFAULT_TIMEOUT_MS) -> str:
     """
     Read from stdin with a timeout.
 
@@ -119,8 +120,8 @@ def _read_stdin_with_timeout(timeout_ms: int = 50) -> str:
 
 
 def _huml_main(
-    indent: int = 2,
-    timeout: int = 50,
+    indent: int = DEFAULT_INDENT,
+    timeout: int = DEFAULT_TIMEOUT_MS,
     inputs: str | None = None,
     output: str | None = None,
     auto: bool = False,
@@ -554,7 +555,7 @@ def _write_to_output(
     documents,
     output_path,
     auto=False,
-    indent=2,
+    indent=DEFAULT_INDENT,
     document_sources=None,
     preserve_empty_lines=True,
 ):
@@ -656,7 +657,7 @@ def huml():
     # Use click for proper CLI argument parsing
     @click.command()
     @click.option(
-        "--indent", default=2, type=int, help="Indentation level (default: 2)"
+        "--indent", default=DEFAULT_INDENT, type=int, help=f"Indentation level (default: {DEFAULT_INDENT})"
     )
     @click.option(
         "--timeout",
@@ -664,7 +665,7 @@ def huml():
         default=DEFAULT_TIMEOUT_MS,
         type=int,
         envvar=["HUML_STDIN_TIMEOUT", "HUML_TIMEOUT_STDIN"],
-        help="Stdin timeout in milliseconds (default: 500)",
+        help=f"Stdin timeout in milliseconds (default: {DEFAULT_TIMEOUT_MS})",
     )
     @click.option(
         "--inputs",

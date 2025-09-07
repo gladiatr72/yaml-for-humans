@@ -13,22 +13,8 @@
 - [ ] Add type hints throughout codebase to improve maintainability
 - [ ] Consider using `typing.Protocol` for dumper interfaces
 
-### Refactor duplicate code
-- [ ] **Phase 2: File Detection Utilities** (Medium Impact)
-  - Create `file_utils.py` module with format detection constants:
-    - `YAML_EXTENSIONS = ('.yaml', '.yml')`
-    - `JSON_EXTENSIONS = ('.json', '.jsonl')`
-    - `SUPPORTED_EXTENSIONS = YAML_EXTENSIONS + JSON_EXTENSIONS`
-  - Add `detect_file_format()` function to replace hardcoded extension checking
-  - Add `_read_file_safely()` utility to consolidate file I/O patterns
-  - Eliminates inconsistent extension checking across 4+ locations
-- [ ] **Phase 3: Unified Document Processing** (Long-term Architecture)
-  - Refactor to single `process_documents()` function handling all formats/sources
-  - Consider Strategy Pattern or Document Processor Class for format dispatch
-  - Single point of maintenance for all document processing logic
 
 ### I/O Performance
-- [ ] Consider adding async I/O support for large file processing
 - [ ] Implement streaming for memory-efficient processing of large YAML files
 
 ## Low Priority

@@ -25,6 +25,20 @@
   - Eliminated 9 total duplicated processing locations (3 formats × 3 input sources)
   - All tests pass, functionality preserved
 
+- [x] **Phase 2: File Detection Utilities** (Medium Impact) ✅ **COMPLETED**
+  - Created `file_utils.py` module with format detection constants:
+    - `YAML_EXTENSIONS = ('.yaml', '.yml')`
+    - `JSON_EXTENSIONS = ('.json', '.jsonl')`
+    - `SUPPORTED_EXTENSIONS = YAML_EXTENSIONS + JSON_EXTENSIONS`
+  - Added `detect_file_format()` function to replace hardcoded extension checking
+  - Added `_read_file_safely()` utility to consolidate file I/O patterns
+  - Eliminated inconsistent extension checking across 4+ locations
+
+- [x] **Phase 3: Unified Document Processing** (Long-term Architecture) ✅ **COMPLETED**
+  - Refactored to single `process_documents()` function handling all formats/sources
+  - Implemented Strategy Pattern for format dispatch
+  - Single point of maintenance for all document processing logic
+
 ### Performance Optimizations - Comprehensive Analysis Completed
 
 #### Major Performance Improvements
