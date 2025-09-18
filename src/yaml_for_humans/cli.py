@@ -10,7 +10,9 @@ import io
 import json
 import os
 import sys
-from typing import Any, Iterator, TextIO
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Iterator, TextIO, Callable, Protocol
 
 import yaml
 
@@ -29,6 +31,406 @@ except ImportError:
 
 DEFAULT_TIMEOUT_MS: int = 2000
 DEFAULT_INDENT: int = 2
+
+
+@dataclass(frozen=True)
+class ProcessingContext:
+    """Immutable context for processing operations."""
+    unsafe_inputs: bool = False
+    preserve_empty_lines: bool = True
+
+    def create_source_factory(self, base_info: dict) -> Callable[[], dict]:
+        """Create source factory with counter for multi-document sources."""
+        counter = [0]
+
+        def factory():
+            result = {**base_info}
+            # For stdin, update position counter on each call
+            if "stdin_position" in base_info:
+                result["stdin_position"] = counter[0]
+                counter[0] += 1
+            return result
+
+        return factory
+
+
+class FilePathExpander:
+    """Handles file path expansion with glob and directory support."""
+
+    def expand_paths(self, inputs_str: str) -> list[str]:
+        """Main entry point - expands comma-separated paths with glob and directory support."""
+        raw_paths = [path.strip() for path in inputs_str.split(",")]
+        expanded = []
+
+        for path in raw_paths:
+            if not path:
+                continue
+            expanded.extend(self._expand_single_path(path))
+
+        return expanded
+
+    def _expand_single_path(self, path: str) -> list[str]:
+        """Expand a single path - handles directories, globs, and regular files."""
+        if path.endswith(os.sep):
+            return self._expand_directory(path)
+        elif self._is_glob_pattern(path):
+            return self._expand_glob(path)
+        else:
+            return self._expand_regular_file(path)
+
+    def _expand_directory(self, dir_path: str) -> list[str]:
+        """Expand directory to list of valid files."""
+        dir_path = dir_path.rstrip(os.sep)
+        expanded = []
+
+        if os.path.exists(dir_path) and os.path.isdir(dir_path):
+            for file_name in os.listdir(dir_path):
+                full_path = os.path.join(dir_path, file_name)
+                if os.path.isfile(full_path):
+                    if _is_valid_file_type(full_path):
+                        expanded.append(full_path)
+                    else:
+                        click.echo(f"Skipping file with invalid format: {full_path}", err=True)
+        else:
+            click.echo(f"Directory not found: {dir_path}", err=True)
+
+        return expanded
+
+    def _expand_glob(self, glob_pattern: str) -> list[str]:
+        """Expand glob pattern to list of valid files."""
+        expanded = []
+        glob_matches = glob.glob(glob_pattern)
+
+        if glob_matches:
+            for match in sorted(glob_matches):
+                if os.path.isfile(match):
+                    if _is_valid_file_type(match):
+                        expanded.append(match)
+                    else:
+                        click.echo(f"Skipping file with invalid format: {match}", err=True)
+        else:
+            click.echo(f"No files found matching pattern: {glob_pattern}", err=True)
+
+        return expanded
+
+    def _expand_regular_file(self, file_path: str) -> list[str]:
+        """Handle regular file path."""
+        if os.path.exists(file_path) and os.path.isfile(file_path):
+            if _is_valid_file_type(file_path):
+                return [file_path]
+            else:
+                click.echo(f"Skipping file with invalid format: {file_path}", err=True)
+                return []
+        else:
+            click.echo(f"File not found: {file_path}", err=True)
+            return []
+
+    def _is_glob_pattern(self, path: str) -> bool:
+        """Check if path contains glob pattern characters."""
+        return any(char in path for char in ["*", "?", "["])
+
+
+class FormatDetector:
+    """Centralized format detection and processing."""
+
+    def __init__(self, context: ProcessingContext):
+        self.context = context
+
+    def process_content(self, content: str, source_factory: Callable) -> tuple[list[Any], list[dict]]:
+        """Unified content processing with format detection."""
+        if _looks_like_json(content):
+            return self._process_json_content(content, source_factory)
+        else:
+            return self._process_yaml_content(content, source_factory)
+
+    def _process_json_content(self, content: str, source_factory: Callable) -> tuple[list[Any], list[dict]]:
+        """Process JSON content with format-specific handling."""
+        if _is_json_lines(content):
+            return process_json_lines(content, source_factory)
+
+        # This will raise json.JSONDecodeError if invalid, which should propagate up
+        data = json.loads(content)
+        if _has_items_array(data):
+            return process_items_array(data, source_factory)
+
+        return [data], [source_factory()]
+
+    def _process_yaml_content(self, content: str, source_factory: Callable) -> tuple[list[Any], list[dict]]:
+        """Process YAML content with multi-document support."""
+        if _is_multi_document_yaml(content):
+            return process_multi_document_yaml(
+                content,
+                source_factory,
+                unsafe=self.context.unsafe_inputs,
+                preserve_empty_lines=self.context.preserve_empty_lines,
+                _load_all_yaml_func=_load_all_yaml
+            )
+
+        data = _load_yaml(
+            content,
+            unsafe=self.context.unsafe_inputs,
+            preserve_empty_lines=self.context.preserve_empty_lines
+        )
+        return [data], [source_factory()]
+
+
+class InputProcessor:
+    """Handles document processing from various input sources."""
+
+    def __init__(self, context: ProcessingContext):
+        self.context = context
+        self.format_detector = FormatDetector(context)
+
+    def process_files(self, inputs_str: str) -> tuple[list[Any], list[dict]]:
+        """Process file inputs with path expansion and format detection."""
+        expander = FilePathExpander()
+        file_paths = expander.expand_paths(inputs_str)
+
+        documents, sources = [], []
+        for file_path in file_paths:
+            docs, srcs = self._process_single_file(file_path)
+            documents.extend(docs)
+            sources.extend(srcs)
+
+        return documents, sources
+
+    def process_stdin(self, timeout: int) -> tuple[list[Any], list[dict]]:
+        """Process stdin input with timeout and format detection."""
+        input_text = _read_stdin_with_timeout(timeout).strip()
+
+        if not input_text:
+            raise ValueError("No input provided")
+
+        # Create appropriate source factory for stdin
+        # For multi-document cases, the processors will handle counter incrementation
+        source_factory = self.context.create_source_factory({"stdin_position": 0})
+
+        return self.format_detector.process_content(input_text, source_factory)
+
+    def _process_single_file(self, file_path: str) -> tuple[list[Any], list[dict]]:
+        """Process individual file with error handling."""
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                content = f.read().strip()
+
+            if not content:
+                return [], []
+
+            source_factory = self.context.create_source_factory({"file_path": file_path})
+            return self.format_detector.process_content(content, source_factory)
+
+        except FileNotFoundError:
+            click.echo(f"Error: File not found: {file_path}", err=True)
+            return [], []
+        except json.JSONDecodeError as e:
+            click.echo(f"Error: Failed to parse {file_path}: {e}", err=True)
+            return [], []
+        except yaml.YAMLError as e:
+            click.echo(f"Error: Failed to parse {file_path}: {e}", err=True)
+            return [], []
+        except Exception as e:
+            click.echo(f"Error: Failed to read {file_path}: {e}", err=True)
+            return [], []
+
+
+@dataclass(frozen=True)
+class OutputContext:
+    """Configuration for output operations."""
+    indent: int = DEFAULT_INDENT
+    preserve_empty_lines: bool = True
+    auto_create_dirs: bool = False
+
+
+class OutputStrategy(Protocol):
+    """Strategy interface for different output modes."""
+
+    def write_documents(
+        self,
+        documents: list[Any],
+        sources: list[dict],
+        context: OutputContext
+    ) -> None:
+        """Write documents using the specific output strategy."""
+        ...
+
+
+class DirectoryOutputWriter:
+    """Handles writing multiple documents to directory with individual files."""
+
+    def __init__(self, dir_path: Path):
+        self.dir_path = dir_path
+        self._filename_cache: set[str] = set()
+
+    def write_documents(
+        self,
+        documents: list[Any],
+        sources: list[dict],
+        context: OutputContext
+    ) -> None:
+        """Write documents to individual files in directory."""
+        self._ensure_directory_exists(context.auto_create_dirs)
+
+        if len(documents) == 1:
+            self._write_single_document(documents[0], sources[0] if sources else {}, context)
+        else:
+            self._write_multiple_documents(documents, sources, context)
+
+    def _ensure_directory_exists(self, auto_create: bool) -> None:
+        """Ensure target directory exists."""
+        if not self.dir_path.exists():
+            if auto_create:
+                self.dir_path.mkdir(parents=True, exist_ok=True)
+                print(f"Created directory: {self.dir_path}", file=sys.stderr)
+            else:
+                print(f"Error: Directory does not exist: {self.dir_path}", file=sys.stderr)
+                sys.exit(1)
+
+    def _write_single_document(
+        self,
+        document: Any,
+        source: dict,
+        context: OutputContext
+    ) -> None:
+        """Write single document to file."""
+        filename = self._generate_unique_filename(document, source)
+        file_path = self.dir_path / filename
+        self._write_yaml_file(file_path, document, context)
+
+    def _write_multiple_documents(
+        self,
+        documents: list[Any],
+        sources: list[dict],
+        context: OutputContext
+    ) -> None:
+        """Write multiple documents with O(1) filename conflict resolution."""
+        for i, doc in enumerate(documents):
+            source = sources[i] if sources and i < len(sources) else {}
+            filename = self._generate_unique_filename(doc, source, i)
+            file_path = self.dir_path / filename
+            self._write_yaml_file(file_path, doc, context)
+
+    def _generate_unique_filename(
+        self,
+        document: Any,
+        source: dict,
+        index: int = 0
+    ) -> str:
+        """Generate unique filename avoiding O(n²) filesystem checks."""
+        base_filename = _generate_k8s_filename(
+            document,
+            source_file=source.get("file_path"),
+            stdin_position=source.get("stdin_position")
+        )
+
+        # Use cache to avoid filesystem checks for known filenames
+        if base_filename not in self._filename_cache:
+            # Check if file actually exists on first encounter
+            if not (self.dir_path / base_filename).exists():
+                self._filename_cache.add(base_filename)
+                return base_filename
+
+        # Generate numbered variant
+        counter = 1
+        base_name = base_filename.replace(".yaml", "")
+        while True:
+            candidate = f"{base_name}-{counter}.yaml"
+            if candidate not in self._filename_cache:
+                # Double-check filesystem for safety
+                if not (self.dir_path / candidate).exists():
+                    self._filename_cache.add(candidate)
+                    return candidate
+            counter += 1
+
+    def _write_yaml_file(self, file_path: Path, document: Any, context: OutputContext) -> None:
+        """Write single document to YAML file."""
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(dumps(
+                document,
+                indent=context.indent,
+                preserve_empty_lines=context.preserve_empty_lines,
+            ))
+
+
+class FileOutputWriter:
+    """Handles writing documents to single file."""
+
+    def __init__(self, file_path: Path):
+        self.file_path = file_path
+
+    def write_documents(
+        self,
+        documents: list[Any],
+        sources: list[dict],
+        context: OutputContext
+    ) -> None:
+        """Write documents to single file."""
+        self._ensure_parent_dirs_exist(context.auto_create_dirs)
+
+        with open(self.file_path, "w", encoding="utf-8") as f:
+            if len(documents) > 1:
+                self._write_multi_document_yaml(f, documents, context)
+            else:
+                self._write_single_document_yaml(f, documents[0], context)
+
+    def _ensure_parent_dirs_exist(self, auto_create: bool) -> None:
+        """Ensure parent directories exist."""
+        if auto_create and not self.file_path.parent.exists():
+            self.file_path.parent.mkdir(parents=True, exist_ok=True)
+            print(f"Created parent directories for: {self.file_path}", file=sys.stderr)
+
+    def _write_multi_document_yaml(
+        self,
+        file_handle: TextIO,
+        documents: list[Any],
+        context: OutputContext
+    ) -> None:
+        """Write multiple documents to single file."""
+        from .multi_document import dumps_all
+        file_handle.write(dumps_all(documents, indent=context.indent))
+
+    def _write_single_document_yaml(
+        self,
+        file_handle: TextIO,
+        document: Any,
+        context: OutputContext
+    ) -> None:
+        """Write single document to file."""
+        file_handle.write(dumps(
+            document,
+            indent=context.indent,
+            preserve_empty_lines=context.preserve_empty_lines,
+        ))
+
+
+class OutputWriter:
+    """Main output coordination class with strategy pattern."""
+
+    @staticmethod
+    def create_writer(output_path: str) -> OutputStrategy:
+        """Factory method to create appropriate output strategy."""
+        if output_path.endswith(os.sep):
+            return DirectoryOutputWriter(Path(output_path.rstrip(os.sep)))
+        else:
+            return FileOutputWriter(Path(output_path))
+
+    @staticmethod
+    def write(
+        documents: list[Any],
+        sources: list[dict],
+        output_path: str,
+        indent: int = DEFAULT_INDENT,
+        preserve_empty_lines: bool = True,
+        auto: bool = False
+    ) -> None:
+        """Main entry point replacing _write_to_output."""
+        context = OutputContext(
+            indent=indent,
+            preserve_empty_lines=preserve_empty_lines,
+            auto_create_dirs=auto
+        )
+
+        writer = OutputWriter.create_writer(output_path)
+        writer.write_documents(documents, sources, context)
 
 
 def _load_yaml(
@@ -145,246 +547,36 @@ def _huml_main(
     _check_cli_dependencies()
 
     try:
-        documents = []
-        document_sources = []  # Track source info for each document
+        # Create processing context with configuration
+        context = ProcessingContext(
+            unsafe_inputs=unsafe_inputs,
+            preserve_empty_lines=preserve_empty_lines
+        )
 
-        # Handle --inputs flag (process files)
+        # Initialize input processor
+        processor = InputProcessor(context)
+
+        # Process input from files or stdin
         if inputs:
-            file_paths = [path.strip() for path in inputs.split(",")]
-            expanded_file_paths = []
-
-            # Expand globs and directories
-            for file_path in file_paths:
-                if not file_path:
-                    continue
-
-                # Check if path ends with os.sep (directory indicator)
-                if file_path.endswith(os.sep):
-                    # Treat as directory
-                    dir_path = file_path.rstrip(os.sep)
-                    if os.path.exists(dir_path) and os.path.isdir(dir_path):
-                        # Process all files in directory
-                        for file_name in os.listdir(dir_path):
-                            full_path = os.path.join(dir_path, file_name)
-                            if os.path.isfile(full_path):
-                                if _is_valid_file_type(full_path):
-                                    expanded_file_paths.append(full_path)
-                                else:
-                                    click.echo(
-                                        f"Skipping file with invalid format: {full_path}",
-                                        err=True,
-                                    )
-                    else:
-                        click.echo(f"Directory not found: {dir_path}", err=True)
-                        continue
-                else:
-                    # Check if it's a glob pattern or regular file
-                    if any(char in file_path for char in ["*", "?", "["]):
-                        # Handle glob pattern
-                        glob_matches = glob.glob(file_path)
-                        if glob_matches:
-                            for match in sorted(glob_matches):
-                                if os.path.isfile(match):
-                                    if _is_valid_file_type(match):
-                                        expanded_file_paths.append(match)
-                                    else:
-                                        click.echo(
-                                            f"Skipping file with invalid format: {match}",
-                                            err=True,
-                                        )
-                        else:
-                            click.echo(
-                                f"No files found matching pattern: {file_path}",
-                                err=True,
-                            )
-                    else:
-                        # Regular file path
-                        if os.path.exists(file_path) and os.path.isfile(file_path):
-                            if _is_valid_file_type(file_path):
-                                expanded_file_paths.append(file_path)
-                            else:
-                                click.echo(
-                                    f"Skipping file with invalid format: {file_path}",
-                                    err=True,
-                                )
-                        else:
-                            click.echo(f"File not found: {file_path}", err=True)
-
-            for file_path in expanded_file_paths:
-                if not file_path:
-                    continue
-
-                try:
-                    with open(file_path, "r", encoding="utf-8") as f:
-                        file_content = f.read().strip()
-
-                    if not file_content:
-                        continue
-
-                    # Determine file format from extension or content
-                    if file_path.lower().endswith(".json"):
-                        # Check for JSON Lines format (multiple JSON objects, one per line)
-                        if _is_json_lines(file_content):
-                            docs, sources = process_json_lines(
-                                file_content, lambda: {"file_path": file_path}
-                            )
-                            documents.extend(docs)
-                            document_sources.extend(sources)
-                            continue
-                        else:
-                            data = json.loads(file_content)
-                            # Check if JSON has an 'items' array that should be processed as separate documents
-                            if _has_items_array(data):
-                                items, sources = process_items_array(
-                                    data, lambda: {"file_path": file_path}
-                                )
-                                documents.extend(items)
-                                document_sources.extend(sources)
-                                continue
-                    elif file_path.lower().endswith((".yaml", ".yml")):
-                        # Always check for multi-document YAML (detect automatically)
-                        if _is_multi_document_yaml(file_content):
-                            docs, sources = process_multi_document_yaml(
-                                file_content,
-                                lambda: {"file_path": file_path},
-                                unsafe=unsafe_inputs,
-                                preserve_empty_lines=preserve_empty_lines,
-                                _load_all_yaml_func=_load_all_yaml,
-                            )
-                            documents.extend(docs)
-                            document_sources.extend(sources)
-                            continue
-                        else:
-                            data = _load_yaml(
-                                file_content,
-                                unsafe=unsafe_inputs,
-                                preserve_empty_lines=preserve_empty_lines,
-                            )
-                    else:
-                        # Auto-detect format for files without clear extensions
-                        if _looks_like_json(file_content):
-                            if _is_json_lines(file_content):
-                                docs, sources = process_json_lines(
-                                    file_content, lambda: {"file_path": file_path}
-                                )
-                                documents.extend(docs)
-                                document_sources.extend(sources)
-                                continue
-                            else:
-                                data = json.loads(file_content)
-                                # Check if JSON has an 'items' array that should be processed as separate documents
-                                if _has_items_array(data):
-                                    items, sources = process_items_array(
-                                        data, lambda: {"file_path": file_path}
-                                    )
-                                    documents.extend(items)
-                                    document_sources.extend(sources)
-                                    continue
-                        else:
-                            if _is_multi_document_yaml(file_content):
-                                docs, sources = process_multi_document_yaml(
-                                    file_content,
-                                    lambda: {"file_path": file_path},
-                                    unsafe=unsafe_inputs,
-                                    preserve_empty_lines=preserve_empty_lines,
-                                    _load_all_yaml_func=_load_all_yaml,
-                                )
-                                documents.extend(docs)
-                                document_sources.extend(sources)
-                                continue
-                            else:
-                                data = _load_yaml(
-                                    file_content,
-                                    unsafe=unsafe_inputs,
-                                    preserve_empty_lines=preserve_empty_lines,
-                                )
-
-                    documents.append(data)
-                    document_sources.append({"file_path": file_path})
-
-                except FileNotFoundError:
-                    click.echo(f"Error: File not found: {file_path}", err=True)
-                    continue  # Continue processing other files instead of exiting
-                except (json.JSONDecodeError, yaml.YAMLError) as e:
-                    click.echo(f"Error: Failed to parse {file_path}: {e}", err=True)
-                    continue  # Continue processing other files instead of exiting
-                except Exception as e:
-                    click.echo(f"Error: Failed to read {file_path}: {e}", err=True)
-                    continue  # Continue processing other files instead of exiting
-
+            documents, document_sources = processor.process_files(inputs)
         else:
-            # Read input from stdin with timeout
+            # Read from stdin with timeout handling
             try:
-                input_text = _read_stdin_with_timeout(timeout).strip()
+                documents, document_sources = processor.process_stdin(timeout)
             except TimeoutError as e:
                 print(f"Error: {e}", file=sys.stderr)
                 sys.exit(1)
-
-            if not input_text:
-                print("Error: No input provided", file=sys.stderr)
+            except json.JSONDecodeError as e:
+                # Re-raise to be caught by outer exception handler
+                raise
+            except yaml.YAMLError as e:
+                # Re-raise to be caught by outer exception handler
+                raise
+            except ValueError as e:
+                print(f"Error: {e}", file=sys.stderr)
                 sys.exit(1)
 
-            # Auto-detect input format and parse accordingly
-            if _looks_like_json(input_text):
-                # Check for JSON Lines format (multiple JSON objects, one per line)
-                if _is_json_lines(input_text):
-                    counter = [0]  # Use list to create mutable counter
-
-                    def stdin_factory():
-                        result = {"stdin_position": counter[0]}
-                        counter[0] += 1
-                        return result
-
-                    docs, sources = process_json_lines(input_text, stdin_factory)
-                    documents.extend(docs)
-                    document_sources.extend(sources)
-                else:
-                    data = json.loads(input_text)
-                    # Check if JSON has an 'items' array that should be processed as separate documents
-                    if _has_items_array(data):
-                        counter = [0]  # Use list to create mutable counter
-
-                        def stdin_factory():
-                            result = {"stdin_position": counter[0]}
-                            counter[0] += 1
-                            return result
-
-                        items, sources = process_items_array(data, stdin_factory)
-                        documents.extend(items)
-                        document_sources.extend(sources)
-                    else:
-                        documents.append(data)
-                        document_sources.append({"stdin_position": 0})
-            else:
-                # Assume YAML format for non-JSON input
-                # Auto-detect multi-document YAML (like file processing does)
-                if _is_multi_document_yaml(input_text):
-                    counter = [0]  # Use list to create mutable counter
-
-                    def stdin_factory():
-                        result = {"stdin_position": counter[0]}
-                        counter[0] += 1
-                        return result
-
-                    docs, sources = process_multi_document_yaml(
-                        input_text,
-                        stdin_factory,
-                        unsafe=unsafe_inputs,
-                        preserve_empty_lines=preserve_empty_lines,
-                        _load_all_yaml_func=_load_all_yaml,
-                    )
-                    documents.extend(docs)
-                    document_sources.extend(sources)
-                else:
-                    data = _load_yaml(
-                        input_text,
-                        unsafe=unsafe_inputs,
-                        preserve_empty_lines=preserve_empty_lines,
-                    )
-                    documents.append(data)
-                    document_sources.append({"stdin_position": 0})
-
-        # Handle output
+        # Handle case where no documents were processed
         if len(documents) == 0:
             if inputs:
                 # When using --inputs flag, we might have no valid files
@@ -394,6 +586,7 @@ def _huml_main(
                 print("Error: No documents to process", file=sys.stderr)
                 sys.exit(1)
 
+        # Handle output
         if output:
             # Write to file/directory
             _write_to_output(
@@ -563,95 +756,15 @@ def _write_to_output(
     document_sources=None,
     preserve_empty_lines=True,
 ):
-    """Write documents to the specified output path."""
-    from pathlib import Path
-
-    # Determine if output is a directory
-    is_directory = output_path.endswith(os.sep)
-
-    if is_directory:
-        # Handle directory output
-        dir_path = Path(output_path.rstrip(os.sep))
-
-        # Check if directory exists
-        if not dir_path.exists():
-            if auto:
-                dir_path.mkdir(parents=True, exist_ok=True)
-                print(f"Created directory: {dir_path}", file=sys.stderr)
-            else:
-                print(f"Error: Directory does not exist: {dir_path}", file=sys.stderr)
-                sys.exit(1)
-
-        # Write each document to its own file
-        if len(documents) == 1:
-            # Single document
-            source_info = document_sources[0] if document_sources else {}
-            filename = _generate_k8s_filename(
-                documents[0],
-                source_file=source_info.get("file_path"),
-                stdin_position=source_info.get("stdin_position"),
-            )
-            file_path = dir_path / filename
-            with open(file_path, "w", encoding="utf-8") as f:
-                f.write(
-                    dumps(
-                        documents[0],
-                        indent=indent,
-                        preserve_empty_lines=preserve_empty_lines,
-                    )
-                )
-        else:
-            # Multiple documents - each gets its own file
-            for i, doc in enumerate(documents):
-                source_info = (
-                    document_sources[i]
-                    if document_sources and i < len(document_sources)
-                    else {}
-                )
-                filename = _generate_k8s_filename(
-                    doc,
-                    source_file=source_info.get("file_path"),
-                    stdin_position=source_info.get("stdin_position"),
-                )
-                # If filename conflicts, add index
-                file_path = dir_path / filename
-                counter = 1
-                while file_path.exists():
-                    base_name = filename.replace(".yaml", "")
-                    file_path = dir_path / f"{base_name}-{counter}.yaml"
-                    counter += 1
-
-                with open(file_path, "w", encoding="utf-8") as f:
-                    f.write(
-                        dumps(
-                            doc,
-                            indent=indent,
-                            preserve_empty_lines=preserve_empty_lines,
-                        )
-                    )
-    else:
-        # Handle single file output
-        file_path = Path(output_path)
-
-        # Create parent directories if needed
-        if auto and not file_path.parent.exists():
-            file_path.parent.mkdir(parents=True, exist_ok=True)
-            print(f"Created parent directories for: {file_path}", file=sys.stderr)
-
-        # Write all documents to single file
-        with open(file_path, "w", encoding="utf-8") as f:
-            if len(documents) > 1:
-                from .multi_document import dumps_all
-
-                f.write(dumps_all(documents, indent=indent))
-            else:
-                f.write(
-                    dumps(
-                        documents[0],
-                        indent=indent,
-                        preserve_empty_lines=preserve_empty_lines,
-                    )
-                )
+    """Write documents to the specified output path using OutputWriter architecture."""
+    OutputWriter.write(
+        documents=documents,
+        sources=document_sources or [],
+        output_path=output_path,
+        indent=indent,
+        preserve_empty_lines=preserve_empty_lines,
+        auto=auto
+    )
 
 
 def huml():

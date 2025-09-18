@@ -30,7 +30,7 @@ try:
     __version__: str = importlib.metadata.version("yaml-for-humans")
 except (importlib.metadata.PackageNotFoundError, ImportError):
     # Fallback for development installs
-    __version__: str = "1.1.1"
+    __version__: str = "1.2.0"
 __all__: list[str] = [
     "HumanFriendlyEmitter",
     "HumanFriendlyDumper",
