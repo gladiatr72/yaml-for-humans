@@ -178,7 +178,7 @@ pyrightconfig.json
 .t*/
 .c*/
 
-.claude/
+.claude/*
 .mcp.json
 
 .bench/
