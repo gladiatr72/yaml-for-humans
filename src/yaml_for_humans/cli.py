@@ -316,10 +316,14 @@ class DirectoryOutputWriter:
         index: int = 0
     ) -> str:
         """Generate unique filename avoiding O(n²) filesystem checks."""
+        # Check if this is a Kubernetes manifest to enable prefix ordering
+        is_k8s_manifest = isinstance(document, dict) and "kind" in document
+
         base_filename = _generate_k8s_filename(
             document,
             source_file=source.get("file_path"),
-            stdin_position=source.get("stdin_position")
+            stdin_position=source.get("stdin_position"),
+            add_prefix=is_k8s_manifest
         )
 
         # Use cache to avoid filesystem checks for known filenames
@@ -666,8 +670,18 @@ def _has_items_array(data: Any) -> bool:
     return any(isinstance(item, dict) for item in items)
 
 
-def _generate_k8s_filename(document, source_file=None, stdin_position=None):
-    """Generate a filename for a Kubernetes manifest document."""
+def _generate_k8s_filename(document, source_file=None, stdin_position=None, add_prefix=False):
+    """Generate a filename for a Kubernetes manifest document.
+
+    Args:
+        document: Kubernetes resource dictionary
+        source_file: Original source file path for fallback naming
+        stdin_position: Position when reading from stdin
+        add_prefix: If True, prepend 2-digit resource ordering prefix
+
+    Returns:
+        str: Generated filename with optional prefix
+    """
     if not isinstance(document, dict):
         # Fallback naming logic
         if source_file:
@@ -703,7 +717,15 @@ def _generate_k8s_filename(document, source_file=None, stdin_position=None):
         else:
             return "document.yaml"
 
-    return f"{'-'.join(parts)}.yaml"
+    base_filename = f"{'-'.join(parts)}.yaml"
+
+    # Add resource ordering prefix if requested
+    if add_prefix and kind:
+        from .multi_document import get_k8s_resource_prefix
+        prefix = get_k8s_resource_prefix(document)
+        return f"{prefix}-{base_filename}"
+
+    return base_filename
 
 
 def _is_valid_file_type(file_path):

@@ -160,6 +160,21 @@ def dump_kubernetes_manifests(
     """
     ...
 
+def get_k8s_resource_prefix(document: Any) -> str:
+    """
+    Get a 2-digit prefix for a Kubernetes resource based on its kind.
+
+    Uses the same ordering as KubernetesManifestDumper to ensure consistency
+    between multi-document YAML and directory output ordering.
+
+    Args:
+        document: Kubernetes resource dictionary
+
+    Returns:
+        2-digit prefix (e.g. "00", "01", "99" for unknown)
+    """
+    ...
+
 def dumps_kubernetes_manifests(
     manifests: Iterable[KubernetesResource],
     **kwargs: Any,

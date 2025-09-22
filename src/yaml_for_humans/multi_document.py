@@ -232,6 +232,38 @@ def dump_kubernetes_manifests(manifests, stream, **kwargs):
     dumper.dump_all(manifests)
 
 
+def get_k8s_resource_prefix(document):
+    """
+    Get a 2-digit prefix for a Kubernetes resource based on its kind.
+
+    Uses the same ordering as KubernetesManifestDumper to ensure consistency
+    between multi-document YAML and directory output ordering.
+
+    Args:
+        document: Kubernetes resource dictionary
+
+    Returns:
+        str: 2-digit prefix (e.g. "00", "01", "99" for unknown)
+
+    Example:
+        >>> get_k8s_resource_prefix({"kind": "Namespace"})
+        "01"
+        >>> get_k8s_resource_prefix({"kind": "Deployment"})
+        "14"
+        >>> get_k8s_resource_prefix({"kind": "Unknown"})
+        "99"
+    """
+    if not isinstance(document, dict):
+        return "99"
+
+    kind = document.get("kind", "")
+    priority = KubernetesManifestDumper.RESOURCE_PRIORITIES.get(
+        kind, KubernetesManifestDumper.UNKNOWN_PRIORITY
+    )
+
+    return f"{priority:02d}"
+
+
 def dumps_kubernetes_manifests(manifests, **kwargs):
     """
     Serialize Kubernetes manifests to a multi-document YAML string.

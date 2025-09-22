@@ -1,0 +1,348 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+CustomMapping	tests/test_emitter.py	/^        class CustomMapping:$/;"	c	function:TestErrorHandling.test_non_dict_mappings
+DirectoryOutputWriter	src/yaml_for_humans/cli.py	/^class DirectoryOutputWriter:$/;"	c
+FileOutputWriter	src/yaml_for_humans/cli.py	/^class FileOutputWriter:$/;"	c
+FilePathExpander	src/yaml_for_humans/cli.py	/^class FilePathExpander:$/;"	c
+FormatDetector	src/yaml_for_humans/cli.py	/^class FormatDetector:$/;"	c
+FormattingAwareComposer	src/yaml_for_humans/formatting_aware.py	/^class FormattingAwareComposer(Composer):$/;"	c
+FormattingAwareConstructor	src/yaml_for_humans/formatting_aware.py	/^class FormattingAwareConstructor(SafeConstructor):$/;"	c
+FormattingAwareDict	src/yaml_for_humans/formatting_aware.py	/^class FormattingAwareDict(dict):$/;"	c
+FormattingAwareDumper	src/yaml_for_humans/formatting_emitter.py	/^):$/;"	c
+FormattingAwareEmitter	src/yaml_for_humans/formatting_emitter.py	/^class FormattingAwareEmitter(HumanFriendlyEmitter):$/;"	c
+FormattingAwareList	src/yaml_for_humans/formatting_aware.py	/^class FormattingAwareList(list):$/;"	c
+FormattingAwareLoader	src/yaml_for_humans/formatting_aware.py	/^):$/;"	c
+FormattingMetadata	src/yaml_for_humans/formatting_aware.py	/^class FormattingMetadata:$/;"	c
+HumanFriendlyDumper	src/yaml_for_humans/emitter.py	/^):$/;"	c
+HumanFriendlyEmitter	src/yaml_for_humans/emitter.py	/^class HumanFriendlyEmitter(Emitter):$/;"	c
+InputProcessor	src/yaml_for_humans/cli.py	/^class InputProcessor:$/;"	c
+KubernetesManifestDumper	src/yaml_for_humans/multi_document.py	/^class KubernetesManifestDumper(MultiDocumentDumper):$/;"	c
+MultiDocumentDumper	src/yaml_for_humans/multi_document.py	/^class MultiDocumentDumper:$/;"	c
+OutputContext	src/yaml_for_humans/cli.py	/^class OutputContext:$/;"	c
+OutputStrategy	src/yaml_for_humans/cli.py	/^class OutputStrategy(Protocol):$/;"	c
+OutputWriter	src/yaml_for_humans/cli.py	/^class OutputWriter:$/;"	c
+PRIORITY_KEYS	src/yaml_for_humans/formatting_emitter.py	/^    PRIORITY_KEYS = frozenset($/;"	v	class:FormattingAwareDumper
+PRIORITY_ORDER	src/yaml_for_humans/formatting_emitter.py	/^    PRIORITY_ORDER = {$/;"	v	class:FormattingAwareDumper
+PerformanceAnalyzer	ast_analysis.py	/^class PerformanceAnalyzer(ast.NodeVisitor):$/;"	c
+PresetFormattingAwareDumper	src/yaml_for_humans/dumper.py	/^            class PresetFormattingAwareDumper(FormattingAwareDumper):$/;"	c	function:dump
+ProcessingContext	src/yaml_for_humans/cli.py	/^class ProcessingContext:$/;"	c
+RESOURCE_ORDER	src/yaml_for_humans/multi_document.py	/^    RESOURCE_ORDER = [$/;"	v	class:KubernetesManifestDumper
+RESOURCE_PRIORITIES	src/yaml_for_humans/multi_document.py	/^    RESOURCE_PRIORITIES = {kind: i for i, kind in enumerate(RESOURCE_ORDER)}$/;"	v	class:KubernetesManifestDumper
+TestCLIEmptyLines	tests/test_cli_empty_lines.py	/^class TestCLIEmptyLines:$/;"	c
+TestCLIFunctionality	tests/test_cli.py	/^class TestCLIFunctionality:$/;"	c
+TestCLIInputsFlag	tests/test_integration.py	/^class TestCLIInputsFlag:$/;"	c
+TestConvenienceFunctions	tests/test_multi_document.py	/^class TestConvenienceFunctions:$/;"	c
+TestDocumentSeparation	tests/test_multi_document.py	/^class TestDocumentSeparation:$/;"	c
+TestEdgeCases	tests/test_multi_document.py	/^class TestEdgeCases:$/;"	c
+TestEmptyLinePreservation	tests/test_empty_line_preservation.py	/^class TestEmptyLinePreservation:$/;"	c
+TestErrorHandling	tests/test_emitter.py	/^class TestErrorHandling:$/;"	c
+TestFileOperations	tests/test_integration.py	/^class TestFileOperations:$/;"	c
+TestFileTypeDetection	tests/test_cli.py	/^class TestFileTypeDetection:$/;"	c
+TestGlobbingAndDirectorySupport	tests/test_cli.py	/^class TestGlobbingAndDirectorySupport:$/;"	c
+TestHumanFriendlyEmitter	tests/test_emitter.py	/^class TestHumanFriendlyEmitter:$/;"	c
+TestInputsFlag	tests/test_cli.py	/^class TestInputsFlag:$/;"	c
+TestKeyOrdering	tests/test_emitter.py	/^class TestKeyOrdering:$/;"	c
+TestKubernetesIntegration	tests/test_integration.py	/^class TestKubernetesIntegration:$/;"	c
+TestKubernetesManifestDumper	tests/test_multi_document.py	/^class TestKubernetesManifestDumper:$/;"	c
+TestMultiDocumentDumper	tests/test_multi_document.py	/^class TestMultiDocumentDumper:$/;"	c
+TestOutputFlag	tests/test_cli.py	/^class TestOutputFlag:$/;"	c
+TestRealWorldExamples	tests/test_integration.py	/^class TestRealWorldExamples:$/;"	c
+TestStdinAutoDetection	tests/test_cli.py	/^class TestStdinAutoDetection:$/;"	c
+TestStdinTimeout	tests/test_cli.py	/^class TestStdinTimeout:$/;"	c
+TestYAMLValidity	tests/test_emitter.py	/^class TestYAMLValidity:$/;"	c
+UNKNOWN_PRIORITY	src/yaml_for_humans/multi_document.py	/^    UNKNOWN_PRIORITY = len(RESOURCE_ORDER)$/;"	v	class:KubernetesManifestDumper
+__delitem__	src/yaml_for_humans/formatting_aware.py	/^    def __delitem__(self, key):$/;"	m	class:FormattingAwareDict	file:
+__init__	ast_analysis.py	/^    def __init__(self, filename: str):$/;"	m	class:PerformanceAnalyzer
+__init__	src/yaml_for_humans/cli.py	/^    def __init__(self, context: ProcessingContext):$/;"	m	class:FormatDetector
+__init__	src/yaml_for_humans/cli.py	/^    def __init__(self, context: ProcessingContext):$/;"	m	class:InputProcessor
+__init__	src/yaml_for_humans/cli.py	/^    def __init__(self, dir_path: Path):$/;"	m	class:DirectoryOutputWriter
+__init__	src/yaml_for_humans/cli.py	/^    def __init__(self, file_path: Path):$/;"	m	class:FileOutputWriter
+__init__	src/yaml_for_humans/dumper.py	/^                def __init__(self, *args, **kwargs):$/;"	m	class:dump.PresetFormattingAwareDumper
+__init__	src/yaml_for_humans/emitter.py	/^    def __init__($/;"	m	class:HumanFriendlyDumper
+__init__	src/yaml_for_humans/emitter.py	/^    def __init__(self, *args: Any, **kwargs: Any) -> None:$/;"	m	class:HumanFriendlyEmitter
+__init__	src/yaml_for_humans/formatting_aware.py	/^    def __init__(self):$/;"	m	class:FormattingAwareComposer
+__init__	src/yaml_for_humans/formatting_aware.py	/^    def __init__(self, *args, **kwargs):$/;"	m	class:FormattingAwareDict
+__init__	src/yaml_for_humans/formatting_aware.py	/^    def __init__(self, *args, **kwargs):$/;"	m	class:FormattingAwareList
+__init__	src/yaml_for_humans/formatting_aware.py	/^    def __init__(self, empty_lines_before=0, empty_lines_after=0):$/;"	m	class:FormattingMetadata
+__init__	src/yaml_for_humans/formatting_aware.py	/^    def __init__(self, stream):$/;"	m	class:FormattingAwareLoader
+__init__	src/yaml_for_humans/formatting_emitter.py	/^    def __init__($/;"	m	class:FormattingAwareDumper
+__init__	src/yaml_for_humans/formatting_emitter.py	/^    def __init__(self, *args, preserve_empty_lines=True, **kwargs):$/;"	m	class:FormattingAwareEmitter
+__init__	src/yaml_for_humans/multi_document.py	/^    def __init__(self, stream: TextIO | None = None, **dumper_kwargs: Any) -> None:$/;"	m	class:MultiDocumentDumper
+__init__	src/yaml_for_humans/multi_document.py	/^    def __init__(self, stream=None, sort_resources=True, **kwargs):$/;"	m	class:KubernetesManifestDumper
+__init__	tests/test_emitter.py	/^            def __init__(self, data):$/;"	m	class:TestErrorHandling.test_non_dict_mappings.CustomMapping
+__iter__	tests/test_emitter.py	/^            def __iter__(self):$/;"	m	class:TestErrorHandling.test_non_dict_mappings.CustomMapping	file:
+__repr__	src/yaml_for_humans/formatting_aware.py	/^    def __repr__(self):$/;"	m	class:FormattingMetadata	file:
+__setitem__	src/yaml_for_humans/formatting_aware.py	/^    def __setitem__(self, key, value):$/;"	m	class:FormattingAwareDict	file:
+_add_mapping_formatting_metadata	src/yaml_for_humans/formatting_aware.py	/^    def _add_mapping_formatting_metadata(self, node):$/;"	m	class:FormattingAwareComposer
+_add_sequence_formatting_metadata	src/yaml_for_humans/formatting_aware.py	/^    def _add_sequence_formatting_metadata(self, node):$/;"	m	class:FormattingAwareComposer
+_calculate_end_line	src/yaml_for_humans/formatting_aware.py	/^    def _calculate_end_line(self, node):$/;"	m	class:FormattingAwareComposer
+_check_cli_dependencies	src/yaml_for_humans/cli.py	/^def _check_cli_dependencies() -> None:$/;"	f
+_ensure_directory_exists	src/yaml_for_humans/cli.py	/^    def _ensure_directory_exists(self, auto_create: bool) -> None:$/;"	m	class:DirectoryOutputWriter
+_ensure_parent_dirs_exist	src/yaml_for_humans/cli.py	/^    def _ensure_parent_dirs_exist(self, auto_create: bool) -> None:$/;"	m	class:FileOutputWriter
+_expand_directory	src/yaml_for_humans/cli.py	/^    def _expand_directory(self, dir_path: str) -> list[str]:$/;"	m	class:FilePathExpander
+_expand_glob	src/yaml_for_humans/cli.py	/^    def _expand_glob(self, glob_pattern: str) -> list[str]:$/;"	m	class:FilePathExpander
+_expand_regular_file	src/yaml_for_humans/cli.py	/^    def _expand_regular_file(self, file_path: str) -> list[str]:$/;"	m	class:FilePathExpander
+_expand_single_path	src/yaml_for_humans/cli.py	/^    def _expand_single_path(self, path: str) -> list[str]:$/;"	m	class:FilePathExpander
+_generate_k8s_filename	src/yaml_for_humans/cli.py	/^def _generate_k8s_filename(document, source_file=None, stdin_position=None, add_prefix=False):$/;"	f
+_generate_unique_filename	src/yaml_for_humans/cli.py	/^    def _generate_unique_filename($/;"	m	class:DirectoryOutputWriter
+_get_buffer	src/yaml_for_humans/dumper.py	/^def _get_buffer() -> StringIO:$/;"	f
+_get_item_formatting	src/yaml_for_humans/formatting_aware.py	/^    def _get_item_formatting(self, index):$/;"	m	class:FormattingAwareList
+_get_key_formatting	src/yaml_for_humans/formatting_aware.py	/^    def _get_key_formatting(self, key):$/;"	m	class:FormattingAwareDict
+_get_metadata_object	src/yaml_for_humans/formatting_aware.py	/^    def _get_metadata_object(self, **kwargs):$/;"	m	class:FormattingAwareComposer
+_get_node_end_line	src/yaml_for_humans/formatting_aware.py	/^    def _get_node_end_line(self, node):$/;"	m	class:FormattingAwareComposer
+_has_items_array	src/yaml_for_humans/cli.py	/^def _has_items_array(data: Any) -> bool:$/;"	f
+_huml_main	src/yaml_for_humans/cli.py	/^def _huml_main($/;"	f
+_is_empty_container	src/yaml_for_humans/emitter.py	/^    def _is_empty_container(self) -> bool:$/;"	m	class:HumanFriendlyEmitter
+_is_empty_container_fast	src/yaml_for_humans/emitter.py	/^    def _is_empty_container_fast(self, event: Any) -> bool:$/;"	m	class:HumanFriendlyEmitter
+_is_glob_pattern	src/yaml_for_humans/cli.py	/^    def _is_glob_pattern(self, path: str) -> bool:$/;"	m	class:FilePathExpander
+_is_json_lines	src/yaml_for_humans/cli.py	/^def _is_json_lines(text: str) -> bool:$/;"	f
+_is_multi_document_yaml	src/yaml_for_humans/cli.py	/^def _is_multi_document_yaml(text: str) -> bool:$/;"	f
+_is_valid_file_type	src/yaml_for_humans/cli.py	/^def _is_valid_file_type(file_path):$/;"	f
+_load_all_yaml	src/yaml_for_humans/cli.py	/^def _load_all_yaml($/;"	f
+_load_yaml	src/yaml_for_humans/cli.py	/^def _load_yaml($/;"	f
+_looks_like_json	src/yaml_for_humans/cli.py	/^def _looks_like_json(text: str) -> bool:$/;"	f
+_looks_like_yaml	src/yaml_for_humans/cli.py	/^def _looks_like_yaml(text):$/;"	f
+_process_empty_line_markers	src/yaml_for_humans/dumper.py	/^def _process_empty_line_markers(yaml_text: str) -> str:$/;"	f
+_process_json_content	src/yaml_for_humans/cli.py	/^    def _process_json_content(self, content: str, source_factory: Callable) -> tuple[list[Any], list[dict]]:$/;"	m	class:FormatDetector
+_process_single_file	src/yaml_for_humans/cli.py	/^    def _process_single_file(self, file_path: str) -> tuple[list[Any], list[dict]]:$/;"	m	class:InputProcessor
+_process_yaml_content	src/yaml_for_humans/cli.py	/^    def _process_yaml_content(self, content: str, source_factory: Callable) -> tuple[list[Any], list[dict]]:$/;"	m	class:FormatDetector
+_read_stdin_with_timeout	src/yaml_for_humans/cli.py	/^def _read_stdin_with_timeout(timeout_ms: int = DEFAULT_TIMEOUT_MS) -> str:$/;"	f
+_return_buffer	src/yaml_for_humans/dumper.py	/^def _return_buffer(buffer: StringIO) -> None:$/;"	f
+_set_item_formatting	src/yaml_for_humans/formatting_aware.py	/^    def _set_item_formatting(self, index, formatting):$/;"	m	class:FormattingAwareList
+_set_key_formatting	src/yaml_for_humans/formatting_aware.py	/^    def _set_key_formatting(self, key, formatting):$/;"	m	class:FormattingAwareDict
+_set_metadata	src/yaml_for_humans/formatting_aware.py	/^    def _set_metadata(self, node, **kwargs):$/;"	m	class:FormattingAwareComposer
+_sort_resources	src/yaml_for_humans/multi_document.py	/^    def _sort_resources(self, documents):$/;"	m	class:KubernetesManifestDumper
+_write_multi_document_yaml	src/yaml_for_humans/cli.py	/^    def _write_multi_document_yaml($/;"	m	class:FileOutputWriter
+_write_multiple_documents	src/yaml_for_humans/cli.py	/^    def _write_multiple_documents($/;"	m	class:DirectoryOutputWriter
+_write_single_document	src/yaml_for_humans/cli.py	/^    def _write_single_document($/;"	m	class:DirectoryOutputWriter
+_write_single_document_yaml	src/yaml_for_humans/cli.py	/^    def _write_single_document_yaml($/;"	m	class:FileOutputWriter
+_write_to_output	src/yaml_for_humans/cli.py	/^def _write_to_output($/;"	f
+_write_yaml_file	src/yaml_for_humans/cli.py	/^    def _write_yaml_file(self, file_path: Path, document: Any, context: OutputContext) -> None:$/;"	m	class:DirectoryOutputWriter
+advanced_multi_document_example	examples/multi_document_example.py	/^def advanced_multi_document_example():$/;"	f
+analyze_codebase	ast_analysis.py	/^def analyze_codebase(src_dir: Path) -> Dict[str, PerformanceAnalyzer]:$/;"	f
+analyze_file	ast_analysis.py	/^def analyze_file(filepath: Path) -> PerformanceAnalyzer:$/;"	f
+append	src/yaml_for_humans/formatting_aware.py	/^    def append(self, value):$/;"	m	class:FormattingAwareList
+auto	src/yaml_for_humans/cli.py	/^        auto=auto$/;"	v
+basic_multi_document_example	examples/multi_document_example.py	/^def basic_multi_document_example():$/;"	f
+benchmark_serialization	benchmark.py	/^def benchmark_serialization():$/;"	f
+cli_main	src/yaml_for_humans/cli.py	/^    def cli_main($/;"	f	function:huml
+click	src/yaml_for_humans/cli.py	/^    click = None$/;"	v
+complex_application_example	examples/kubernetes_manifests_example.py	/^def complex_application_example():$/;"	f
+compose_mapping_node	src/yaml_for_humans/formatting_aware.py	/^    def compose_mapping_node(self, anchor):$/;"	m	class:FormattingAwareComposer
+compose_sequence_node	src/yaml_for_humans/formatting_aware.py	/^    def compose_sequence_node(self, anchor):$/;"	m	class:FormattingAwareComposer
+configuration_files_example	examples/multi_document_example.py	/^def configuration_files_example():$/;"	f
+construct_mapping	src/yaml_for_humans/formatting_aware.py	/^    def construct_mapping(self, node, deep=False):$/;"	m	class:FormattingAwareConstructor
+construct_sequence	src/yaml_for_humans/formatting_aware.py	/^    def construct_sequence(self, node, deep=False):$/;"	m	class:FormattingAwareConstructor
+create_sample_manifests	examples/kubernetes_manifests_example.py	/^def create_sample_manifests():$/;"	f
+create_source_factory	src/yaml_for_humans/cli.py	/^    def create_source_factory(self, base_info: dict) -> Callable[[], dict]:$/;"	m	class:ProcessingContext
+create_test_data	benchmark.py	/^def create_test_data():$/;"	f
+create_writer	src/yaml_for_humans/cli.py	/^    def create_writer(output_path: str) -> OutputStrategy:$/;"	m	class:OutputWriter
+documents	src/yaml_for_humans/cli.py	/^        documents=documents,$/;"	v
+dump	src/yaml_for_humans/dumper.py	/^def dump($/;"	f
+dump_all	src/yaml_for_humans/multi_document.py	/^    def dump_all(self, documents: Iterable[Any]) -> None:$/;"	m	class:KubernetesManifestDumper
+dump_all	src/yaml_for_humans/multi_document.py	/^    def dump_all(self, documents: Iterable[Any]) -> None:$/;"	m	class:MultiDocumentDumper
+dump_all	src/yaml_for_humans/multi_document.py	/^def dump_all(documents: Iterable[Any], stream: TextIO, **kwargs: Any) -> None:$/;"	f
+dump_document	src/yaml_for_humans/multi_document.py	/^    def dump_document(self, data: Any) -> None:$/;"	m	class:MultiDocumentDumper
+dump_kubernetes_manifests	src/yaml_for_humans/multi_document.py	/^def dump_kubernetes_manifests(manifests, stream, **kwargs):$/;"	f
+dumps	src/yaml_for_humans/dumper.py	/^def dumps(data: Any, preserve_empty_lines: bool = False, **kwargs: Any) -> str:$/;"	f
+dumps_all	src/yaml_for_humans/multi_document.py	/^def dumps_all(documents: Iterable[Any], **kwargs: Any) -> str:$/;"	f
+dumps_kubernetes_manifests	src/yaml_for_humans/multi_document.py	/^def dumps_kubernetes_manifests(manifests, **kwargs):$/;"	f
+expand_paths	src/yaml_for_humans/cli.py	/^    def expand_paths(self, inputs_str: str) -> list[str]:$/;"	m	class:FilePathExpander
+expect_block_mapping	src/yaml_for_humans/emitter.py	/^    def expect_block_mapping(self) -> None:$/;"	m	class:HumanFriendlyEmitter
+expect_block_mapping_simple_value	src/yaml_for_humans/emitter.py	/^    def expect_block_mapping_simple_value(self) -> None:$/;"	m	class:HumanFriendlyEmitter
+expect_block_sequence	src/yaml_for_humans/emitter.py	/^    def expect_block_sequence(self) -> None:$/;"	m	class:HumanFriendlyEmitter
+expect_block_sequence_item	src/yaml_for_humans/emitter.py	/^    def expect_block_sequence_item(self, first: bool = False) -> None:$/;"	m	class:HumanFriendlyEmitter
+expect_scalar	src/yaml_for_humans/emitter.py	/^    def expect_scalar(self) -> None:$/;"	m	class:HumanFriendlyEmitter
+factory	src/yaml_for_humans/cli.py	/^        def factory():$/;"	f	function:ProcessingContext.create_source_factory
+generate_performance_report	ast_analysis.py	/^def generate_performance_report(analyzers: Dict[str, PerformanceAnalyzer]) -> str:$/;"	f
+get_function_key	ast_analysis.py	/^    def get_function_key(self) -> str:$/;"	m	class:PerformanceAnalyzer
+get_k8s_resource_prefix	src/yaml_for_humans/multi_document.py	/^def get_k8s_resource_prefix(document):$/;"	f
+get_kind_priority	src/yaml_for_humans/multi_document.py	/^        def get_kind_priority(doc):$/;"	f	function:KubernetesManifestDumper._sort_resources
+get_sort_key	src/yaml_for_humans/emitter.py	/^        def get_sort_key(item):$/;"	f	function:HumanFriendlyDumper.represent_mapping
+get_sort_key	src/yaml_for_humans/formatting_emitter.py	/^        def get_sort_key(item):$/;"	f	function:FormattingAwareDumper.represent_mapping
+getvalue	src/yaml_for_humans/multi_document.py	/^    def getvalue(self) -> str:$/;"	m	class:MultiDocumentDumper
+huml	src/yaml_for_humans/cli.py	/^def huml():$/;"	f
+huml_func	benchmark.py	/^            def huml_func():$/;"	f	function:benchmark_serialization.pyyaml_multi
+indent	src/yaml_for_humans/cli.py	/^        indent=indent,$/;"	v
+items	tests/test_emitter.py	/^            def items(self):$/;"	m	class:TestErrorHandling.test_non_dict_mappings.CustomMapping
+kubernetes_resource_ordering_example	examples/kubernetes_manifests_example.py	/^def kubernetes_resource_ordering_example():$/;"	f
+load_with_formatting	src/yaml_for_humans/dumper.py	/^def load_with_formatting(stream: str | TextIO) -> Any:$/;"	f
+main	ast_analysis.py	/^def main():$/;"	f
+main	examples/docker_compose_example.py	/^def main():$/;"	f
+main	examples/kubernetes_example.py	/^def main():$/;"	f
+main	examples/kubernetes_manifests_example.py	/^def main():$/;"	f
+main	examples/multi_document_example.py	/^def main():$/;"	f
+output_path	src/yaml_for_humans/cli.py	/^        output_path=output_path,$/;"	v
+preserve_empty_lines	src/yaml_for_humans/cli.py	/^        preserve_empty_lines=preserve_empty_lines,$/;"	v
+process_content	src/yaml_for_humans/cli.py	/^    def process_content(self, content: str, source_factory: Callable) -> tuple[list[Any], list[dict]]:$/;"	m	class:FormatDetector
+process_files	src/yaml_for_humans/cli.py	/^    def process_files(self, inputs_str: str) -> tuple[list[Any], list[dict]]:$/;"	m	class:InputProcessor
+process_items_array	src/yaml_for_humans/document_processors.py	/^def process_items_array($/;"	f
+process_json_lines	src/yaml_for_humans/document_processors.py	/^def process_json_lines($/;"	f
+process_multi_document_yaml	src/yaml_for_humans/document_processors.py	/^def process_multi_document_yaml($/;"	f
+process_stdin	src/yaml_for_humans/cli.py	/^    def process_stdin(self, timeout: int) -> tuple[list[Any], list[dict]]:$/;"	m	class:InputProcessor
+pyyaml_func	benchmark.py	/^            def pyyaml_func():$/;"	f	function:benchmark_serialization.pyyaml_multi
+pyyaml_multi	benchmark.py	/^    def pyyaml_multi(docs):$/;"	f	function:benchmark_serialization
+pyyaml_single	benchmark.py	/^    def pyyaml_single(data):$/;"	f	function:benchmark_serialization
+read_input	src/yaml_for_humans/cli.py	/^        def read_input():$/;"	f	function:_read_stdin_with_timeout
+represent_formatting_aware_dict	src/yaml_for_humans/emitter.py	/^    def represent_formatting_aware_dict(self, dumper, data):$/;"	m	class:HumanFriendlyDumper
+represent_formatting_aware_dict	src/yaml_for_humans/formatting_emitter.py	/^    def represent_formatting_aware_dict(self, dumper, data):$/;"	m	class:FormattingAwareDumper
+represent_formatting_aware_list	src/yaml_for_humans/emitter.py	/^    def represent_formatting_aware_list(self, dumper, data):$/;"	m	class:HumanFriendlyDumper
+represent_formatting_aware_list	src/yaml_for_humans/formatting_emitter.py	/^    def represent_formatting_aware_list(self, dumper, data):$/;"	m	class:FormattingAwareDumper
+represent_mapping	src/yaml_for_humans/emitter.py	/^    def represent_mapping(self, tag, mapping, flow_style=None):$/;"	m	class:HumanFriendlyDumper
+represent_mapping	src/yaml_for_humans/formatting_emitter.py	/^    def represent_mapping(self, tag, mapping, flow_style=None):$/;"	m	class:FormattingAwareDumper
+represent_str	src/yaml_for_humans/emitter.py	/^    def represent_str(self, dumper, data):$/;"	m	class:HumanFriendlyDumper
+represent_str	src/yaml_for_humans/formatting_emitter.py	/^    def represent_str(self, dumper, data):$/;"	m	class:FormattingAwareDumper
+setup_method	tests/test_cli.py	/^    def setup_method(self):$/;"	m	class:TestFileTypeDetection
+setup_method	tests/test_cli.py	/^    def setup_method(self):$/;"	m	class:TestGlobbingAndDirectorySupport
+setup_method	tests/test_cli.py	/^    def setup_method(self):$/;"	m	class:TestInputsFlag
+setup_method	tests/test_cli.py	/^    def setup_method(self):$/;"	m	class:TestOutputFlag
+setup_method	tests/test_integration.py	/^    def setup_method(self):$/;"	m	class:TestCLIInputsFlag
+sources	src/yaml_for_humans/cli.py	/^        sources=document_sources or [],$/;"	v
+teardown_method	tests/test_cli.py	/^    def teardown_method(self):$/;"	m	class:TestFileTypeDetection
+teardown_method	tests/test_cli.py	/^    def teardown_method(self):$/;"	m	class:TestGlobbingAndDirectorySupport
+teardown_method	tests/test_cli.py	/^    def teardown_method(self):$/;"	m	class:TestInputsFlag
+teardown_method	tests/test_cli.py	/^    def teardown_method(self):$/;"	m	class:TestOutputFlag
+teardown_method	tests/test_integration.py	/^    def teardown_method(self):$/;"	m	class:TestCLIInputsFlag
+test_auto_format_detection	tests/test_cli.py	/^    def test_auto_format_detection(self, capsys):$/;"	f
+test_backward_compatibility	tests/test_empty_line_preservation.py	/^    def test_backward_compatibility(self):$/;"	f
+test_ci_cd_pipeline	tests/test_integration.py	/^    def test_ci_cd_pipeline(self):$/;"	m	class:TestRealWorldExamples
+test_cli_can_preserve_empty_lines_with_P_flag	tests/test_cli_empty_lines.py	/^    def test_cli_can_preserve_empty_lines_with_P_flag(self):$/;"	m	class:TestCLIEmptyLines
+test_cli_does_not_preserve_empty_lines_by_default	tests/test_cli_empty_lines.py	/^    def test_cli_does_not_preserve_empty_lines_by_default(self):$/;"	m	class:TestCLIEmptyLines
+test_cli_help_includes_preserve_empty_lines_option	tests/test_cli_empty_lines.py	/^    def test_cli_help_includes_preserve_empty_lines_option(self):$/;"	m	class:TestCLIEmptyLines
+test_cli_inputs_kubernetes_deployment	tests/test_integration.py	/^    def test_cli_inputs_kubernetes_deployment(self):$/;"	m	class:TestCLIInputsFlag
+test_cli_inputs_multiple_files	tests/test_integration.py	/^    def test_cli_inputs_multiple_files(self):$/;"	m	class:TestCLIInputsFlag
+test_cli_preserves_empty_lines_with_file_input_and_P_flag	tests/test_cli_empty_lines.py	/^    def test_cli_preserves_empty_lines_with_file_input_and_P_flag(self, tmp_path):$/;"	m	class:TestCLIEmptyLines
+test_cli_with_json_input_still_works	tests/test_cli_empty_lines.py	/^    def test_cli_with_json_input_still_works(self):$/;"	m	class:TestCLIEmptyLines
+test_comparison_with_test_data	tests/test_multiline_scalars.py	/^def test_comparison_with_test_data():$/;"	f
+test_complex_multiline_formatting	tests/test_multiline_scalars.py	/^def test_complex_multiline_formatting():$/;"	f
+test_complex_nested_structures	tests/test_integration.py	/^    def test_complex_nested_structures(self):$/;"	m	class:TestKubernetesIntegration
+test_complex_object_sequence	tests/test_emitter.py	/^    def test_complex_object_sequence(self):$/;"	m	class:TestHumanFriendlyEmitter
+test_complex_yaml_empty_line_preservation	tests/test_empty_line_preservation.py	/^    def test_complex_yaml_empty_line_preservation(self):$/;"	f
+test_content_based_detection	tests/test_cli.py	/^    def test_content_based_detection(self):$/;"	m	class:TestFileTypeDetection
+test_continue_on_invalid_files	tests/test_cli.py	/^    def test_continue_on_invalid_files(self, capsys):$/;"	m	class:TestGlobbingAndDirectorySupport
+test_custom_dumper_options	tests/test_multi_document.py	/^    def test_custom_dumper_options(self):$/;"	m	class:TestConvenienceFunctions
+test_custom_indent	tests/test_cli.py	/^    def test_custom_indent(self, capsys):$/;"	f
+test_directory_nonexistent	tests/test_cli.py	/^    def test_directory_nonexistent(self, capsys):$/;"	m	class:TestGlobbingAndDirectorySupport
+test_directory_processing	tests/test_cli.py	/^    def test_directory_processing(self, capsys):$/;"	m	class:TestGlobbingAndDirectorySupport
+test_disable_resource_ordering	tests/test_multi_document.py	/^    def test_disable_resource_ordering(self):$/;"	m	class:TestKubernetesManifestDumper
+test_docker_compose_style	tests/test_integration.py	/^    def test_docker_compose_style(self):$/;"	m	class:TestRealWorldExamples
+test_document_separators	tests/test_multi_document.py	/^    def test_document_separators(self):$/;"	m	class:TestDocumentSeparation
+test_dump_all_to_file	tests/test_multi_document.py	/^    def test_dump_all_to_file(self):$/;"	m	class:TestConvenienceFunctions
+test_dump_to_file	tests/test_integration.py	/^    def test_dump_to_file(self):$/;"	m	class:TestFileOperations
+test_dumps_all	tests/test_multi_document.py	/^    def test_dumps_all(self):$/;"	m	class:TestConvenienceFunctions
+test_empty_containers_in_sequences	tests/test_emitter.py	/^    def test_empty_containers_in_sequences(self):$/;"	m	class:TestHumanFriendlyEmitter
+test_empty_data	tests/test_emitter.py	/^    def test_empty_data(self):$/;"	m	class:TestErrorHandling
+test_empty_directory	tests/test_cli.py	/^    def test_empty_directory(self, capsys):$/;"	m	class:TestGlobbingAndDirectorySupport
+test_empty_document_list	tests/test_multi_document.py	/^    def test_empty_document_list(self):$/;"	m	class:TestEdgeCases
+test_empty_file_detection	tests/test_cli.py	/^    def test_empty_file_detection(self):$/;"	m	class:TestFileTypeDetection
+test_empty_input_error	tests/test_cli.py	/^    def test_empty_input_error(self, capsys):$/;"	f
+test_empty_line_count_accuracy	tests/test_empty_line_preservation.py	/^    def test_empty_line_count_accuracy(self):$/;"	f
+test_empty_structures	tests/test_emitter.py	/^    def test_empty_structures(self):$/;"	m	class:TestHumanFriendlyEmitter
+test_explicit_end_markers	tests/test_multi_document.py	/^    def test_explicit_end_markers(self):$/;"	m	class:TestDocumentSeparation
+test_extension_based_detection	tests/test_cli.py	/^    def test_extension_based_detection(self):$/;"	m	class:TestFileTypeDetection
+test_file_and_glob_mixed_invalid	tests/test_cli.py	/^    def test_file_and_glob_mixed_invalid(self, capsys):$/;"	m	class:TestGlobbingAndDirectorySupport
+test_filename_fallback_from_source_file	tests/test_cli.py	/^    def test_filename_fallback_from_source_file(self, capsys):$/;"	m	class:TestOutputFlag
+test_filename_fallback_mixed_k8s_and_non_k8s	tests/test_cli.py	/^    def test_filename_fallback_mixed_k8s_and_non_k8s(self, capsys):$/;"	m	class:TestOutputFlag
+test_filename_fallback_stdin_multiple_documents	tests/test_cli.py	/^    def test_filename_fallback_stdin_multiple_documents(self, capsys):$/;"	m	class:TestOutputFlag
+test_filename_fallback_stdin_single_document	tests/test_cli.py	/^    def test_filename_fallback_stdin_single_document(self, capsys):$/;"	m	class:TestOutputFlag
+test_generate_k8s_filename	tests/test_cli.py	/^    def test_generate_k8s_filename(self):$/;"	m	class:TestOutputFlag
+test_getvalue_with_file_stream	tests/test_multi_document.py	/^    def test_getvalue_with_file_stream(self):$/;"	m	class:TestEdgeCases
+test_glob_case_sensitivity	tests/test_cli.py	/^    def test_glob_case_sensitivity(self, capsys):$/;"	m	class:TestGlobbingAndDirectorySupport
+test_glob_pattern_json_files	tests/test_cli.py	/^    def test_glob_pattern_json_files(self, capsys):$/;"	m	class:TestGlobbingAndDirectorySupport
+test_glob_pattern_no_matches	tests/test_cli.py	/^    def test_glob_pattern_no_matches(self, capsys):$/;"	m	class:TestGlobbingAndDirectorySupport
+test_glob_pattern_yaml_files	tests/test_cli.py	/^    def test_glob_pattern_yaml_files(self, capsys):$/;"	m	class:TestGlobbingAndDirectorySupport
+test_glob_with_subdirectories	tests/test_cli.py	/^    def test_glob_with_subdirectories(self, capsys):$/;"	m	class:TestGlobbingAndDirectorySupport
+test_has_items_array	tests/test_cli.py	/^    def test_has_items_array(self):$/;"	m	class:TestStdinTimeout
+test_human_friendly_formatting	tests/test_multi_document.py	/^    def test_human_friendly_formatting(self):$/;"	m	class:TestMultiDocumentDumper
+test_indentation_consistency	tests/test_emitter.py	/^    def test_indentation_consistency(self):$/;"	m	class:TestHumanFriendlyEmitter
+test_inputs_flag_auto_multi_document_yaml	tests/test_cli.py	/^    def test_inputs_flag_auto_multi_document_yaml(self, capsys):$/;"	m	class:TestInputsFlag
+test_inputs_flag_empty_file	tests/test_cli.py	/^    def test_inputs_flag_empty_file(self, capsys):$/;"	m	class:TestInputsFlag
+test_inputs_flag_invalid_json	tests/test_cli.py	/^    def test_inputs_flag_invalid_json(self, capsys):$/;"	m	class:TestInputsFlag
+test_inputs_flag_json_items_array	tests/test_cli.py	/^    def test_inputs_flag_json_items_array(self, capsys):$/;"	m	class:TestInputsFlag
+test_inputs_flag_json_items_array_mixed_types	tests/test_cli.py	/^    def test_inputs_flag_json_items_array_mixed_types(self, capsys):$/;"	m	class:TestInputsFlag
+test_inputs_flag_json_items_primitive_array	tests/test_cli.py	/^    def test_inputs_flag_json_items_primitive_array(self, capsys):$/;"	m	class:TestInputsFlag
+test_inputs_flag_json_lines	tests/test_cli.py	/^    def test_inputs_flag_json_lines(self, capsys):$/;"	m	class:TestInputsFlag
+test_inputs_flag_json_no_items_array	tests/test_cli.py	/^    def test_inputs_flag_json_no_items_array(self, capsys):$/;"	m	class:TestInputsFlag
+test_inputs_flag_mixed_formats	tests/test_cli.py	/^    def test_inputs_flag_mixed_formats(self, capsys):$/;"	m	class:TestInputsFlag
+test_inputs_flag_mixed_with_multi_docs	tests/test_cli.py	/^    def test_inputs_flag_mixed_with_multi_docs(self, capsys):$/;"	m	class:TestInputsFlag
+test_inputs_flag_multiple_files	tests/test_cli.py	/^    def test_inputs_flag_multiple_files(self, capsys):$/;"	m	class:TestInputsFlag
+test_inputs_flag_nonexistent_file	tests/test_cli.py	/^    def test_inputs_flag_nonexistent_file(self, capsys):$/;"	m	class:TestInputsFlag
+test_inputs_flag_single_file	tests/test_cli.py	/^    def test_inputs_flag_single_file(self, capsys):$/;"	m	class:TestInputsFlag
+test_inputs_flag_with_multi_doc_yaml	tests/test_cli.py	/^    def test_inputs_flag_with_multi_doc_yaml(self, capsys):$/;"	m	class:TestInputsFlag
+test_invalid_json_error	tests/test_cli.py	/^    def test_invalid_json_error(self, capsys):$/;"	f
+test_invalid_yaml_error	tests/test_cli.py	/^    def test_invalid_yaml_error(self, capsys):$/;"	f
+test_is_json_lines	tests/test_cli.py	/^    def test_is_json_lines(self):$/;"	m	class:TestStdinTimeout
+test_is_multi_document_yaml	tests/test_cli.py	/^    def test_is_multi_document_yaml(self):$/;"	m	class:TestStdinTimeout
+test_json_input_processing	tests/test_cli.py	/^    def test_json_input_processing(self, capsys):$/;"	m	class:TestCLIFunctionality
+test_kubernetes_deployment	tests/test_integration.py	/^    def test_kubernetes_deployment(self):$/;"	m	class:TestKubernetesIntegration
+test_kubernetes_formatting	tests/test_multi_document.py	/^    def test_kubernetes_formatting(self):$/;"	m	class:TestKubernetesManifestDumper
+test_large_file_handling	tests/test_integration.py	/^    def test_large_file_handling(self):$/;"	m	class:TestFileOperations
+test_load_with_formatting_file_path	tests/test_empty_line_preservation.py	/^    def test_load_with_formatting_file_path(self):$/;"	f
+test_looks_like_json	tests/test_cli.py	/^    def test_looks_like_json(self):$/;"	m	class:TestStdinTimeout
+test_looks_like_yaml_function	tests/test_cli.py	/^    def test_looks_like_yaml_function(self):$/;"	m	class:TestGlobbingAndDirectorySupport
+test_mixed_directory_and_files	tests/test_cli.py	/^    def test_mixed_directory_and_files(self, capsys):$/;"	m	class:TestGlobbingAndDirectorySupport
+test_mixed_document_types	tests/test_multi_document.py	/^    def test_mixed_document_types(self):$/;"	m	class:TestEdgeCases
+test_mixed_glob_and_files	tests/test_cli.py	/^    def test_mixed_glob_and_files(self, capsys):$/;"	m	class:TestGlobbingAndDirectorySupport
+test_mixed_sequences	tests/test_emitter.py	/^    def test_mixed_sequences(self):$/;"	m	class:TestHumanFriendlyEmitter
+test_mixed_string_types	tests/test_multiline_scalars.py	/^def test_mixed_string_types():$/;"	f
+test_multi_document_processing	tests/test_cli.py	/^    def test_multi_document_processing(self, capsys):$/;"	f
+test_multiline_edge_cases	tests/test_multiline_scalars.py	/^def test_multiline_edge_cases():$/;"	f
+test_multiline_string_uses_literal_block	tests/test_multiline_scalars.py	/^def test_multiline_string_uses_literal_block():$/;"	f
+test_multiple_documents	tests/test_multi_document.py	/^    def test_multiple_documents(self):$/;"	m	class:TestMultiDocumentDumper
+test_multiple_files	tests/test_cli.py	/^    def test_multiple_files(self, capsys):$/;"	m	class:TestInputsFlag
+test_nested_sequences	tests/test_emitter.py	/^    def test_nested_sequences(self):$/;"	m	class:TestHumanFriendlyEmitter
+test_no_empty_lines_yaml	tests/test_empty_line_preservation.py	/^    def test_no_empty_lines_yaml(self):$/;"	f
+test_non_dict_mappings	tests/test_emitter.py	/^    def test_non_dict_mappings(self):$/;"	m	class:TestErrorHandling
+test_non_priority_keys_preserved_order	tests/test_emitter.py	/^    def test_non_priority_keys_preserved_order(self):$/;"	m	class:TestKeyOrdering
+test_nonexistent_file_handling	tests/test_cli.py	/^    def test_nonexistent_file_handling(self):$/;"	m	class:TestInputsFlag
+test_output_directory_multiple_documents	tests/test_cli.py	/^    def test_output_directory_multiple_documents(self, capsys):$/;"	m	class:TestOutputFlag
+test_output_directory_single_document	tests/test_cli.py	/^    def test_output_directory_single_document(self, capsys):$/;"	m	class:TestOutputFlag
+test_output_directory_without_auto_fails	tests/test_cli.py	/^    def test_output_directory_without_auto_fails(self, capsys):$/;"	m	class:TestOutputFlag
+test_output_file_with_auto_creates_parent_dirs	tests/test_cli.py	/^    def test_output_file_with_auto_creates_parent_dirs(self, capsys):$/;"	m	class:TestOutputFlag
+test_output_filename_conflicts_handled	tests/test_cli.py	/^    def test_output_filename_conflicts_handled(self, capsys):$/;"	m	class:TestOutputFlag
+test_output_multiple_files_to_single_file	tests/test_cli.py	/^    def test_output_multiple_files_to_single_file(self, capsys):$/;"	m	class:TestOutputFlag
+test_output_single_file	tests/test_cli.py	/^    def test_output_single_file(self, capsys):$/;"	m	class:TestOutputFlag
+test_priority_keys_first	tests/test_emitter.py	/^    def test_priority_keys_first(self):$/;"	m	class:TestKeyOrdering
+test_resource_ordering	tests/test_multi_document.py	/^    def test_resource_ordering(self):$/;"	m	class:TestKubernetesManifestDumper
+test_round_trip_complex	tests/test_emitter.py	/^    def test_round_trip_complex(self):$/;"	m	class:TestYAMLValidity
+test_round_trip_simple	tests/test_emitter.py	/^    def test_round_trip_simple(self):$/;"	m	class:TestYAMLValidity
+test_simple_empty_line_preservation	tests/test_empty_line_preservation.py	/^    def test_simple_empty_line_preservation(self):$/;"	m	class:TestEmptyLinePreservation
+test_simple_string_sequence	tests/test_emitter.py	/^    def test_simple_string_sequence(self):$/;"	m	class:TestHumanFriendlyEmitter
+test_single_document	tests/test_multi_document.py	/^    def test_single_document(self):$/;"	m	class:TestMultiDocumentDumper
+test_single_json_file	tests/test_cli.py	/^    def test_single_json_file(self, capsys):$/;"	m	class:TestInputsFlag
+test_single_none_document	tests/test_multi_document.py	/^    def test_single_none_document(self):$/;"	m	class:TestEdgeCases
+test_single_yaml_file	tests/test_cli.py	/^    def test_single_yaml_file(self, capsys):$/;"	m	class:TestInputsFlag
+test_special_characters	tests/test_emitter.py	/^    def test_special_characters(self):$/;"	m	class:TestYAMLValidity
+test_stdin_auto_detect_json_items_array	tests/test_cli.py	/^    def test_stdin_auto_detect_json_items_array(self, capsys):$/;"	f
+test_stdin_auto_detect_json_lines	tests/test_cli.py	/^    def test_stdin_auto_detect_json_lines(self, capsys):$/;"	f
+test_stdin_auto_detect_multi_document_yaml	tests/test_cli.py	/^    def test_stdin_auto_detect_multi_document_yaml(self, capsys):$/;"	m	class:TestStdinAutoDetection
+test_stdin_single_document_still_works	tests/test_cli.py	/^    def test_stdin_single_document_still_works(self, capsys):$/;"	f
+test_stdin_timeout_function_exists	tests/test_cli.py	/^    def test_stdin_timeout_function_exists(self):$/;"	m	class:TestStdinTimeout
+test_timeout_error	tests/test_cli.py	/^    def test_timeout_error(self, capsys):$/;"	f
+test_timeout_error_type	tests/test_cli.py	/^    def test_timeout_error_type(self):$/;"	m	class:TestStdinTimeout
+test_unknown_resources	tests/test_multi_document.py	/^    def test_unknown_resources(self):$/;"	m	class:TestKubernetesManifestDumper
+test_unreadable_file_detection	tests/test_cli.py	/^    def test_unreadable_file_detection(self):$/;"	m	class:TestFileTypeDetection
+test_unsupported_file_type	tests/test_cli.py	/^    def test_unsupported_file_type(self):$/;"	m	class:TestInputsFlag
+test_valid_file_type_detection	tests/test_cli.py	/^    def test_valid_file_type_detection(self):$/;"	m	class:TestGlobbingAndDirectorySupport
+test_very_large_document_list	tests/test_multi_document.py	/^    def test_very_large_document_list(self):$/;"	m	class:TestEdgeCases
+test_yaml_input_processing	tests/test_cli.py	/^    def test_yaml_input_processing(self, capsys):$/;"	m	class:TestCLIFunctionality
+time_operation	benchmark.py	/^def time_operation(func, iterations=1000, warmup=50):$/;"	f
+visit_Call	ast_analysis.py	/^    def visit_Call(self, node):$/;"	m	class:PerformanceAnalyzer
+visit_ClassDef	ast_analysis.py	/^    def visit_ClassDef(self, node):$/;"	m	class:PerformanceAnalyzer
+visit_Dict	ast_analysis.py	/^    def visit_Dict(self, node):$/;"	m	class:PerformanceAnalyzer
+visit_DictComp	ast_analysis.py	/^    def visit_DictComp(self, node):$/;"	m	class:PerformanceAnalyzer
+visit_For	ast_analysis.py	/^    def visit_For(self, node):$/;"	m	class:PerformanceAnalyzer
+visit_FunctionDef	ast_analysis.py	/^    def visit_FunctionDef(self, node):$/;"	m	class:PerformanceAnalyzer
+visit_If	ast_analysis.py	/^    def visit_If(self, node):$/;"	m	class:PerformanceAnalyzer
+visit_List	ast_analysis.py	/^    def visit_List(self, node):$/;"	m	class:PerformanceAnalyzer
+visit_ListComp	ast_analysis.py	/^    def visit_ListComp(self, node):$/;"	m	class:PerformanceAnalyzer
+visit_SetComp	ast_analysis.py	/^    def visit_SetComp(self, node):$/;"	m	class:PerformanceAnalyzer
+visit_While	ast_analysis.py	/^    def visit_While(self, node):$/;"	m	class:PerformanceAnalyzer
+write	src/yaml_for_humans/cli.py	/^    def write($/;"	m	class:OutputWriter
+write_documents	src/yaml_for_humans/cli.py	/^    def write_documents($/;"	m	class:DirectoryOutputWriter
+write_documents	src/yaml_for_humans/cli.py	/^    def write_documents($/;"	m	class:FileOutputWriter
+write_documents	src/yaml_for_humans/cli.py	/^    def write_documents($/;"	m	class:OutputStrategy

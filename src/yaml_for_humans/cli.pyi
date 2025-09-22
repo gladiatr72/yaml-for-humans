@@ -60,6 +60,7 @@ def _generate_k8s_filename(
     document: Dict[str, Any],
     source_file: Optional[str] = ...,
     stdin_position: Optional[int] = ...,
+    add_prefix: bool = ...,
 ) -> str:
     """
     Generate appropriate filename for Kubernetes resources.
@@ -68,9 +69,10 @@ def _generate_k8s_filename(
         document: YAML document (should have apiVersion, kind, metadata)
         source_file: Source file path for fallback naming
         stdin_position: Position in stdin for fallback naming
+        add_prefix: If True, prepend 2-digit resource ordering prefix
 
     Returns:
-        Generated filename
+        Generated filename with optional prefix
     """
     ...
 

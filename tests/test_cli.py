@@ -875,8 +875,8 @@ class TestOutputFlag:
         assert os.path.exists(dir_path)
         assert os.path.isdir(dir_path)
 
-        # Check that file was created with correct name
-        expected_file = os.path.join(dir_path, "pod-test-pod.yaml")
+        # Check that file was created with correct name (with prefix)
+        expected_file = os.path.join(dir_path, "19-pod-test-pod.yaml")
         assert os.path.exists(expected_file)
 
         # Check file contents
@@ -912,19 +912,19 @@ class TestOutputFlag:
         dir_path = output_dir.rstrip(os.sep)
         assert os.path.exists(dir_path)
 
-        # Check that all files were created
+        # Check that all files were created (with prefixes)
         expected_files = [
-            "service-web-svc.yaml",
-            "deployment-web-app.yaml",
-            "configmap-app-config.yaml",
+            "11-service-web-svc.yaml",
+            "14-deployment-web-app.yaml",
+            "07-configmap-app-config.yaml",
         ]
 
         for expected_file in expected_files:
             file_path = os.path.join(dir_path, expected_file)
             assert os.path.exists(file_path), f"File {expected_file} was not created"
 
-        # Check contents of one file
-        with open(os.path.join(dir_path, "service-web-svc.yaml"), "r") as f:
+        # Check contents of one file (with prefix)
+        with open(os.path.join(dir_path, "11-service-web-svc.yaml"), "r") as f:
             content = f.read()
         assert "kind: Service" in content
         assert "name: web-svc" in content
@@ -1016,11 +1016,11 @@ class TestOutputFlag:
 
         dir_path = output_dir.rstrip(os.sep)
 
-        # Check that all files were created with conflict resolution
+        # Check that all files were created with conflict resolution (with prefixes)
         expected_files = [
-            "pod-worker.yaml",
-            "pod-worker-1.yaml",
-            "pod-worker-2.yaml",
+            "19-pod-worker.yaml",
+            "19-pod-worker-1.yaml",
+            "19-pod-worker-2.yaml",
         ]
 
         for expected_file in expected_files:
@@ -1117,8 +1117,8 @@ number: 3"""
 
         dir_path = output_dir.rstrip(os.sep)
 
-        # Check k8s resource gets proper name
-        pod_file = os.path.join(dir_path, "pod-worker.yaml")
+        # Check k8s resource gets proper name (with prefix)
+        pod_file = os.path.join(dir_path, "19-pod-worker.yaml")
         assert os.path.exists(pod_file)
 
         # Check non-k8s data gets source filename
@@ -1128,8 +1128,8 @@ number: 3"""
             content = f.read()
         assert "username: alice" in content
 
-        # Check k8s with type gets proper name
-        service_file = os.path.join(dir_path, "service-clusterip-api.yaml")
+        # Check k8s with type gets proper name (with prefix)
+        service_file = os.path.join(dir_path, "11-service-clusterip-api.yaml")
         assert os.path.exists(service_file)
 
 
