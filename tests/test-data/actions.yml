@@ -1,0 +1,54 @@
+name: CI
+
+on:
+    pull_request:
+    push:
+        branches: [main]
+
+jobs:
+    build:
+        name: Build and Push Container Image
+        runs-on: ubuntu-latest
+        environment:
+            name: main-gcr
+        needs: test
+        if: github.ref == 'refs/heads/main'
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v3
+            - name: Cache Docker layers
+              uses: actions/cache@v3
+              with:
+                  path: /tmp/.buildx-cache
+                  key: ${{ runner.os }}-buildx-${{ github.sha }}
+                  restore-keys: |
+                      ${{ runner.os }}-buildx-
+            - name: Login to Github Container Registry
+              uses: docker/login-action@v3
+              with:
+                  registry: registry.gitlab.com
+                  username: github-actions
+                  password: ${{ secrets.GITLAB_REG_TOKEN }}
+            - name: Authenticate to Google Cloud
+              uses: google-github-actions/auth@v2
+              continue-on-error: true
+              with:
+                  workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+                  service_account: ${{ vars.SERVICE_ACCOUNT }}
+            - name: Bump version and push tag
+              id: tag_version
+              uses: mathieudutour/github-tag-action@v6.1
+              with:
+                  github_token: ${{ secrets.GITHUB_TOKEN }}
+                  release_branches: "main"
+            - name: Build and push
+              id: docker_build
+              uses: docker/build-push-action@v5
+              with:
+                  context: .
+                  cache-from: type=local,src=/tmp/.buildx-cache
+                  cache-to: type=local,dest=/tmp/.buildx-cache
+                  push: true
+                  tags: registry.gitlab.com/some/repo:${{ steps.tag_version.outputs.new_tag }}
