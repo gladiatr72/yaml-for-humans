@@ -9,7 +9,7 @@ This module provides custom emitters that produce more readable YAML output by:
 """
 
 import yaml
-from typing import Any, Union
+from typing import Any
 from yaml.emitter import Emitter
 from yaml.events import (
     ScalarEvent,

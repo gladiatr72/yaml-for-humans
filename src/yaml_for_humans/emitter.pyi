@@ -5,7 +5,6 @@ Type stubs for emitter module.
 from typing import (
     Any,
     Dict,
-    List,
     Optional,
     Union,
     IO,

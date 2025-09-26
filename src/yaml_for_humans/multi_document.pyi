@@ -2,7 +2,7 @@
 Type stubs for multi_document module.
 """
 
-from typing import Any, Dict, List, Iterable, Union, IO, TextIO, Optional
+from typing import Any, List, Iterable, Union, IO, TextIO, Optional
 from typing_extensions import TypeAlias
 
 # Type aliases

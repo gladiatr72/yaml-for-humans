@@ -127,7 +127,8 @@ class FormattingAwareComposer(Composer):
                 stack.extend(current.value)
             elif isinstance(current, yaml.MappingNode) and current.value:
                 for key, value in current.value:
-                    stack.extend([key, value])
+                    stack.append(value)
+                    stack.append(key)
 
         return max_end_line
 

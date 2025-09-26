@@ -6,14 +6,6 @@ formatting metadata captured during parsing.
 """
 
 import yaml
-from yaml.emitter import Emitter
-from yaml.events import (
-    ScalarEvent,
-    SequenceEndEvent,
-    MappingStartEvent,
-    MappingEndEvent,
-    SequenceStartEvent,
-)
 
 from .emitter import HumanFriendlyEmitter
 from .formatting_aware import FormattingAwareDict, FormattingAwareList

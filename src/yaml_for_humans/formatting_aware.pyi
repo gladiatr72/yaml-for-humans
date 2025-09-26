@@ -2,7 +2,7 @@
 Type stubs for formatting_aware module.
 """
 
-from typing import Any, Dict, List, Optional, Union, IO, TextIO
+from typing import Any, Dict, List, Optional, Union, IO
 import yaml
 from yaml.composer import Composer
 from yaml.constructor import SafeConstructor

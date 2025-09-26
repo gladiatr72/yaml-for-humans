@@ -448,7 +448,9 @@ def _load_yaml(
     elif unsafe:
         return yaml.load(content, Loader=yaml.Loader)
     else:
-        return yaml.safe_load(content)
+        # Use key-preserving loader to prevent 'on'/'off'/'yes'/'no' -> boolean conversion
+        from .dumper import _load_yaml_safe_keys
+        return _load_yaml_safe_keys(content)
 
 
 def _load_all_yaml(
@@ -529,6 +531,68 @@ def _read_stdin_with_timeout(timeout_ms: int = DEFAULT_TIMEOUT_MS) -> str:
         return input_data[0]
 
 
+def _process_input_source(
+    inputs: str | None, processor: InputProcessor, timeout: int
+) -> tuple[list[Any], list[dict]]:
+    """
+    Process input from files or stdin.
+
+    Returns:
+        Tuple of (documents, document_sources)
+
+    Raises:
+        Various exceptions that should be handled by caller
+    """
+    if inputs:
+        return processor.process_files(inputs)
+    else:
+        # Read from stdin with timeout handling
+        try:
+            return processor.process_stdin(timeout)
+        except TimeoutError as e:
+            print(f"Error: {e}", file=sys.stderr)
+            sys.exit(1)
+        except json.JSONDecodeError:
+            # Re-raise to be caught by outer exception handler
+            raise
+        except yaml.YAMLError:
+            # Re-raise to be caught by outer exception handler
+            raise
+        except ValueError as e:
+            print(f"Error: {e}", file=sys.stderr)
+            sys.exit(1)
+
+
+def _handle_output_generation(
+    documents: list[Any],
+    document_sources: list[dict],
+    output: str | None,
+    auto: bool,
+    indent: int,
+    preserve_empty_lines: bool,
+) -> None:
+    """
+    Handle output generation - either to file/directory or stdout.
+    """
+    if output:
+        # Write to file/directory
+        _write_to_output(
+            documents, output, auto, indent, document_sources, preserve_empty_lines
+        )
+    else:
+        # Write to stdout (existing behavior)
+        if len(documents) > 1:
+            from .multi_document import dumps_all
+            output_str = dumps_all(documents, indent=indent)
+        else:
+            output_str = dumps(
+                documents[0],
+                indent=indent,
+                preserve_empty_lines=preserve_empty_lines,
+            )
+        print(output_str, end="")
+
+
 def _huml_main(
     indent: int = DEFAULT_INDENT,
     timeout: int = DEFAULT_TIMEOUT_MS,
@@ -551,34 +615,15 @@ def _huml_main(
     _check_cli_dependencies()
 
     try:
-        # Create processing context with configuration
+        # Create processing context and processor
         context = ProcessingContext(
             unsafe_inputs=unsafe_inputs,
             preserve_empty_lines=preserve_empty_lines
         )
-
-        # Initialize input processor
         processor = InputProcessor(context)
 
         # Process input from files or stdin
-        if inputs:
-            documents, document_sources = processor.process_files(inputs)
-        else:
-            # Read from stdin with timeout handling
-            try:
-                documents, document_sources = processor.process_stdin(timeout)
-            except TimeoutError as e:
-                print(f"Error: {e}", file=sys.stderr)
-                sys.exit(1)
-            except json.JSONDecodeError as e:
-                # Re-raise to be caught by outer exception handler
-                raise
-            except yaml.YAMLError as e:
-                # Re-raise to be caught by outer exception handler
-                raise
-            except ValueError as e:
-                print(f"Error: {e}", file=sys.stderr)
-                sys.exit(1)
+        documents, document_sources = _process_input_source(inputs, processor, timeout)
 
         # Handle case where no documents were processed
         if len(documents) == 0:
@@ -590,26 +635,10 @@ def _huml_main(
                 print("Error: No documents to process", file=sys.stderr)
                 sys.exit(1)
 
-        # Handle output
-        if output:
-            # Write to file/directory
-            _write_to_output(
-                documents, output, auto, indent, document_sources, preserve_empty_lines
-            )
-        else:
-            # Write to stdout (existing behavior)
-            if len(documents) > 1:
-                from .multi_document import dumps_all
-
-                output_str = dumps_all(documents, indent=indent)
-            else:
-                output_str = dumps(
-                    documents[0],
-                    indent=indent,
-                    preserve_empty_lines=preserve_empty_lines,
-                )
-
-            print(output_str, end="")
+        # Handle output generation
+        _handle_output_generation(
+            documents, document_sources, output, auto, indent, preserve_empty_lines
+        )
 
     except json.JSONDecodeError as e:
         print(f"Error: Invalid JSON input - {e}", file=sys.stderr)

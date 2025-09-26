@@ -34,6 +34,7 @@ class MultiDocumentDumper:
             "default_flow_style": False,
             "indent": 2,
             "sort_keys": False,
+            "width": 120,
             "explicit_start": True,  # Add --- separators
             "explicit_end": False,  # Don't add ... end markers by default
             **dumper_kwargs,

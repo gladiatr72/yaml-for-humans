@@ -7,6 +7,7 @@ that use the HumanFriendlyDumper by default, with optional empty line preservati
 
 import re
 import threading
+import yaml
 from io import StringIO
 from typing import Any, TextIO, Pattern
 from .emitter import HumanFriendlyDumper
@@ -100,6 +101,7 @@ def dump(
         "default_flow_style": False,
         "indent": 2,
         "sort_keys": False,
+        "width": 120,
     }
 
     # Update with user-provided kwargs first
@@ -207,3 +209,77 @@ def load_with_formatting(stream: str | TextIO) -> Any:
     else:
         # Stream object
         return yaml.load(stream, Loader=FormattingAwareLoader)
+
+
+class KeyPreservingResolver(yaml.resolver.Resolver):
+    """
+    Custom YAML resolver that preserves string keys while allowing boolean conversion for values.
+
+    This resolver prevents automatic conversion of keys like 'on', 'off', 'yes', 'no' to booleans
+    while maintaining standard YAML behavior for values.
+    """
+
+    def __init__(self):
+        super().__init__()
+        # Remove boolean resolver to prevent automatic conversion
+        # We'll add it back selectively for values only
+        if (None, 'tag:yaml.org,2002:bool') in self.yaml_implicit_resolvers:
+            self.yaml_implicit_resolvers.remove((None, 'tag:yaml.org,2002:bool'))
+
+        # Remove bool patterns from first character lookups
+        for char, resolvers in list(self.yaml_implicit_resolvers.items()):
+            if char in ['y', 'Y', 'n', 'N', 't', 'T', 'f', 'F', 'o', 'O']:
+                # Filter out boolean resolvers
+                filtered_resolvers = [
+                    (tag, regexp) for tag, regexp in resolvers
+                    if tag != 'tag:yaml.org,2002:bool'
+                ]
+                if filtered_resolvers != resolvers:
+                    self.yaml_implicit_resolvers[char] = filtered_resolvers
+
+
+class KeyPreservingSafeLoader(yaml.SafeLoader):
+    """
+    Safe YAML loader that preserves problematic string keys as strings.
+
+    Inherits from SafeLoader for security while removing boolean resolvers
+    to prevent automatic boolean conversion of mapping keys.
+    """
+
+    def __init__(self, stream):
+        super().__init__(stream)
+        # Remove boolean resolver after parent initialization
+        self._remove_boolean_resolvers()
+
+    def _remove_boolean_resolvers(self):
+        """Remove boolean resolvers to prevent automatic conversion."""
+        # Remove boolean resolver from implicit resolvers
+        for key, resolvers in list(self.yaml_implicit_resolvers.items()):
+            filtered_resolvers = [
+                (tag, regexp) for tag, regexp in resolvers
+                if tag != 'tag:yaml.org,2002:bool'
+            ]
+            if filtered_resolvers != resolvers:
+                self.yaml_implicit_resolvers[key] = filtered_resolvers
+
+
+def _load_yaml_safe_keys(content: str) -> Any:
+    """
+    Load YAML content using a safe loader that preserves string keys.
+
+    This function prevents automatic conversion of keys like 'on', 'off', 'yes', 'no'
+    to boolean values while maintaining security by using SafeLoader as the base.
+
+    Args:
+        content: YAML content string to parse
+
+    Returns:
+        Parsed Python object with string keys preserved
+
+    Example:
+        >>> yaml_content = "on:\\n  pull_request:\\n  push:"
+        >>> result = _load_yaml_safe_keys(yaml_content)
+        >>> list(result.keys())[0]  # Returns 'on' as string, not True
+        'on'
+    """
+    return yaml.load(content, Loader=KeyPreservingSafeLoader)

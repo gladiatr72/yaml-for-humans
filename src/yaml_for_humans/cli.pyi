@@ -17,6 +17,19 @@ def huml(
     """
     ...
 
+def _process_input_source(
+    inputs: Optional[str], processor: InputProcessor, timeout: int
+) -> Tuple[List[Any], List[Dict[str, Any]]]: ...
+
+def _handle_output_generation(
+    documents: List[Any],
+    document_sources: List[Dict[str, Any]],
+    output: Optional[str],
+    auto: bool,
+    indent: int,
+    preserve_empty_lines: bool,
+) -> None: ...
+
 def _huml_main(
     indent: int = ...,
     timeout: int = ...,

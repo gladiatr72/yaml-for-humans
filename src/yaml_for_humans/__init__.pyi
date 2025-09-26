@@ -2,7 +2,6 @@
 Type stubs for yaml-for-humans package.
 """
 
-from typing import List
 
 from .emitter import (
     HumanFriendlyEmitter as HumanFriendlyEmitter,

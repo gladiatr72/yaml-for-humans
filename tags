@@ -20,6 +20,8 @@ FormattingMetadata	src/yaml_for_humans/formatting_aware.py	/^class FormattingMet
 HumanFriendlyDumper	src/yaml_for_humans/emitter.py	/^):$/;"	c
 HumanFriendlyEmitter	src/yaml_for_humans/emitter.py	/^class HumanFriendlyEmitter(Emitter):$/;"	c
 InputProcessor	src/yaml_for_humans/cli.py	/^class InputProcessor:$/;"	c
+KeyPreservingResolver	src/yaml_for_humans/dumper.py	/^class KeyPreservingResolver(yaml.resolver.Resolver):$/;"	c
+KeyPreservingSafeLoader	src/yaml_for_humans/dumper.py	/^class KeyPreservingSafeLoader(yaml.SafeLoader):$/;"	c
 KubernetesManifestDumper	src/yaml_for_humans/multi_document.py	/^class KubernetesManifestDumper(MultiDocumentDumper):$/;"	c
 MultiDocumentDumper	src/yaml_for_humans/multi_document.py	/^class MultiDocumentDumper:$/;"	c
 OutputContext	src/yaml_for_humans/cli.py	/^class OutputContext:$/;"	c
@@ -62,6 +64,8 @@ __init__	src/yaml_for_humans/cli.py	/^    def __init__(self, context: Processing
 __init__	src/yaml_for_humans/cli.py	/^    def __init__(self, dir_path: Path):$/;"	m	class:DirectoryOutputWriter
 __init__	src/yaml_for_humans/cli.py	/^    def __init__(self, file_path: Path):$/;"	m	class:FileOutputWriter
 __init__	src/yaml_for_humans/dumper.py	/^                def __init__(self, *args, **kwargs):$/;"	m	class:dump.PresetFormattingAwareDumper
+__init__	src/yaml_for_humans/dumper.py	/^    def __init__(self):$/;"	m	class:KeyPreservingResolver
+__init__	src/yaml_for_humans/dumper.py	/^    def __init__(self, stream):$/;"	m	class:KeyPreservingSafeLoader
 __init__	src/yaml_for_humans/emitter.py	/^    def __init__($/;"	m	class:HumanFriendlyDumper
 __init__	src/yaml_for_humans/emitter.py	/^    def __init__(self, *args: Any, **kwargs: Any) -> None:$/;"	m	class:HumanFriendlyEmitter
 __init__	src/yaml_for_humans/formatting_aware.py	/^    def __init__(self):$/;"	m	class:FormattingAwareComposer
@@ -94,6 +98,7 @@ _get_item_formatting	src/yaml_for_humans/formatting_aware.py	/^    def _get_item
 _get_key_formatting	src/yaml_for_humans/formatting_aware.py	/^    def _get_key_formatting(self, key):$/;"	m	class:FormattingAwareDict
 _get_metadata_object	src/yaml_for_humans/formatting_aware.py	/^    def _get_metadata_object(self, **kwargs):$/;"	m	class:FormattingAwareComposer
 _get_node_end_line	src/yaml_for_humans/formatting_aware.py	/^    def _get_node_end_line(self, node):$/;"	m	class:FormattingAwareComposer
+_handle_output_generation	src/yaml_for_humans/cli.py	/^def _handle_output_generation($/;"	f
 _has_items_array	src/yaml_for_humans/cli.py	/^def _has_items_array(data: Any) -> bool:$/;"	f
 _huml_main	src/yaml_for_humans/cli.py	/^def _huml_main($/;"	f
 _is_empty_container	src/yaml_for_humans/emitter.py	/^    def _is_empty_container(self) -> bool:$/;"	m	class:HumanFriendlyEmitter
@@ -104,13 +109,16 @@ _is_multi_document_yaml	src/yaml_for_humans/cli.py	/^def _is_multi_document_yaml
 _is_valid_file_type	src/yaml_for_humans/cli.py	/^def _is_valid_file_type(file_path):$/;"	f
 _load_all_yaml	src/yaml_for_humans/cli.py	/^def _load_all_yaml($/;"	f
 _load_yaml	src/yaml_for_humans/cli.py	/^def _load_yaml($/;"	f
+_load_yaml_safe_keys	src/yaml_for_humans/dumper.py	/^def _load_yaml_safe_keys(content: str) -> Any:$/;"	f
 _looks_like_json	src/yaml_for_humans/cli.py	/^def _looks_like_json(text: str) -> bool:$/;"	f
 _looks_like_yaml	src/yaml_for_humans/cli.py	/^def _looks_like_yaml(text):$/;"	f
 _process_empty_line_markers	src/yaml_for_humans/dumper.py	/^def _process_empty_line_markers(yaml_text: str) -> str:$/;"	f
+_process_input_source	src/yaml_for_humans/cli.py	/^def _process_input_source($/;"	f
 _process_json_content	src/yaml_for_humans/cli.py	/^    def _process_json_content(self, content: str, source_factory: Callable) -> tuple[list[Any], list[dict]]:$/;"	m	class:FormatDetector
 _process_single_file	src/yaml_for_humans/cli.py	/^    def _process_single_file(self, file_path: str) -> tuple[list[Any], list[dict]]:$/;"	m	class:InputProcessor
 _process_yaml_content	src/yaml_for_humans/cli.py	/^    def _process_yaml_content(self, content: str, source_factory: Callable) -> tuple[list[Any], list[dict]]:$/;"	m	class:FormatDetector
 _read_stdin_with_timeout	src/yaml_for_humans/cli.py	/^def _read_stdin_with_timeout(timeout_ms: int = DEFAULT_TIMEOUT_MS) -> str:$/;"	f
+_remove_boolean_resolvers	src/yaml_for_humans/dumper.py	/^    def _remove_boolean_resolvers(self):$/;"	m	class:KeyPreservingSafeLoader
 _return_buffer	src/yaml_for_humans/dumper.py	/^def _return_buffer(buffer: StringIO) -> None:$/;"	f
 _set_item_formatting	src/yaml_for_humans/formatting_aware.py	/^    def _set_item_formatting(self, index, formatting):$/;"	m	class:FormattingAwareList
 _set_key_formatting	src/yaml_for_humans/formatting_aware.py	/^    def _set_key_formatting(self, key, formatting):$/;"	m	class:FormattingAwareDict
