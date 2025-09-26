@@ -2,15 +2,36 @@
 
 All notable changes to yaml-for-humans will be documented in this file.
 
-## [1.3.1] 
-
-### Changed
-- **BREAKING CHANGE**: Empty line preservation is now **enabled by default**
-- Replaced `-P/--preserve-empty-lines` flag with `--no-preserve` flag
-- Users who want the old behavior (no empty line preservation) should now use `--no-preserve`
+## [1.4.0]
 
 ### Added
-- `DEFAULT_PRESERVE_EMPTY_LINES` constant for centralized configuration
+- **Comment preservation**: Full support for preserving YAML comments including:
+  - Block comments (comments on their own lines)
+  - Inline comments (comments at the end of content lines)
+  - Comments are now preserved by default alongside empty lines
+- `preserve_comments` parameter to all dump functions (`dump()`, `dumps()`, etc.)
+- `DEFAULT_PRESERVE_COMMENTS` constant for centralized configuration
+- End-of-line comment support in `FormattingMetadata` and `CommentMetadata` classes
+- Unified content line preservation system for both empty lines and comments
+
+### Changed
+- **BREAKING CHANGE**: Comment preservation is now **enabled by default**
+- **BREAKING CHANGE**: Empty line preservation is now **enabled by default**
+- The `--no-preserve` CLI flag now controls both empty lines AND comments
+- Updated `--no-preserve` help text to mention both empty lines and comments
+- `FormattingMetadata.empty_lines_before` now stores `List[str]` (unified content) with backward compatibility
+- Enhanced boundary detection logic to prevent extra blank lines in nested structures
+
+### Fixed
+- Extra blank lines no longer inserted in nested YAML structures
+- Improved content line extraction to properly distinguish empty lines from YAML content
+- Fixed nested mapping and sequence comment capture with proper root vs nested detection
+
+### Technical
+- Extended marker-based post-processing system with `__INLINE_COMMENT_` markers
+- Enhanced `FormattingAwareComposer` with inline comment extraction using node end positions
+- Unified content line processing handles both `""` (empty lines) and `"# comment"` (comments)
+- Improved PyYAML node positioning analysis for precise inline comment detection
 
 ## [1.0.2] - 2025-01-03
 

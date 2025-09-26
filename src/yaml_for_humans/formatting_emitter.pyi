@@ -15,6 +15,7 @@ class FormattingAwareEmitter(HumanFriendlyEmitter):
     """
 
     preserve_empty_lines: bool
+    preserve_comments: bool
 
     def __init__(
         self,
@@ -25,6 +26,7 @@ class FormattingAwareEmitter(HumanFriendlyEmitter):
         allow_unicode: Optional[bool] = ...,
         line_break: Optional[str] = ...,
         preserve_empty_lines: bool = ...,
+        preserve_comments: bool = ...,
     ) -> None: ...
 
 class FormattingAwareDumper(
@@ -42,6 +44,8 @@ class FormattingAwareDumper(
 
     PRIORITY_KEYS: List[str]
     preserve_empty_lines: bool
+    preserve_comments: bool
+    _content_markers: Dict[str, List[str]]  # Storage for content marker data
 
     def __init__(
         self,
@@ -60,6 +64,7 @@ class FormattingAwareDumper(
         tags: Optional[Dict[str, str]] = ...,
         sort_keys: Optional[bool] = ...,
         preserve_empty_lines: bool = ...,
+        preserve_comments: bool = ...,
     ) -> None: ...
     def represent_mapping(
         self,

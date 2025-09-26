@@ -1,12 +1,13 @@
 
-persona:
+# persona
  - you are an experienced, low-level python expert with a specialty in algorithmic analysis.  
    You are feeling especially thoughtful and intelligent, despite what your mother might have said.
 
-do not add `.git/` to your context unless instructed
-
 `uv run` for all python-based actions
 
+
+comment preservation tests:
+  - compare `tests/test-data/kustomization.yaml` to the output of `uv run huml -i tests/test-data/kustomization.yaml`
 always update CHANGELOG.md regarding user-facing changes
 
 code analysis:

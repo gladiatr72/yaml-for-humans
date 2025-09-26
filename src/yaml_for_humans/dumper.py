@@ -8,16 +8,19 @@ that use the HumanFriendlyDumper by default, with optional empty line preservati
 import re
 import threading
 import yaml
+import json
 from io import StringIO
 from typing import Any, TextIO, Pattern
 from .emitter import HumanFriendlyDumper
 from .formatting_emitter import FormattingAwareDumper
 from .formatting_aware import FormattingAwareLoader
 
-# Pre-compiled regex pattern for empty line markers
-_EMPTY_LINE_PATTERN: Pattern[str] = re.compile(r"__EMPTY_LINES_(\d+)__")
+# Pre-compiled regex patterns for content line markers
+_EMPTY_LINE_PATTERN: Pattern[str] = re.compile(r"__EMPTY_LINES_(\d+)__")  # Backward compatibility
+_CONTENT_LINE_PATTERN: Pattern[str] = re.compile(r"__CONTENT_LINES_([^_]+)__")
+_INLINE_COMMENT_PATTERN: Pattern[str] = re.compile(r"__INLINE_COMMENT_([^_]+)__")
 
-# Thread-local buffer pool for StringIO reuse
+# Thread-local buffer pool for StringIO reuse and content markers
 _local: threading.local = threading.local()
 
 
@@ -35,6 +38,16 @@ def _get_buffer() -> StringIO:
         return StringIO()
 
 
+def _store_content_markers(markers: dict) -> None:
+    """Store content markers in thread-local storage."""
+    _local.content_markers = markers
+
+
+def _get_content_markers() -> dict:
+    """Get content markers from thread-local storage."""
+    return getattr(_local, 'content_markers', {})
+
+
 def _return_buffer(buffer: StringIO) -> None:
     """Return buffer to pool for reuse."""
     if not hasattr(_local, "buffer_pool"):
@@ -44,10 +57,12 @@ def _return_buffer(buffer: StringIO) -> None:
         _local.buffer_pool.append(buffer)
 
 
-def _process_empty_line_markers(yaml_text: str) -> str:
-    """Convert empty line markers to actual empty lines with optimized processing."""
+def _process_content_line_markers(yaml_text: str, content_markers: dict = None) -> str:
+    """Convert unified content line markers to actual empty lines and comments."""
+    content_markers = content_markers or {}
+
     # Fast path: if no markers present, return original text unchanged
-    if "__EMPTY_LINES_" not in yaml_text:
+    if "__CONTENT_LINES_" not in yaml_text and "__EMPTY_LINES_" not in yaml_text and "__INLINE_COMMENT_" not in yaml_text:
         return yaml_text
 
     lines = yaml_text.split("\n")
@@ -55,20 +70,56 @@ def _process_empty_line_markers(yaml_text: str) -> str:
     result_extend = result.extend  # Cache method lookup for performance
 
     for line in lines:
-        if "__EMPTY_LINES_" in line:
+        # Handle new unified content markers
+        if "__CONTENT_LINES_" in line:
+            match = _CONTENT_LINE_PATTERN.search(line)
+            if match:
+                content_hash = match.group(1)
+                if content_hash in content_markers:
+                    # Convert stored line content to actual lines
+                    content_lines = content_markers[content_hash]
+                    for content_line in content_lines:
+                        if content_line == "":  # Empty line
+                            result.append("")
+                        else:  # Comment line
+                            result.append(content_line)
+            # Skip marker lines
+        # Handle legacy empty line markers for backward compatibility
+        elif "__EMPTY_LINES_" in line:
             match = _EMPTY_LINE_PATTERN.search(line)
             if match:
                 empty_count = int(match.group(1))
                 result_extend([""] * empty_count)  # Bulk extend operation
-            # Skip malformed marker lines (no else needed)
+            # Skip marker lines
+        # Handle inline comment markers
+        elif "__INLINE_COMMENT_" in line:
+            match = _INLINE_COMMENT_PATTERN.search(line)
+            if match:
+                comment_hash = match.group(1)
+                if comment_hash in content_markers:
+                    comment_info = content_markers[comment_hash]
+                    # Replace the composite key with original key + comment
+                    clean_line = line.replace(f"__INLINE_COMMENT_{comment_hash}__", "")
+                    result.append(f"{clean_line}  {comment_info['comment']}")
+                else:
+                    # Fallback: just remove the marker if not found
+                    clean_line = _INLINE_COMMENT_PATTERN.sub("", line)
+                    result.append(clean_line)
+            else:
+                result.append(line)
         else:
             result.append(line)
 
     return "\n".join(result)
 
 
+def _process_empty_line_markers(yaml_text: str) -> str:
+    """Backward compatibility wrapper for old empty line marker processing."""
+    return _process_content_line_markers(yaml_text)
+
+
 def dump(
-    data: Any, stream: TextIO, preserve_empty_lines: bool = False, **kwargs: Any
+    data: Any, stream: TextIO, preserve_empty_lines: bool = False, preserve_comments: bool = False, **kwargs: Any
 ) -> None:
     """
     Serialize Python object to YAML with human-friendly formatting.
@@ -77,6 +128,7 @@ def dump(
         data: Python object to serialize
         stream: File-like object to write to
         preserve_empty_lines: If True, preserve empty lines from FormattingAware objects
+        preserve_comments: If True, preserve comments from FormattingAware objects
         **kwargs: Additional arguments passed to the dumper
 
     Example:
@@ -89,8 +141,8 @@ def dump(
         with open('output.yaml', 'w') as f:
             dump(data, f, preserve_empty_lines=True)
     """
-    # Choose dumper based on whether we need empty line preservation
-    if preserve_empty_lines:
+    # Choose dumper based on whether we need formatting preservation
+    if preserve_empty_lines or preserve_comments:
         dumper_class = FormattingAwareDumper
     else:
         dumper_class = HumanFriendlyDumper
@@ -107,32 +159,36 @@ def dump(
     # Update with user-provided kwargs first
     defaults.update(kwargs)
 
-    # Handle preserve_empty_lines parameter specially
-    if preserve_empty_lines and dumper_class == FormattingAwareDumper:
-        # Remove preserve_empty_lines from kwargs passed to yaml.dump
-        # since PyYAML doesn't expect it
+    # Handle formatting preservation parameters specially
+    if (preserve_empty_lines or preserve_comments) and dumper_class == FormattingAwareDumper:
+        # Remove formatting parameters from kwargs passed to yaml.dump
+        # since PyYAML doesn't expect them
         defaults.pop("preserve_empty_lines", None)
-        # The FormattingAwareDumper will get it via its constructor
+        defaults.pop("preserve_comments", None)
+        # The FormattingAwareDumper will get them via its constructor
         if "Dumper" in defaults and defaults["Dumper"] == FormattingAwareDumper:
-            # Create a custom dumper class with preserve_empty_lines preset
+            # Create a custom dumper class with formatting preservation preset
             class PresetFormattingAwareDumper(FormattingAwareDumper):
                 def __init__(self, *args, **kwargs):
                     kwargs.setdefault("preserve_empty_lines", preserve_empty_lines)
+                    kwargs.setdefault("preserve_comments", preserve_comments)
                     super().__init__(*args, **kwargs)
 
             defaults["Dumper"] = PresetFormattingAwareDumper
 
     import yaml
 
-    if preserve_empty_lines and dumper_class == FormattingAwareDumper:
+    if (preserve_empty_lines or preserve_comments) and dumper_class == FormattingAwareDumper:
         # For formatting-aware dumping, we need to post-process
         temp_stream = _get_buffer()
         try:
+            # Use yaml.dump with our custom dumper class that stores content markers
             result = yaml.dump(data, temp_stream, **defaults)
             yaml_output = temp_stream.getvalue()
 
-            # Post-process to convert empty line markers to actual empty lines
-            yaml_output = _process_empty_line_markers(yaml_output)
+            # Post-process to convert content line markers to actual lines
+            content_markers = _get_content_markers()
+            yaml_output = _process_content_line_markers(yaml_output, content_markers)
 
             # Write to the actual stream
             stream.write(yaml_output)
@@ -143,13 +199,14 @@ def dump(
         return yaml.dump(data, stream, **defaults)
 
 
-def dumps(data: Any, preserve_empty_lines: bool = False, **kwargs: Any) -> str:
+def dumps(data: Any, preserve_empty_lines: bool = False, preserve_comments: bool = False, **kwargs: Any) -> str:
     """
     Serialize Python object to YAML string with human-friendly formatting.
 
     Args:
         data: Python object to serialize
         preserve_empty_lines: If True, preserve empty lines from FormattingAware objects
+        preserve_comments: If True, preserve comments from FormattingAware objects
         **kwargs: Additional arguments passed to the dumper
 
     Returns:
@@ -165,7 +222,7 @@ def dumps(data: Any, preserve_empty_lines: bool = False, **kwargs: Any) -> str:
     """
     stream = _get_buffer()
     try:
-        dump(data, stream, preserve_empty_lines=preserve_empty_lines, **kwargs)
+        dump(data, stream, preserve_empty_lines=preserve_empty_lines, preserve_comments=preserve_comments, **kwargs)
         return stream.getvalue()
     finally:
         _return_buffer(stream)

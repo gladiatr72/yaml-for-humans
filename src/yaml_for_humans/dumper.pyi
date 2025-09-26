@@ -13,6 +13,7 @@ def dump(
     data: YAMLObject,
     stream: StreamType,
     preserve_empty_lines: bool = ...,
+    preserve_comments: bool = ...,
     *,
     Dumper: Optional[type] = ...,
     default_flow_style: Optional[bool] = ...,
@@ -27,6 +28,7 @@ def dump(
         data: Python object to serialize
         stream: File-like object to write to
         preserve_empty_lines: If True, preserve empty lines from FormattingAware objects
+        preserve_comments: If True, preserve comments from FormattingAware objects
         **kwargs: Additional arguments passed to the dumper
     """
     ...
@@ -34,6 +36,7 @@ def dump(
 def dumps(
     data: YAMLObject,
     preserve_empty_lines: bool = ...,
+    preserve_comments: bool = ...,
     *,
     Dumper: Optional[type] = ...,
     default_flow_style: Optional[bool] = ...,
@@ -47,6 +50,7 @@ def dumps(
     Args:
         data: Python object to serialize
         preserve_empty_lines: If True, preserve empty lines from FormattingAware objects
+        preserve_comments: If True, preserve comments from FormattingAware objects
         **kwargs: Additional arguments passed to the dumper
 
     Returns:

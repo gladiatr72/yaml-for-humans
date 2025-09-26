@@ -12,16 +12,16 @@ import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterator, TextIO, Callable, Protocol
+from typing import Any, Callable, Iterator, Protocol, TextIO
 
 import yaml
 
-from .dumper import dumps, load_with_formatting
 from .document_processors import (
+    process_items_array,
     process_json_lines,
     process_multi_document_yaml,
-    process_items_array,
 )
+from .dumper import dumps, load_with_formatting
 
 try:
     import click
@@ -32,13 +32,16 @@ except ImportError:
 DEFAULT_TIMEOUT_MS: int = 2000
 DEFAULT_INDENT: int = 2
 DEFAULT_PRESERVE_EMPTY_LINES: bool = True
+DEFAULT_PRESERVE_COMMENTS: bool = True
 
 
 @dataclass(frozen=True)
 class ProcessingContext:
     """Immutable context for processing operations."""
+
     unsafe_inputs: bool = False
     preserve_empty_lines: bool = DEFAULT_PRESERVE_EMPTY_LINES
+    preserve_comments: bool = DEFAULT_PRESERVE_COMMENTS
 
     def create_source_factory(self, base_info: dict) -> Callable[[], dict]:
         """Create source factory with counter for multi-document sources."""
@@ -91,7 +94,9 @@ class FilePathExpander:
                     if _is_valid_file_type(full_path):
                         expanded.append(full_path)
                     else:
-                        click.echo(f"Skipping file with invalid format: {full_path}", err=True)
+                        click.echo(
+                            f"Skipping file with invalid format: {full_path}", err=True
+                        )
         else:
             click.echo(f"Directory not found: {dir_path}", err=True)
 
@@ -108,7 +113,9 @@ class FilePathExpander:
                     if _is_valid_file_type(match):
                         expanded.append(match)
                     else:
-                        click.echo(f"Skipping file with invalid format: {match}", err=True)
+                        click.echo(
+                            f"Skipping file with invalid format: {match}", err=True
+                        )
         else:
             click.echo(f"No files found matching pattern: {glob_pattern}", err=True)
 
@@ -137,14 +144,18 @@ class FormatDetector:
     def __init__(self, context: ProcessingContext):
         self.context = context
 
-    def process_content(self, content: str, source_factory: Callable) -> tuple[list[Any], list[dict]]:
+    def process_content(
+        self, content: str, source_factory: Callable
+    ) -> tuple[list[Any], list[dict]]:
         """Unified content processing with format detection."""
         if _looks_like_json(content):
             return self._process_json_content(content, source_factory)
         else:
             return self._process_yaml_content(content, source_factory)
 
-    def _process_json_content(self, content: str, source_factory: Callable) -> tuple[list[Any], list[dict]]:
+    def _process_json_content(
+        self, content: str, source_factory: Callable
+    ) -> tuple[list[Any], list[dict]]:
         """Process JSON content with format-specific handling."""
         if _is_json_lines(content):
             return process_json_lines(content, source_factory)
@@ -156,7 +167,9 @@ class FormatDetector:
 
         return [data], [source_factory()]
 
-    def _process_yaml_content(self, content: str, source_factory: Callable) -> tuple[list[Any], list[dict]]:
+    def _process_yaml_content(
+        self, content: str, source_factory: Callable
+    ) -> tuple[list[Any], list[dict]]:
         """Process YAML content with multi-document support."""
         if _is_multi_document_yaml(content):
             return process_multi_document_yaml(
@@ -164,13 +177,13 @@ class FormatDetector:
                 source_factory,
                 unsafe=self.context.unsafe_inputs,
                 preserve_empty_lines=self.context.preserve_empty_lines,
-                _load_all_yaml_func=_load_all_yaml
+                _load_all_yaml_func=_load_all_yaml,
             )
 
         data = _load_yaml(
             content,
             unsafe=self.context.unsafe_inputs,
-            preserve_empty_lines=self.context.preserve_empty_lines
+            preserve_empty_lines=self.context.preserve_empty_lines,
         )
         return [data], [source_factory()]
 
@@ -217,7 +230,9 @@ class InputProcessor:
             if not content:
                 return [], []
 
-            source_factory = self.context.create_source_factory({"file_path": file_path})
+            source_factory = self.context.create_source_factory(
+                {"file_path": file_path}
+            )
             return self.format_detector.process_content(content, source_factory)
 
         except FileNotFoundError:
@@ -237,8 +252,10 @@ class InputProcessor:
 @dataclass(frozen=True)
 class OutputContext:
     """Configuration for output operations."""
+
     indent: int = DEFAULT_INDENT
     preserve_empty_lines: bool = DEFAULT_PRESERVE_EMPTY_LINES
+    preserve_comments: bool = DEFAULT_PRESERVE_COMMENTS
     auto_create_dirs: bool = False
 
 
@@ -246,10 +263,7 @@ class OutputStrategy(Protocol):
     """Strategy interface for different output modes."""
 
     def write_documents(
-        self,
-        documents: list[Any],
-        sources: list[dict],
-        context: OutputContext
+        self, documents: list[Any], sources: list[dict], context: OutputContext
     ) -> None:
         """Write documents using the specific output strategy."""
         ...
@@ -263,16 +277,15 @@ class DirectoryOutputWriter:
         self._filename_cache: set[str] = set()
 
     def write_documents(
-        self,
-        documents: list[Any],
-        sources: list[dict],
-        context: OutputContext
+        self, documents: list[Any], sources: list[dict], context: OutputContext
     ) -> None:
         """Write documents to individual files in directory."""
         self._ensure_directory_exists(context.auto_create_dirs)
 
         if len(documents) == 1:
-            self._write_single_document(documents[0], sources[0] if sources else {}, context)
+            self._write_single_document(
+                documents[0], sources[0] if sources else {}, context
+            )
         else:
             self._write_multiple_documents(documents, sources, context)
 
@@ -283,14 +296,13 @@ class DirectoryOutputWriter:
                 self.dir_path.mkdir(parents=True, exist_ok=True)
                 print(f"Created directory: {self.dir_path}", file=sys.stderr)
             else:
-                print(f"Error: Directory does not exist: {self.dir_path}", file=sys.stderr)
+                print(
+                    f"Error: Directory does not exist: {self.dir_path}", file=sys.stderr
+                )
                 sys.exit(1)
 
     def _write_single_document(
-        self,
-        document: Any,
-        source: dict,
-        context: OutputContext
+        self, document: Any, source: dict, context: OutputContext
     ) -> None:
         """Write single document to file."""
         filename = self._generate_unique_filename(document, source)
@@ -298,10 +310,7 @@ class DirectoryOutputWriter:
         self._write_yaml_file(file_path, document, context)
 
     def _write_multiple_documents(
-        self,
-        documents: list[Any],
-        sources: list[dict],
-        context: OutputContext
+        self, documents: list[Any], sources: list[dict], context: OutputContext
     ) -> None:
         """Write multiple documents with O(1) filename conflict resolution."""
         for i, doc in enumerate(documents):
@@ -311,10 +320,7 @@ class DirectoryOutputWriter:
             self._write_yaml_file(file_path, doc, context)
 
     def _generate_unique_filename(
-        self,
-        document: Any,
-        source: dict,
-        index: int = 0
+        self, document: Any, source: dict, index: int = 0
     ) -> str:
         """Generate unique filename avoiding O(n²) filesystem checks."""
         # Check if this is a Kubernetes manifest to enable prefix ordering
@@ -324,7 +330,7 @@ class DirectoryOutputWriter:
             document,
             source_file=source.get("file_path"),
             stdin_position=source.get("stdin_position"),
-            add_prefix=is_k8s_manifest
+            add_prefix=is_k8s_manifest,
         )
 
         # Use cache to avoid filesystem checks for known filenames
@@ -346,14 +352,19 @@ class DirectoryOutputWriter:
                     return candidate
             counter += 1
 
-    def _write_yaml_file(self, file_path: Path, document: Any, context: OutputContext) -> None:
+    def _write_yaml_file(
+        self, file_path: Path, document: Any, context: OutputContext
+    ) -> None:
         """Write single document to YAML file."""
         with open(file_path, "w", encoding="utf-8") as f:
-            f.write(dumps(
-                document,
-                indent=context.indent,
-                preserve_empty_lines=context.preserve_empty_lines,
-            ))
+            f.write(
+                dumps(
+                    document,
+                    indent=context.indent,
+                    preserve_empty_lines=context.preserve_empty_lines,
+                    preserve_comments=context.preserve_comments,
+                )
+            )
 
 
 class FileOutputWriter:
@@ -363,10 +374,7 @@ class FileOutputWriter:
         self.file_path = file_path
 
     def write_documents(
-        self,
-        documents: list[Any],
-        sources: list[dict],
-        context: OutputContext
+        self, documents: list[Any], sources: list[dict], context: OutputContext
     ) -> None:
         """Write documents to single file."""
         self._ensure_parent_dirs_exist(context.auto_create_dirs)
@@ -384,27 +392,25 @@ class FileOutputWriter:
             print(f"Created parent directories for: {self.file_path}", file=sys.stderr)
 
     def _write_multi_document_yaml(
-        self,
-        file_handle: TextIO,
-        documents: list[Any],
-        context: OutputContext
+        self, file_handle: TextIO, documents: list[Any], context: OutputContext
     ) -> None:
         """Write multiple documents to single file."""
         from .multi_document import dumps_all
+
         file_handle.write(dumps_all(documents, indent=context.indent))
 
     def _write_single_document_yaml(
-        self,
-        file_handle: TextIO,
-        document: Any,
-        context: OutputContext
+        self, file_handle: TextIO, document: Any, context: OutputContext
     ) -> None:
         """Write single document to file."""
-        file_handle.write(dumps(
-            document,
-            indent=context.indent,
-            preserve_empty_lines=context.preserve_empty_lines,
-        ))
+        file_handle.write(
+            dumps(
+                document,
+                indent=context.indent,
+                preserve_empty_lines=context.preserve_empty_lines,
+                preserve_comments=context.preserve_comments,
+            )
+        )
 
 
 class OutputWriter:
@@ -425,13 +431,15 @@ class OutputWriter:
         output_path: str,
         indent: int = DEFAULT_INDENT,
         preserve_empty_lines: bool = DEFAULT_PRESERVE_EMPTY_LINES,
-        auto: bool = False
+        preserve_comments: bool = DEFAULT_PRESERVE_COMMENTS,
+        auto: bool = False,
     ) -> None:
         """Main entry point replacing _write_to_output."""
         context = OutputContext(
             indent=indent,
             preserve_empty_lines=preserve_empty_lines,
-            auto_create_dirs=auto
+            preserve_comments=preserve_comments,
+            auto_create_dirs=auto,
         )
 
         writer = OutputWriter.create_writer(output_path)
@@ -451,6 +459,7 @@ def _load_yaml(
     else:
         # Use key-preserving loader to prevent 'on'/'off'/'yes'/'no' -> boolean conversion
         from .dumper import _load_yaml_safe_keys
+
         return _load_yaml_safe_keys(content)
 
 
@@ -571,25 +580,34 @@ def _handle_output_generation(
     auto: bool,
     indent: int,
     preserve_empty_lines: bool,
+    preserve_comments: bool = DEFAULT_PRESERVE_COMMENTS,
 ) -> None:
     """
     Handle output generation - either to file/directory or stdout.
     """
     if output:
         # Write to file/directory
-        _write_to_output(
-            documents, output, auto, indent, document_sources, preserve_empty_lines
+        OutputWriter.write(
+            documents=documents,
+            sources=document_sources,
+            output_path=output,
+            indent=indent,
+            preserve_empty_lines=preserve_empty_lines,
+            preserve_comments=preserve_comments,
+            auto=auto,
         )
     else:
         # Write to stdout (existing behavior)
         if len(documents) > 1:
             from .multi_document import dumps_all
+
             output_str = dumps_all(documents, indent=indent)
         else:
             output_str = dumps(
                 documents[0],
                 indent=indent,
                 preserve_empty_lines=preserve_empty_lines,
+                preserve_comments=preserve_comments,
             )
         print(output_str, end="")
 
@@ -602,6 +620,7 @@ def _huml_main(
     auto: bool = False,
     unsafe_inputs: bool = False,
     preserve_empty_lines: bool = DEFAULT_PRESERVE_EMPTY_LINES,
+    preserve_comments: bool = DEFAULT_PRESERVE_COMMENTS,
 ) -> None:
     """
     Convert YAML or JSON input to human-friendly YAML.
@@ -619,7 +638,8 @@ def _huml_main(
         # Create processing context and processor
         context = ProcessingContext(
             unsafe_inputs=unsafe_inputs,
-            preserve_empty_lines=preserve_empty_lines
+            preserve_empty_lines=preserve_empty_lines,
+            preserve_comments=preserve_comments,
         )
         processor = InputProcessor(context)
 
@@ -638,7 +658,13 @@ def _huml_main(
 
         # Handle output generation
         _handle_output_generation(
-            documents, document_sources, output, auto, indent, preserve_empty_lines
+            documents,
+            document_sources,
+            output,
+            auto,
+            indent,
+            preserve_empty_lines,
+            preserve_comments,
         )
 
     except json.JSONDecodeError as e:
@@ -700,7 +726,9 @@ def _has_items_array(data: Any) -> bool:
     return any(isinstance(item, dict) for item in items)
 
 
-def _generate_k8s_filename(document, source_file=None, stdin_position=None, add_prefix=False):
+def _generate_k8s_filename(
+    document, source_file=None, stdin_position=None, add_prefix=False
+):
     """Generate a filename for a Kubernetes manifest document.
 
     Args:
@@ -752,6 +780,7 @@ def _generate_k8s_filename(document, source_file=None, stdin_position=None, add_
     # Add resource ordering prefix if requested
     if add_prefix and kind:
         from .multi_document import get_k8s_resource_prefix
+
         prefix = get_k8s_resource_prefix(document)
         return f"{prefix}-{base_filename}"
 
@@ -807,6 +836,7 @@ def _write_to_output(
     indent=DEFAULT_INDENT,
     document_sources=None,
     preserve_empty_lines=DEFAULT_PRESERVE_EMPTY_LINES,
+    preserve_comments=DEFAULT_PRESERVE_COMMENTS,
 ):
     """Write documents to the specified output path using OutputWriter architecture."""
     OutputWriter.write(
@@ -815,7 +845,8 @@ def _write_to_output(
         output_path=output_path,
         indent=indent,
         preserve_empty_lines=preserve_empty_lines,
-        auto=auto
+        preserve_comments=preserve_comments,
+        auto=auto,
     )
 
 
@@ -864,14 +895,13 @@ def huml():
     )
     @click.option(
         "--no-preserve",
+        "-P",
         is_flag=True,
         default=False,
-        help="Disable preservation of empty lines from original YAML",
+        help="Disable preservation of empty lines and comments from original YAML",
     )
     @click.version_option()
-    def cli_main(
-        indent, timeout, inputs, output, auto, unsafe_inputs, no_preserve
-    ):
+    def cli_main(indent, timeout, inputs, output, auto, unsafe_inputs, no_preserve):
         """
         Convert YAML or JSON input to human-friendly YAML.
 
@@ -884,7 +914,14 @@ def huml():
           arbitrary Python object instantiation (use with caution).
         """
         _huml_main(
-            indent, timeout, inputs, output, auto, unsafe_inputs, not no_preserve
+            indent,
+            timeout,
+            inputs,
+            output,
+            auto,
+            unsafe_inputs,
+            not no_preserve,
+            not no_preserve,
         )
 
     cli_main()

@@ -2,7 +2,20 @@
 Type stubs for CLI module.
 """
 
-from typing import Optional, Any, Dict, List
+from typing import Optional, Any, Dict, List, Tuple
+
+class ProcessingContext:
+    """Immutable context for processing operations."""
+    def __init__(
+        self,
+        unsafe_inputs: bool = ...,
+        preserve_empty_lines: bool = ...,
+        preserve_comments: bool = ...,
+    ) -> None: ...
+
+class InputProcessor:
+    """Handles document processing from various input sources."""
+    def __init__(self, context: ProcessingContext) -> None: ...
 
 def huml(
     indent: int = ...,
@@ -28,6 +41,7 @@ def _handle_output_generation(
     auto: bool,
     indent: int,
     preserve_empty_lines: bool,
+    preserve_comments: bool = ...,
 ) -> None: ...
 
 def _huml_main(
@@ -38,6 +52,7 @@ def _huml_main(
     auto: bool = ...,
     unsafe_inputs: bool = ...,
     preserve_empty_lines: bool = ...,
+    preserve_comments: bool = ...,
 ) -> None:
     """
     Main CLI functionality for processing YAML/JSON input with automatic format detection.
@@ -50,6 +65,7 @@ def _huml_main(
         auto: Auto-create output directories
         unsafe_inputs: Use unsafe YAML loader
         preserve_empty_lines: Preserve empty lines from original YAML (default: True)
+        preserve_comments: Preserve comments from original YAML (default: True)
     """
     ...
 
@@ -111,6 +127,7 @@ def _write_to_output(
     indent: int = ...,
     document_sources: Optional[List[Dict[str, Any]]] = ...,
     preserve_empty_lines: bool = ...,
+    preserve_comments: bool = ...,
 ) -> None:
     """
     Write documents to output file or directory.
@@ -122,5 +139,6 @@ def _write_to_output(
         indent: YAML indentation level
         document_sources: Source information for each document
         preserve_empty_lines: Preserve empty lines from original YAML (default: True)
+        preserve_comments: Preserve comments from original YAML (default: True)
     """
     ...

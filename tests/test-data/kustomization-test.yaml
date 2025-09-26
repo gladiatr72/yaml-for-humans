@@ -1,0 +1,68 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../.overlays/gitlab-registry-access/
+  - ../../.overlays/postgres-headless-2023/
+  - django/
+# these
+
+
+labels:
+  -
+    includeSelectors: true
+# this
+    pairs:
+      env: prod
+# whee
+
+
+
+
+images:
+  -
+    name: application
+    newName: registry.gitlab.com/who/what
+    newTag: v3.3.1i
+
+  -
+    name: nginx
+    newTag: 1.27.4
+
+configMapGenerator:
+  -
+    name: env
+    behavior: create
+    envs:
+      - vars.env
+
+  -
+    name: proxy-config
+    files:
+      - nginx.conf
+
+secretGenerator:
+  -
+    name: env
+    behavior: create
+    envs:
+      - secrets.env
+
+patches:
+  -
+    path: patches/sidecars/nginx-front.yaml
+    target:
+      kind: Deployment
+      labelSelector: component=django
+
+  -
+    path: patches/init-containers/migrate.yaml
+    target:
+      kind: Deployment
+      labelSelector: component=django
+
+  -
+    path: patches/init-containers/collectstatic.yaml
+    target:
+      kind: Deployment
+      labelSelector: component=django
