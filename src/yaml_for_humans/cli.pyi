@@ -49,7 +49,7 @@ def _huml_main(
         output: Output file or directory path
         auto: Auto-create output directories
         unsafe_inputs: Use unsafe YAML loader
-        preserve_empty_lines: Preserve empty lines from original YAML
+        preserve_empty_lines: Preserve empty lines from original YAML (default: True)
     """
     ...
 
@@ -121,6 +121,6 @@ def _write_to_output(
         auto: Whether to auto-create directories
         indent: YAML indentation level
         document_sources: Source information for each document
-        preserve_empty_lines: Preserve empty lines from original YAML
+        preserve_empty_lines: Preserve empty lines from original YAML (default: True)
     """
     ...

@@ -7,42 +7,52 @@ resources:
   - django/
 
 labels:
-  - includeSelectors: true
+  -
+    includeSelectors: true
     pairs:
       env: prod
 
+
 images:
-  - name: application
+  -
+    name: application
     newName: registry.gitlab.com/who/what
     newTag: v3.3.1i
-  - name: nginx
+  -
+    name: nginx
     newTag: 1.27.4
 
 configMapGenerator:
-  - name: env
+  -
+    name: env
     behavior: create
     envs:
       - vars.env
-  - name: proxy-config
+  -
+    name: proxy-config
     files:
       - nginx.conf
 
 secretGenerator:
-  - name: env
+  -
+    name: env
     behavior: create
     envs:
       - secrets.env
 
 patches:
-  - path: patches/sidecars/nginx-front.yaml
+  -
+    path: patches/sidecars/nginx-front.yaml
     target:
       kind: Deployment
       labelSelector: component=django
-  - path: patches/init-containers/migrate.yaml
+  -
+    path: patches/init-containers/migrate.yaml
     target:
       kind: Deployment
       labelSelector: component=django
-  - path: patches/init-containers/collectstatic.yaml
+  -
+    path: patches/init-containers/collectstatic.yaml
     target:
       kind: Deployment
       labelSelector: component=django

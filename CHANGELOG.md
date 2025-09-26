@@ -2,6 +2,16 @@
 
 All notable changes to yaml-for-humans will be documented in this file.
 
+## [1.3.1] 
+
+### Changed
+- **BREAKING CHANGE**: Empty line preservation is now **enabled by default**
+- Replaced `-P/--preserve-empty-lines` flag with `--no-preserve` flag
+- Users who want the old behavior (no empty line preservation) should now use `--no-preserve`
+
+### Added
+- `DEFAULT_PRESERVE_EMPTY_LINES` constant for centralized configuration
+
 ## [1.0.2] - 2025-01-03
 
 ### Changed

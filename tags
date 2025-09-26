@@ -218,12 +218,13 @@ teardown_method	tests/test_integration.py	/^    def teardown_method(self):$/;"	m
 test_auto_format_detection	tests/test_cli.py	/^    def test_auto_format_detection(self, capsys):$/;"	f
 test_backward_compatibility	tests/test_empty_line_preservation.py	/^    def test_backward_compatibility(self):$/;"	f
 test_ci_cd_pipeline	tests/test_integration.py	/^    def test_ci_cd_pipeline(self):$/;"	m	class:TestRealWorldExamples
-test_cli_can_preserve_empty_lines_with_P_flag	tests/test_cli_empty_lines.py	/^    def test_cli_can_preserve_empty_lines_with_P_flag(self):$/;"	m	class:TestCLIEmptyLines
-test_cli_does_not_preserve_empty_lines_by_default	tests/test_cli_empty_lines.py	/^    def test_cli_does_not_preserve_empty_lines_by_default(self):$/;"	m	class:TestCLIEmptyLines
-test_cli_help_includes_preserve_empty_lines_option	tests/test_cli_empty_lines.py	/^    def test_cli_help_includes_preserve_empty_lines_option(self):$/;"	m	class:TestCLIEmptyLines
+test_cli_can_disable_empty_lines_with_no_preserve_flag	tests/test_cli_empty_lines.py	/^    def test_cli_can_disable_empty_lines_with_no_preserve_flag(self):$/;"	m	class:TestCLIEmptyLines
+test_cli_disables_empty_lines_with_file_input_and_no_preserve_flag	tests/test_cli_empty_lines.py	/^    def test_cli_disables_empty_lines_with_file_input_and_no_preserve_flag(self, tmp_path):$/;"	m	class:TestCLIEmptyLines
+test_cli_help_includes_no_preserve_option	tests/test_cli_empty_lines.py	/^    def test_cli_help_includes_no_preserve_option(self):$/;"	m	class:TestCLIEmptyLines
 test_cli_inputs_kubernetes_deployment	tests/test_integration.py	/^    def test_cli_inputs_kubernetes_deployment(self):$/;"	m	class:TestCLIInputsFlag
 test_cli_inputs_multiple_files	tests/test_integration.py	/^    def test_cli_inputs_multiple_files(self):$/;"	m	class:TestCLIInputsFlag
-test_cli_preserves_empty_lines_with_file_input_and_P_flag	tests/test_cli_empty_lines.py	/^    def test_cli_preserves_empty_lines_with_file_input_and_P_flag(self, tmp_path):$/;"	m	class:TestCLIEmptyLines
+test_cli_preserves_empty_lines_by_default	tests/test_cli_empty_lines.py	/^    def test_cli_preserves_empty_lines_by_default(self):$/;"	m	class:TestCLIEmptyLines
+test_cli_preserves_empty_lines_with_file_input_by_default	tests/test_cli_empty_lines.py	/^    def test_cli_preserves_empty_lines_with_file_input_by_default(self, tmp_path):$/;"	m	class:TestCLIEmptyLines
 test_cli_with_json_input_still_works	tests/test_cli_empty_lines.py	/^    def test_cli_with_json_input_still_works(self):$/;"	m	class:TestCLIEmptyLines
 test_comparison_with_test_data	tests/test_multiline_scalars.py	/^def test_comparison_with_test_data():$/;"	f
 test_complex_multiline_formatting	tests/test_multiline_scalars.py	/^def test_complex_multiline_formatting():$/;"	f

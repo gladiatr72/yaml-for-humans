@@ -31,13 +31,14 @@ except ImportError:
 
 DEFAULT_TIMEOUT_MS: int = 2000
 DEFAULT_INDENT: int = 2
+DEFAULT_PRESERVE_EMPTY_LINES: bool = True
 
 
 @dataclass(frozen=True)
 class ProcessingContext:
     """Immutable context for processing operations."""
     unsafe_inputs: bool = False
-    preserve_empty_lines: bool = True
+    preserve_empty_lines: bool = DEFAULT_PRESERVE_EMPTY_LINES
 
     def create_source_factory(self, base_info: dict) -> Callable[[], dict]:
         """Create source factory with counter for multi-document sources."""
@@ -237,7 +238,7 @@ class InputProcessor:
 class OutputContext:
     """Configuration for output operations."""
     indent: int = DEFAULT_INDENT
-    preserve_empty_lines: bool = True
+    preserve_empty_lines: bool = DEFAULT_PRESERVE_EMPTY_LINES
     auto_create_dirs: bool = False
 
 
@@ -423,7 +424,7 @@ class OutputWriter:
         sources: list[dict],
         output_path: str,
         indent: int = DEFAULT_INDENT,
-        preserve_empty_lines: bool = True,
+        preserve_empty_lines: bool = DEFAULT_PRESERVE_EMPTY_LINES,
         auto: bool = False
     ) -> None:
         """Main entry point replacing _write_to_output."""
@@ -600,7 +601,7 @@ def _huml_main(
     output: str | None = None,
     auto: bool = False,
     unsafe_inputs: bool = False,
-    preserve_empty_lines: bool = True,
+    preserve_empty_lines: bool = DEFAULT_PRESERVE_EMPTY_LINES,
 ) -> None:
     """
     Convert YAML or JSON input to human-friendly YAML.
@@ -805,7 +806,7 @@ def _write_to_output(
     auto=False,
     indent=DEFAULT_INDENT,
     document_sources=None,
-    preserve_empty_lines=True,
+    preserve_empty_lines=DEFAULT_PRESERVE_EMPTY_LINES,
 ):
     """Write documents to the specified output path using OutputWriter architecture."""
     OutputWriter.write(
@@ -862,15 +863,14 @@ def huml():
         help="Use unsafe YAML loader (yaml.Loader) instead of safe loader (default: false, uses yaml.SafeLoader)",
     )
     @click.option(
-        "-P",
-        "--preserve-empty-lines",
+        "--no-preserve",
         is_flag=True,
         default=False,
-        help="Preserve empty lines from original YAML",
+        help="Disable preservation of empty lines from original YAML",
     )
     @click.version_option()
     def cli_main(
-        indent, timeout, inputs, output, auto, unsafe_inputs, preserve_empty_lines
+        indent, timeout, inputs, output, auto, unsafe_inputs, no_preserve
     ):
         """
         Convert YAML or JSON input to human-friendly YAML.
@@ -884,7 +884,7 @@ def huml():
           arbitrary Python object instantiation (use with caution).
         """
         _huml_main(
-            indent, timeout, inputs, output, auto, unsafe_inputs, preserve_empty_lines
+            indent, timeout, inputs, output, auto, unsafe_inputs, not no_preserve
         )
 
     cli_main()
