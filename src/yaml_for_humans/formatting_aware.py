@@ -91,37 +91,55 @@ class FormattingAwareComposer(Composer):
         self._end_line_cache = {}
         # Object pool for metadata to reduce allocations
         self._metadata_pool = []
-        # Store raw YAML lines for comment extraction
+        # Lazy loading for raw YAML lines
         self._raw_lines = None
+        self._stream = None
 
     def _initialize_raw_lines(self, stream):
-        """Extract raw YAML lines for comment processing."""
-        if self._raw_lines is not None:
+        """Initialize lazy loading for raw YAML lines."""
+        if self._stream is not None:
             return
 
+        # Store stream reference for lazy loading
+        self._stream = stream
+        self._raw_lines = None  # Will be loaded on first access
+
+    def _ensure_raw_lines(self):
+        """Ensure raw lines are loaded, return True if successful."""
+        if self._raw_lines is not None:
+            return True
+
+        if self._stream is None:
+            return False
+
         # Handle different stream types
-        if isinstance(stream, str):
+        if isinstance(self._stream, str):
             # String input
-            content = stream
+            content = self._stream
         else:
             # File-like object
             try:
-                current_pos = stream.tell()
-                stream.seek(0)
-                content = stream.read()
-                stream.seek(current_pos)
+                if hasattr(self._stream, 'getvalue'):
+                    # StringIO-like objects - efficient access
+                    content = self._stream.getvalue()
+                else:
+                    # Regular file objects - minimize I/O
+                    current_pos = self._stream.tell()
+                    self._stream.seek(0)
+                    content = self._stream.read()
+                    self._stream.seek(current_pos)
             except (AttributeError, OSError):
-                # If seek/tell not available, we can't extract raw content
-                # Fall back to empty lines behavior
+                # If seek/tell not available, fall back to empty behavior
                 self._raw_lines = []
-                return
+                return True
 
         # Split into lines for comment extraction
         self._raw_lines = content.splitlines()
+        return True
 
     def _extract_lines_before(self, start_line, previous_end_line):
         """Extract lines (empty lines and comments) between two content lines."""
-        if self._raw_lines is None:
+        if not self._ensure_raw_lines():
             # Fallback to old behavior if raw lines not available
             empty_count = max(0, start_line - previous_end_line - 1)
             return [""] * empty_count
@@ -131,11 +149,12 @@ class FormattingAwareComposer(Composer):
         # Extract lines between previous_end_line and start_line
         for line_num in range(previous_end_line + 1, start_line):
             if 0 <= line_num < len(self._raw_lines):
-                line = self._raw_lines[line_num].rstrip()
-                if line.strip().startswith('#'):
+                line = self._raw_lines[line_num]
+                stripped = line.strip()
+                if stripped.startswith('#'):
                     # This is a comment line
-                    lines_content.append(line.strip())
-                elif line.strip() == "":
+                    lines_content.append(stripped)
+                elif stripped == "":
                     # This is an empty line
                     lines_content.append("")
                 # Otherwise, this is a content line - skip it (don't add to formatting)
@@ -144,7 +163,7 @@ class FormattingAwareComposer(Composer):
 
     def _extract_inline_comment(self, node):
         """Extract inline comment from the end of a node's line."""
-        if self._raw_lines is None or not hasattr(node, 'end_mark') or node.end_mark is None:
+        if not self._ensure_raw_lines() or not hasattr(node, 'end_mark') or node.end_mark is None:
             return None
 
         line_num = node.end_mark.line

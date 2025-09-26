@@ -8,7 +8,6 @@ that use the HumanFriendlyDumper by default, with optional empty line preservati
 import re
 import threading
 import yaml
-import json
 from io import StringIO
 from typing import Any, TextIO, Pattern
 from .emitter import HumanFriendlyDumper

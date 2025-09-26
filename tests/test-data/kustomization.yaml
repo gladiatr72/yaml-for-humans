@@ -6,12 +6,16 @@ resources:
   - ../../.overlays/postgres-headless-2023/
   - django/
 
+#these
 labels:
   -
-    includeSelectors: true
+    includeSelectors: true # this
     pairs:
       env: prod
 
+##
+# whee
+##
 
 images:
   -

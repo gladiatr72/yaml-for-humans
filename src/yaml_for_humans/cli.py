@@ -282,7 +282,13 @@ class DirectoryOutputWriter:
         """Write documents to individual files in directory."""
         self._ensure_directory_exists(context.auto_create_dirs)
 
-        if len(documents) == 1:
+        # Check if we have a single container document with items that should be unwrapped
+        if len(documents) == 1 and _has_items_array(documents[0]):
+            # Unwrap the items and write them as separate documents
+            items = documents[0]["items"]
+            items_sources = [sources[0] if sources else {} for _ in items]
+            self._write_multiple_documents(items, items_sources, context)
+        elif len(documents) == 1:
             self._write_single_document(
                 documents[0], sources[0] if sources else {}, context
             )
@@ -698,7 +704,11 @@ def _is_multi_document_yaml(text: str) -> bool:
 
 def _is_json_lines(text: str) -> bool:
     """Check if text is in JSON Lines format (one JSON object per line)."""
-    lines = [line.strip() for line in text.split("\n") if line.strip()]
+    lines = []
+    for line in text.split("\n"):
+        stripped = line.strip()
+        if stripped:
+            lines.append(stripped)
 
     # Must have more than one line with content
     if len(lines) <= 1:

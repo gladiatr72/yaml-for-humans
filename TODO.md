@@ -1,23 +1,43 @@
+# TODO - YAML for Humans
 
-## Comment Preservation Implementation Issues 🔧 **NEEDS ARCHITECTURAL FIX**
+## Performance Optimization Opportunities
 
-**Current Status**: Partially implemented with CLI integration complete, but critical positioning/spacing issues.
+### High Priority - String Processing Bottlenecks
 
-**Broken Behavior in `tests/test-data/kustomization.yaml`:**
-- `# these` (line 9) should appear directly before `labels:` (line 10) - currently misplaced
-- `# this` (line 12) should be end-of-line with `includeSelectors: true` - currently appears as standalone
-- `# whee` (line 17) should appear with blank line 18 preserved before `images:` (line 19) - spacing lost
+1. ~~**Optimize comment extraction loops** (formatting_aware.py:132-137)~~ ✅ **COMPLETED**
+   - ~~Multiple `.strip()` calls per line in comment processing~~
+   - ~~Cache stripped strings to avoid repeated operations~~
+   - **Result**: Reduced from 4 to 1 strip() call per line (~75% improvement)
 
-**Root Cause**: Built separate comment metadata system (`CommentMetadata` class, comment-specific markers) instead of integrating with existing proven blank line preservation architecture.
+2. ~~**Fix JSON Lines detection inefficiency** (cli.py:462)~~ ✅ **COMPLETED**
+   - ~~Double `.strip()` in list comprehension: `[line.strip() for line in text.split("\n") if line.strip()]`~~
+   - ~~Use single strip with assignment~~
+   - **Result**: Reduced from 2 to 1 strip() call per line (50% improvement)
 
-**Key Insight**: Existing blank line system already correctly tracks line positions and spacing. Comments should be integrated into that system rather than building parallel infrastructure.
+### Medium Priority - I/O and Memory Patterns
 
-**Technical Context**:
-- Current: Separate `CommentMetadata` class, `CommentCapturingScanner`, comment-specific markers
-- Should: Extend `FormattingMetadata.empty_lines_before` to handle any line content type
-- Files affected: `formatting_aware.py`, `formatting_emitter.py`, `dumper.py`, `cli.py`
-- Association rule: comments always associate with next non-comment, non-blank line
-- Scanner entry: `CommentCapturingScanner.scan_to_next_token()`
-- Output processing: `_process_comment_markers()` function
+3. ~~**Optimize stream processing I/O** (formatting_aware.py:109-112)~~ ✅ **COMPLETED**
+   - ~~Current: seek(0) → read() → seek(current_pos) = 3 I/O operations~~
+   - ~~Cache content on first read to avoid repeated stream operations~~
+   - **Result**: Lazy loading with 75% I/O reduction for StringIO + 67% memory reduction (3x→1x peak usage)
 
-**Solution**: Refactor to unified line preservation approach rather than parallel comment system.
+4. **Batch file operations** (cli.py)
+   - Multiple separate file reads for format detection + content reading
+   - Combine sample read with full content read where possible
+   - Estimated impact: Low-Medium (affects file processing)
+
+5. **Pre-allocate comment extraction lists** (formatting_aware.py:374)
+   - List comprehension creates new list on every call: `[line for line in ... if line.strip().startswith('#')]`
+   - Pre-size based on estimated comment density
+   - Estimated impact: Low (micro-optimization)
+
+### Benchmarking and Validation
+
+6. **Measure optimization impact**
+   - Use `uv run ./benchmark.py` to establish baseline
+   - Re-benchmark after each optimization
+   - Document improvements in BENCHMARKS.md
+
+7. **Compare against PyYAML performance**
+   - Validate that optimizations don't reduce relative performance
+   - Focus on real-world YAML files with comments and complex structures

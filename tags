@@ -31,6 +31,7 @@ OutputWriter	src/yaml_for_humans/cli.py	/^class OutputWriter:$/;"	c
 PRIORITY_KEYS	src/yaml_for_humans/formatting_emitter.py	/^    PRIORITY_KEYS = frozenset($/;"	v	class:FormattingAwareDumper
 PRIORITY_ORDER	src/yaml_for_humans/formatting_emitter.py	/^    PRIORITY_ORDER = {$/;"	v	class:FormattingAwareDumper
 PerformanceAnalyzer	ast_analysis.py	/^class PerformanceAnalyzer(ast.NodeVisitor):$/;"	c
+PerformanceAnalyzer	ast_performance_analysis.py	/^class PerformanceAnalyzer(ast.NodeVisitor):$/;"	c
 PresetFormattingAwareDumper	src/yaml_for_humans/dumper.py	/^            class PresetFormattingAwareDumper(FormattingAwareDumper):$/;"	c	function:dump
 ProcessingContext	src/yaml_for_humans/cli.py	/^class ProcessingContext:$/;"	c
 RESOURCE_ORDER	src/yaml_for_humans/multi_document.py	/^    RESOURCE_ORDER = [$/;"	v	class:KubernetesManifestDumper
@@ -61,6 +62,7 @@ TestYAMLValidity	tests/test_emitter.py	/^class TestYAMLValidity:$/;"	c
 UNKNOWN_PRIORITY	src/yaml_for_humans/multi_document.py	/^    UNKNOWN_PRIORITY = len(RESOURCE_ORDER)$/;"	v	class:KubernetesManifestDumper
 __delitem__	src/yaml_for_humans/formatting_aware.py	/^    def __delitem__(self, key):$/;"	m	class:FormattingAwareDict	file:
 __init__	ast_analysis.py	/^    def __init__(self, filename: str):$/;"	m	class:PerformanceAnalyzer
+__init__	ast_performance_analysis.py	/^    def __init__(self, filename: str):$/;"	m	class:PerformanceAnalyzer
 __init__	src/yaml_for_humans/cli.py	/^    def __init__(self, context: ProcessingContext):$/;"	m	class:FormatDetector
 __init__	src/yaml_for_humans/cli.py	/^    def __init__(self, context: ProcessingContext):$/;"	m	class:InputProcessor
 __init__	src/yaml_for_humans/cli.py	/^    def __init__(self, dir_path: Path):$/;"	m	class:DirectoryOutputWriter
@@ -91,6 +93,7 @@ _calculate_end_line	src/yaml_for_humans/formatting_aware.py	/^    def _calculate
 _check_cli_dependencies	src/yaml_for_humans/cli.py	/^def _check_cli_dependencies() -> None:$/;"	f
 _ensure_directory_exists	src/yaml_for_humans/cli.py	/^    def _ensure_directory_exists(self, auto_create: bool) -> None:$/;"	m	class:DirectoryOutputWriter
 _ensure_parent_dirs_exist	src/yaml_for_humans/cli.py	/^    def _ensure_parent_dirs_exist(self, auto_create: bool) -> None:$/;"	m	class:FileOutputWriter
+_ensure_raw_lines	src/yaml_for_humans/formatting_aware.py	/^    def _ensure_raw_lines(self):$/;"	m	class:FormattingAwareComposer
 _expand_directory	src/yaml_for_humans/cli.py	/^    def _expand_directory(self, dir_path: str) -> list[str]:$/;"	m	class:FilePathExpander
 _expand_glob	src/yaml_for_humans/cli.py	/^    def _expand_glob(self, glob_pattern: str) -> list[str]:$/;"	m	class:FilePathExpander
 _expand_regular_file	src/yaml_for_humans/cli.py	/^    def _expand_regular_file(self, file_path: str) -> list[str]:$/;"	m	class:FilePathExpander
@@ -147,9 +150,12 @@ _write_yaml_file	src/yaml_for_humans/cli.py	/^    def _write_yaml_file($/;"	m	cl
 advanced_multi_document_example	examples/multi_document_example.py	/^def advanced_multi_document_example():$/;"	f
 analyze_codebase	ast_analysis.py	/^def analyze_codebase(src_dir: Path) -> Dict[str, PerformanceAnalyzer]:$/;"	f
 analyze_file	ast_analysis.py	/^def analyze_file(filepath: Path) -> PerformanceAnalyzer:$/;"	f
+analyze_file	ast_performance_analysis.py	/^def analyze_file(filepath: Path) -> PerformanceAnalyzer:$/;"	f
+analyze_repository	ast_performance_analysis.py	/^def analyze_repository():$/;"	f
 append	src/yaml_for_humans/formatting_aware.py	/^    def append(self, value):$/;"	m	class:FormattingAwareList
 auto	src/yaml_for_humans/cli.py	/^        auto=auto,$/;"	v
 basic_multi_document_example	examples/multi_document_example.py	/^def basic_multi_document_example():$/;"	f
+benchmark_formatting_preservation	benchmark.py	/^def benchmark_formatting_preservation():$/;"	f
 benchmark_serialization	benchmark.py	/^def benchmark_serialization():$/;"	f
 cli_main	src/yaml_for_humans/cli.py	/^    def cli_main(indent, timeout, inputs, output, auto, unsafe_inputs, no_preserve):$/;"	f	function:huml
 click	src/yaml_for_humans/cli.py	/^    click = None$/;"	v
@@ -163,6 +169,7 @@ create_sample_manifests	examples/kubernetes_manifests_example.py	/^def create_sa
 create_source_factory	src/yaml_for_humans/cli.py	/^    def create_source_factory(self, base_info: dict) -> Callable[[], dict]:$/;"	m	class:ProcessingContext
 create_test_data	benchmark.py	/^def create_test_data():$/;"	f
 create_writer	src/yaml_for_humans/cli.py	/^    def create_writer(output_path: str) -> OutputStrategy:$/;"	m	class:OutputWriter
+create_yaml_with_comments	benchmark.py	/^def create_yaml_with_comments():$/;"	f
 demo_data	examples/comment_preservation_example.py	/^    demo_data = load_with_formatting(comment_demo_yaml)$/;"	v
 demo_output	examples/comment_preservation_example.py	/^    demo_output = dumps(demo_data, preserve_comments=True, preserve_empty_lines=True)$/;"	v
 documents	src/yaml_for_humans/cli.py	/^        documents=documents,$/;"	v
@@ -186,6 +193,7 @@ expect_block_sequence_item	src/yaml_for_humans/emitter.py	/^    def expect_block
 expect_scalar	src/yaml_for_humans/emitter.py	/^    def expect_scalar(self) -> None:$/;"	m	class:HumanFriendlyEmitter
 factory	src/yaml_for_humans/cli.py	/^        def factory():$/;"	f	function:ProcessingContext.create_source_factory
 generate_performance_report	ast_analysis.py	/^def generate_performance_report(analyzers: Dict[str, PerformanceAnalyzer]) -> str:$/;"	f
+generate_report	ast_performance_analysis.py	/^def generate_report(file_results: Dict, all_metrics: Dict, total_complexity: int, analysis_time: float):$/;"	f
 get_function_key	ast_analysis.py	/^    def get_function_key(self) -> str:$/;"	m	class:PerformanceAnalyzer
 get_k8s_resource_prefix	src/yaml_for_humans/multi_document.py	/^def get_k8s_resource_prefix(document):$/;"	f
 get_kind_priority	src/yaml_for_humans/multi_document.py	/^        def get_kind_priority(doc):$/;"	f	function:KubernetesManifestDumper._sort_resources
@@ -373,17 +381,28 @@ test_valid_file_type_detection	tests/test_cli.py	/^    def test_valid_file_type_
 test_very_large_document_list	tests/test_multi_document.py	/^    def test_very_large_document_list(self):$/;"	m	class:TestEdgeCases
 test_yaml_input_processing	tests/test_cli.py	/^    def test_yaml_input_processing(self, capsys):$/;"	m	class:TestCLIFunctionality
 time_operation	benchmark.py	/^def time_operation(func, iterations=1000, warmup=50):$/;"	f
+visit_BinOp	ast_performance_analysis.py	/^    def visit_BinOp(self, node):$/;"	m	class:PerformanceAnalyzer
 visit_Call	ast_analysis.py	/^    def visit_Call(self, node):$/;"	m	class:PerformanceAnalyzer
+visit_Call	ast_performance_analysis.py	/^    def visit_Call(self, node):$/;"	m	class:PerformanceAnalyzer
 visit_ClassDef	ast_analysis.py	/^    def visit_ClassDef(self, node):$/;"	m	class:PerformanceAnalyzer
+visit_ClassDef	ast_performance_analysis.py	/^    def visit_ClassDef(self, node):$/;"	m	class:PerformanceAnalyzer
 visit_Dict	ast_analysis.py	/^    def visit_Dict(self, node):$/;"	m	class:PerformanceAnalyzer
 visit_DictComp	ast_analysis.py	/^    def visit_DictComp(self, node):$/;"	m	class:PerformanceAnalyzer
+visit_DictComp	ast_performance_analysis.py	/^    def visit_DictComp(self, node):$/;"	m	class:PerformanceAnalyzer
 visit_For	ast_analysis.py	/^    def visit_For(self, node):$/;"	m	class:PerformanceAnalyzer
+visit_For	ast_performance_analysis.py	/^    def visit_For(self, node):$/;"	m	class:PerformanceAnalyzer
 visit_FunctionDef	ast_analysis.py	/^    def visit_FunctionDef(self, node):$/;"	m	class:PerformanceAnalyzer
+visit_FunctionDef	ast_performance_analysis.py	/^    def visit_FunctionDef(self, node):$/;"	m	class:PerformanceAnalyzer
 visit_If	ast_analysis.py	/^    def visit_If(self, node):$/;"	m	class:PerformanceAnalyzer
+visit_Import	ast_performance_analysis.py	/^    def visit_Import(self, node):$/;"	m	class:PerformanceAnalyzer
+visit_ImportFrom	ast_performance_analysis.py	/^    def visit_ImportFrom(self, node):$/;"	m	class:PerformanceAnalyzer
 visit_List	ast_analysis.py	/^    def visit_List(self, node):$/;"	m	class:PerformanceAnalyzer
 visit_ListComp	ast_analysis.py	/^    def visit_ListComp(self, node):$/;"	m	class:PerformanceAnalyzer
+visit_ListComp	ast_performance_analysis.py	/^    def visit_ListComp(self, node):$/;"	m	class:PerformanceAnalyzer
 visit_SetComp	ast_analysis.py	/^    def visit_SetComp(self, node):$/;"	m	class:PerformanceAnalyzer
+visit_SetComp	ast_performance_analysis.py	/^    def visit_SetComp(self, node):$/;"	m	class:PerformanceAnalyzer
 visit_While	ast_analysis.py	/^    def visit_While(self, node):$/;"	m	class:PerformanceAnalyzer
+visit_While	ast_performance_analysis.py	/^    def visit_While(self, node):$/;"	m	class:PerformanceAnalyzer
 write	src/yaml_for_humans/cli.py	/^    def write($/;"	m	class:OutputWriter
 write_documents	src/yaml_for_humans/cli.py	/^    def write_documents($/;"	m	class:DirectoryOutputWriter
 write_documents	src/yaml_for_humans/cli.py	/^    def write_documents($/;"	m	class:FileOutputWriter
