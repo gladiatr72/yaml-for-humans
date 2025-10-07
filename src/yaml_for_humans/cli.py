@@ -807,31 +807,61 @@ def _generate_k8s_filename(
     return base_filename
 
 
+def _has_valid_extension(file_path: str) -> bool:
+    """Check if file path has valid YAML/JSON extension.
+
+    Args:
+        file_path: Path to check
+
+    Returns:
+        True if file has .json, .yaml, .yml, or .jsonl extension
+    """
+    return file_path.lower().endswith((".json", ".yaml", ".yml", ".jsonl"))
+
+
+def _sample_file_content(file_path: str) -> str | None:
+    """Read sample content from file for format detection.
+
+    Args:
+        file_path: Path to file
+
+    Returns:
+        Sample content (first 1024 chars) or None if unreadable/empty
+    """
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            sample = f.read(1024).strip()
+            return sample if sample else None
+    except (IOError, UnicodeDecodeError, PermissionError):
+        return None
+
+
+def _content_looks_valid(content: str) -> bool:
+    """Check if content looks like valid YAML or JSON.
+
+    Args:
+        content: Content to check
+
+    Returns:
+        True if content matches YAML or JSON heuristics
+    """
+    return _looks_like_json(content) or _looks_like_yaml(content)
+
+
 def _is_valid_file_type(file_path):
     """Check if file has a valid JSON or YAML extension, or try to detect format from content."""
     # Check common extensions first
-    if file_path.lower().endswith((".json", ".yaml", ".yml", ".jsonl")):
-        # Still need to check if file is empty or readable
-        try:
-            with open(file_path, "r", encoding="utf-8") as f:
-                sample = f.read(1024).strip()
-                if not sample:
-                    return False
-            return True
-        except (IOError, UnicodeDecodeError, PermissionError):
-            return False
+    if _has_valid_extension(file_path):
+        # Still need to check if file is readable and non-empty
+        sample = _sample_file_content(file_path)
+        return sample is not None
 
-    # For files without clear extensions, try to peek at content
-    try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            # Read first few lines to detect format
-            sample = f.read(1024).strip()
-            if not sample:
-                return False
-            # Simple heuristics for format detection
-            return _looks_like_json(sample) or _looks_like_yaml(sample)
-    except (IOError, UnicodeDecodeError, PermissionError):
+    # For files without clear extensions, try content detection
+    sample = _sample_file_content(file_path)
+    if sample is None:
         return False
+
+    return _content_looks_valid(sample)
 
 
 def _looks_like_yaml(text):
