@@ -46,6 +46,9 @@ TestDocumentSeparation	tests/test_multi_document.py	/^class TestDocumentSeparati
 TestEdgeCases	tests/test_multi_document.py	/^class TestEdgeCases:$/;"	c
 TestEmptyLinePreservation	tests/test_empty_line_preservation.py	/^class TestEmptyLinePreservation:$/;"	c
 TestErrorHandling	tests/test_emitter.py	/^class TestErrorHandling:$/;"	c
+TestExpandContentMarker	tests/test_dumper_helpers.py	/^class TestExpandContentMarker:$/;"	c
+TestExpandEmptyMarker	tests/test_dumper_helpers.py	/^class TestExpandEmptyMarker:$/;"	c
+TestExpandInlineComment	tests/test_dumper_helpers.py	/^class TestExpandInlineComment:$/;"	c
 TestFileOperations	tests/test_integration.py	/^class TestFileOperations:$/;"	c
 TestFileTypeDetection	tests/test_cli.py	/^class TestFileTypeDetection:$/;"	c
 TestGlobbingAndDirectorySupport	tests/test_cli.py	/^class TestGlobbingAndDirectorySupport:$/;"	c
@@ -56,6 +59,9 @@ TestKubernetesIntegration	tests/test_integration.py	/^class TestKubernetesIntegr
 TestKubernetesManifestDumper	tests/test_multi_document.py	/^class TestKubernetesManifestDumper:$/;"	c
 TestMultiDocumentDumper	tests/test_multi_document.py	/^class TestMultiDocumentDumper:$/;"	c
 TestOutputFlag	tests/test_cli.py	/^class TestOutputFlag:$/;"	c
+TestProcessContentLineMarkersIntegration	tests/test_dumper_helpers.py	/^class TestProcessContentLineMarkersIntegration:$/;"	c
+TestProcessSingleLine	tests/test_dumper_helpers.py	/^class TestProcessSingleLine:$/;"	c
+TestProcessingContextProperties	tests/test_cli.py	/^class TestProcessingContextProperties:$/;"	c
 TestRealWorldExamples	tests/test_integration.py	/^class TestRealWorldExamples:$/;"	c
 TestStdinAutoDetection	tests/test_cli.py	/^class TestStdinAutoDetection:$/;"	c
 TestStdinTimeout	tests/test_cli.py	/^class TestStdinTimeout:$/;"	c
@@ -97,8 +103,11 @@ _check_cli_dependencies	src/yaml_for_humans/cli.py	/^def _check_cli_dependencies
 _ensure_directory_exists	src/yaml_for_humans/cli.py	/^    def _ensure_directory_exists(self, auto_create: bool) -> None:$/;"	m	class:DirectoryOutputWriter
 _ensure_parent_dirs_exist	src/yaml_for_humans/cli.py	/^    def _ensure_parent_dirs_exist(self, auto_create: bool) -> None:$/;"	m	class:FileOutputWriter
 _ensure_raw_lines	src/yaml_for_humans/formatting_aware.py	/^    def _ensure_raw_lines(self):$/;"	m	class:FormattingAwareComposer
+_expand_content_marker	src/yaml_for_humans/dumper.py	/^def _expand_content_marker(content_hash: str, markers: dict) -> list[str]:$/;"	f
 _expand_directory	src/yaml_for_humans/cli.py	/^    def _expand_directory(self, dir_path: str) -> list[str]:$/;"	m	class:FilePathExpander
+_expand_empty_marker	src/yaml_for_humans/dumper.py	/^def _expand_empty_marker(count: int) -> list[str]:$/;"	f
 _expand_glob	src/yaml_for_humans/cli.py	/^    def _expand_glob(self, glob_pattern: str) -> list[str]:$/;"	m	class:FilePathExpander
+_expand_inline_comment	src/yaml_for_humans/dumper.py	/^def _expand_inline_comment(comment_hash: str, line: str, markers: dict) -> str:$/;"	f
 _expand_regular_file	src/yaml_for_humans/cli.py	/^    def _expand_regular_file(self, file_path: str) -> list[str]:$/;"	m	class:FilePathExpander
 _expand_single_path	src/yaml_for_humans/cli.py	/^    def _expand_single_path(self, path: str) -> list[str]:$/;"	m	class:FilePathExpander
 _extract_inline_comment	src/yaml_for_humans/formatting_aware.py	/^    def _extract_inline_comment(self, node):$/;"	m	class:FormattingAwareComposer
@@ -133,6 +142,7 @@ _process_empty_line_markers	src/yaml_for_humans/dumper.py	/^def _process_empty_l
 _process_input_source	src/yaml_for_humans/cli.py	/^def _process_input_source($/;"	f
 _process_json_content	src/yaml_for_humans/cli.py	/^    def _process_json_content($/;"	m	class:FormatDetector
 _process_single_file	src/yaml_for_humans/cli.py	/^    def _process_single_file(self, file_path: str) -> tuple[list[Any], list[dict]]:$/;"	m	class:InputProcessor
+_process_single_line	src/yaml_for_humans/dumper.py	/^def _process_single_line(line: str, markers: dict) -> list[str]:$/;"	f
 _process_yaml_content	src/yaml_for_humans/cli.py	/^    def _process_yaml_content($/;"	m	class:FormatDetector
 _read_stdin_with_timeout	src/yaml_for_humans/cli.py	/^def _read_stdin_with_timeout(timeout_ms: int = DEFAULT_TIMEOUT_MS) -> str:$/;"	f
 _remove_boolean_resolvers	src/yaml_for_humans/dumper.py	/^    def _remove_boolean_resolvers(self):$/;"	m	class:KeyPreservingSafeLoader
@@ -306,8 +316,22 @@ test_empty_file_detection	tests/test_cli.py	/^    def test_empty_file_detection(
 test_empty_input_error	tests/test_cli.py	/^    def test_empty_input_error(self, capsys):$/;"	f
 test_empty_line_count_accuracy	tests/test_empty_line_preservation.py	/^    def test_empty_line_count_accuracy(self):$/;"	f
 test_empty_structures	tests/test_emitter.py	/^    def test_empty_structures(self):$/;"	m	class:TestHumanFriendlyEmitter
+test_expand_comment_found	tests/test_dumper_helpers.py	/^    def test_expand_comment_found(self):$/;"	m	class:TestExpandInlineComment
+test_expand_comment_not_found	tests/test_dumper_helpers.py	/^    def test_expand_comment_not_found(self):$/;"	m	class:TestExpandInlineComment
+test_expand_comment_with_special_chars	tests/test_dumper_helpers.py	/^    def test_expand_comment_with_special_chars(self):$/;"	m	class:TestExpandInlineComment
+test_expand_empty_markers_dict	tests/test_dumper_helpers.py	/^    def test_expand_empty_markers_dict(self):$/;"	m	class:TestExpandContentMarker
+test_expand_large_count	tests/test_dumper_helpers.py	/^    def test_expand_large_count(self):$/;"	m	class:TestExpandEmptyMarker
+test_expand_missing_hash	tests/test_dumper_helpers.py	/^    def test_expand_missing_hash(self):$/;"	m	class:TestExpandContentMarker
+test_expand_mixed_content	tests/test_dumper_helpers.py	/^    def test_expand_mixed_content(self):$/;"	m	class:TestExpandContentMarker
+test_expand_multiple_empty_lines	tests/test_dumper_helpers.py	/^    def test_expand_multiple_empty_lines(self):$/;"	m	class:TestExpandEmptyMarker
+test_expand_preserves_line_structure	tests/test_dumper_helpers.py	/^    def test_expand_preserves_line_structure(self):$/;"	m	class:TestExpandInlineComment
+test_expand_single_empty_line	tests/test_dumper_helpers.py	/^    def test_expand_single_empty_line(self):$/;"	m	class:TestExpandEmptyMarker
+test_expand_with_comments_only	tests/test_dumper_helpers.py	/^    def test_expand_with_comments_only(self):$/;"	m	class:TestExpandContentMarker
+test_expand_with_empty_lines	tests/test_dumper_helpers.py	/^    def test_expand_with_empty_lines(self):$/;"	m	class:TestExpandContentMarker
+test_expand_zero_empty_lines	tests/test_dumper_helpers.py	/^    def test_expand_zero_empty_lines(self):$/;"	m	class:TestExpandEmptyMarker
 test_explicit_end_markers	tests/test_multi_document.py	/^    def test_explicit_end_markers(self):$/;"	m	class:TestDocumentSeparation
 test_extension_based_detection	tests/test_cli.py	/^    def test_extension_based_detection(self):$/;"	m	class:TestFileTypeDetection
+test_fast_path_optimization	tests/test_dumper_helpers.py	/^    def test_fast_path_optimization(self):$/;"	m	class:TestProcessContentLineMarkersIntegration
 test_file_and_glob_mixed_invalid	tests/test_cli.py	/^    def test_file_and_glob_mixed_invalid(self, capsys):$/;"	m	class:TestGlobbingAndDirectorySupport
 test_filename_fallback_from_source_file	tests/test_cli.py	/^    def test_filename_fallback_from_source_file(self, capsys):$/;"	m	class:TestOutputFlag
 test_filename_fallback_mixed_k8s_and_non_k8s	tests/test_cli.py	/^    def test_filename_fallback_mixed_k8s_and_non_k8s(self, capsys):$/;"	m	class:TestOutputFlag
@@ -341,6 +365,12 @@ test_invalid_json_error	tests/test_cli.py	/^    def test_invalid_json_error(self
 test_invalid_yaml_error	tests/test_cli.py	/^    def test_invalid_yaml_error(self, capsys):$/;"	f
 test_is_json_lines	tests/test_cli.py	/^    def test_is_json_lines(self):$/;"	m	class:TestStdinTimeout
 test_is_multi_document_yaml	tests/test_cli.py	/^    def test_is_multi_document_yaml(self):$/;"	m	class:TestStdinTimeout
+test_is_preservation_enabled_both_false	tests/test_cli.py	/^    def test_is_preservation_enabled_both_false(self):$/;"	m	class:TestProcessingContextProperties
+test_is_preservation_enabled_both_true	tests/test_cli.py	/^    def test_is_preservation_enabled_both_true(self):$/;"	m	class:TestProcessingContextProperties
+test_is_preservation_enabled_comments_only	tests/test_cli.py	/^    def test_is_preservation_enabled_comments_only(self):$/;"	m	class:TestProcessingContextProperties
+test_is_preservation_enabled_empty_only	tests/test_cli.py	/^    def test_is_preservation_enabled_empty_only(self):$/;"	m	class:TestProcessingContextProperties
+test_is_safe_mode_false	tests/test_cli.py	/^    def test_is_safe_mode_false(self):$/;"	m	class:TestProcessingContextProperties
+test_is_safe_mode_true	tests/test_cli.py	/^    def test_is_safe_mode_true(self):$/;"	m	class:TestProcessingContextProperties
 test_json_input_processing	tests/test_cli.py	/^    def test_json_input_processing(self, capsys):$/;"	m	class:TestCLIFunctionality
 test_kubernetes_deployment	tests/test_integration.py	/^    def test_kubernetes_deployment(self):$/;"	m	class:TestKubernetesIntegration
 test_kubernetes_formatting	tests/test_multi_document.py	/^    def test_kubernetes_formatting(self):$/;"	m	class:TestKubernetesManifestDumper
@@ -373,6 +403,18 @@ test_output_filename_conflicts_handled	tests/test_cli.py	/^    def test_output_f
 test_output_multiple_files_to_single_file	tests/test_cli.py	/^    def test_output_multiple_files_to_single_file(self, capsys):$/;"	m	class:TestOutputFlag
 test_output_single_file	tests/test_cli.py	/^    def test_output_single_file(self, capsys):$/;"	m	class:TestOutputFlag
 test_priority_keys_first	tests/test_emitter.py	/^    def test_priority_keys_first(self):$/;"	m	class:TestKeyOrdering
+test_process_content_marker_line	tests/test_dumper_helpers.py	/^    def test_process_content_marker_line(self):$/;"	m	class:TestProcessSingleLine
+test_process_empty_line	tests/test_dumper_helpers.py	/^    def test_process_empty_line(self):$/;"	m	class:TestProcessSingleLine
+test_process_empty_marker_line	tests/test_dumper_helpers.py	/^    def test_process_empty_marker_line(self):$/;"	m	class:TestProcessSingleLine
+test_process_inline_comment_line	tests/test_dumper_helpers.py	/^    def test_process_inline_comment_line(self):$/;"	m	class:TestProcessSingleLine
+test_process_marker_without_match	tests/test_dumper_helpers.py	/^    def test_process_marker_without_match(self):$/;"	m	class:TestProcessSingleLine
+test_process_mixed_markers	tests/test_dumper_helpers.py	/^    def test_process_mixed_markers(self):$/;"	m	class:TestProcessContentLineMarkersIntegration
+test_process_no_markers	tests/test_dumper_helpers.py	/^    def test_process_no_markers(self):$/;"	m	class:TestProcessContentLineMarkersIntegration
+test_process_regular_line	tests/test_dumper_helpers.py	/^    def test_process_regular_line(self):$/;"	m	class:TestProcessSingleLine
+test_process_with_content_markers	tests/test_dumper_helpers.py	/^    def test_process_with_content_markers(self):$/;"	m	class:TestProcessContentLineMarkersIntegration
+test_process_with_empty_markers	tests/test_dumper_helpers.py	/^    def test_process_with_empty_markers(self):$/;"	m	class:TestProcessContentLineMarkersIntegration
+test_process_with_inline_comments	tests/test_dumper_helpers.py	/^    def test_process_with_inline_comments(self):$/;"	m	class:TestProcessContentLineMarkersIntegration
+test_process_with_none_markers	tests/test_dumper_helpers.py	/^    def test_process_with_none_markers(self):$/;"	m	class:TestProcessContentLineMarkersIntegration
 test_resource_ordering	tests/test_multi_document.py	/^    def test_resource_ordering(self):$/;"	m	class:TestKubernetesManifestDumper
 test_round_trip_complex	tests/test_emitter.py	/^    def test_round_trip_complex(self):$/;"	m	class:TestYAMLValidity
 test_round_trip_simple	tests/test_emitter.py	/^    def test_round_trip_simple(self):$/;"	m	class:TestYAMLValidity

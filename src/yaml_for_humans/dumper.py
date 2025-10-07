@@ -56,6 +56,94 @@ def _return_buffer(buffer: StringIO) -> None:
         _local.buffer_pool.append(buffer)
 
 
+def _expand_content_marker(content_hash: str, markers: dict) -> list[str]:
+    """Expand content marker hash to list of lines.
+
+    Args:
+        content_hash: Hash key for stored content
+        markers: Dictionary mapping hashes to content
+
+    Returns:
+        List of lines (empty strings for blank lines, text for comments)
+    """
+    if content_hash not in markers:
+        return []
+    return markers[content_hash]
+
+
+def _expand_empty_marker(count: int) -> list[str]:
+    """Expand empty line marker to list of empty strings.
+
+    Args:
+        count: Number of empty lines
+
+    Returns:
+        List of empty strings
+    """
+    return [""] * count
+
+
+def _expand_inline_comment(comment_hash: str, line: str, markers: dict) -> str:
+    """Expand inline comment marker to line with comment.
+
+    Args:
+        comment_hash: Hash key for stored comment
+        line: Original line with marker
+        markers: Dictionary mapping hashes to comment info
+
+    Returns:
+        Line with marker replaced by comment, or cleaned line if hash not found
+    """
+    if comment_hash in markers:
+        comment_info = markers[comment_hash]
+        clean_line = line.replace(f"__INLINE_COMMENT_{comment_hash}__", "")
+        return f"{clean_line}  {comment_info['comment']}"
+    else:
+        # Fallback: just remove the marker if not found
+        return _INLINE_COMMENT_PATTERN.sub("", line)
+
+
+def _process_single_line(line: str, markers: dict) -> list[str]:
+    """Process single line for markers and expand to result lines.
+
+    Args:
+        line: Line to process
+        markers: Dictionary of content/comment markers
+
+    Returns:
+        List of result lines (empty list if marker should be skipped,
+        single-item list for regular lines, multi-item list for expanded content)
+    """
+    # Handle new unified content markers
+    if "__CONTENT_LINES_" in line:
+        match = _CONTENT_LINE_PATTERN.search(line)
+        if match:
+            content_hash = match.group(1)
+            return _expand_content_marker(content_hash, markers)
+        return []  # Skip marker line if no match
+
+    # Handle legacy empty line markers for backward compatibility
+    elif "__EMPTY_LINES_" in line:
+        match = _EMPTY_LINE_PATTERN.search(line)
+        if match:
+            empty_count = int(match.group(1))
+            return _expand_empty_marker(empty_count)
+        return []  # Skip marker line if no match
+
+    # Handle inline comment markers
+    elif "__INLINE_COMMENT_" in line:
+        match = _INLINE_COMMENT_PATTERN.search(line)
+        if match:
+            comment_hash = match.group(1)
+            return [_expand_inline_comment(comment_hash, line, markers)]
+        else:
+            return [line]
+
+    # No markers, return line as-is
+    else:
+        return [line]
+
+
 def _process_content_line_markers(yaml_text: str, content_markers: dict = None) -> str:
     """Convert unified content line markers to actual empty lines and comments."""
     content_markers = content_markers or {}
@@ -66,48 +154,9 @@ def _process_content_line_markers(yaml_text: str, content_markers: dict = None) 
 
     lines = yaml_text.split("\n")
     result = []
-    result_extend = result.extend  # Cache method lookup for performance
 
     for line in lines:
-        # Handle new unified content markers
-        if "__CONTENT_LINES_" in line:
-            match = _CONTENT_LINE_PATTERN.search(line)
-            if match:
-                content_hash = match.group(1)
-                if content_hash in content_markers:
-                    # Convert stored line content to actual lines
-                    content_lines = content_markers[content_hash]
-                    for content_line in content_lines:
-                        if content_line == "":  # Empty line
-                            result.append("")
-                        else:  # Comment line
-                            result.append(content_line)
-            # Skip marker lines
-        # Handle legacy empty line markers for backward compatibility
-        elif "__EMPTY_LINES_" in line:
-            match = _EMPTY_LINE_PATTERN.search(line)
-            if match:
-                empty_count = int(match.group(1))
-                result_extend([""] * empty_count)  # Bulk extend operation
-            # Skip marker lines
-        # Handle inline comment markers
-        elif "__INLINE_COMMENT_" in line:
-            match = _INLINE_COMMENT_PATTERN.search(line)
-            if match:
-                comment_hash = match.group(1)
-                if comment_hash in content_markers:
-                    comment_info = content_markers[comment_hash]
-                    # Replace the composite key with original key + comment
-                    clean_line = line.replace(f"__INLINE_COMMENT_{comment_hash}__", "")
-                    result.append(f"{clean_line}  {comment_info['comment']}")
-                else:
-                    # Fallback: just remove the marker if not found
-                    clean_line = _INLINE_COMMENT_PATTERN.sub("", line)
-                    result.append(clean_line)
-            else:
-                result.append(line)
-        else:
-            result.append(line)
+        result.extend(_process_single_line(line, content_markers))
 
     return "\n".join(result)
 
