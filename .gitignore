@@ -183,3 +183,5 @@ pyrightconfig.json
 
 .bench/
 
+*.yaml
+*.yml
