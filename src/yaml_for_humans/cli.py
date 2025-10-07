@@ -746,6 +746,55 @@ def _has_items_array(data: Any) -> bool:
     return any(isinstance(item, dict) for item in items)
 
 
+def _extract_k8s_parts(document: dict) -> list[str]:
+    """Extract filename parts from Kubernetes manifest.
+
+    Args:
+        document: Kubernetes resource dictionary
+
+    Returns:
+        List of filename parts (kind, type, name) in lowercase
+    """
+    kind = document.get("kind", "")
+    doc_type = document.get("type", "")
+    metadata = document.get("metadata", {})
+    name = metadata.get("name", "") if isinstance(metadata, dict) else ""
+
+    return [value.lower() for value in [kind, doc_type, name] if value]
+
+
+def _generate_fallback_filename(source_file: str | None, stdin_position: int | None) -> str:
+    """Generate fallback filename when no K8s metadata available.
+
+    Args:
+        source_file: Original source file path
+        stdin_position: Position when reading from stdin
+
+    Returns:
+        Fallback filename
+    """
+    if source_file:
+        import os
+        base_name = os.path.splitext(os.path.basename(source_file))[0]
+        return f"{base_name}.yaml"
+    elif stdin_position is not None:
+        return f"stdin-{stdin_position}.yaml"
+    else:
+        return "document.yaml"
+
+
+def _build_filename_from_parts(parts: list[str]) -> str:
+    """Build filename from K8s manifest parts.
+
+    Args:
+        parts: List of filename parts
+
+    Returns:
+        Filename with .yaml extension
+    """
+    return f"{'-'.join(parts)}.yaml"
+
+
 def _generate_k8s_filename(
     document, source_file=None, stdin_position=None, add_prefix=False
 ):
@@ -760,47 +809,23 @@ def _generate_k8s_filename(
     Returns:
         str: Generated filename with optional prefix
     """
+    # Non-dict documents use fallback naming
     if not isinstance(document, dict):
-        # Fallback naming logic
-        if source_file:
-            # Use original source filename without extension
-            import os
+        return _generate_fallback_filename(source_file, stdin_position)
 
-            base_name = os.path.splitext(os.path.basename(source_file))[0]
-            return f"{base_name}.yaml"
-        elif stdin_position is not None:
-            return f"stdin-{stdin_position}.yaml"
-        else:
-            return "document.yaml"
+    # Extract K8s parts from document
+    parts = _extract_k8s_parts(document)
 
-    # Extract Kubernetes manifest fields
-    kind = document.get("kind", "")
-    doc_type = document.get("type", "")
-    metadata = document.get("metadata", {})
-    name = metadata.get("name", "") if isinstance(metadata, dict) else ""
-
-    # Build filename parts
-    parts = [value.lower() for value in [kind, doc_type, name] if value]
-
-    # If we have no identifying information, use fallback naming
+    # No identifying information, use fallback
     if not parts:
-        if source_file:
-            # Use original source filename without extension
-            import os
+        return _generate_fallback_filename(source_file, stdin_position)
 
-            base_name = os.path.splitext(os.path.basename(source_file))[0]
-            return f"{base_name}.yaml"
-        elif stdin_position is not None:
-            return f"stdin-{stdin_position}.yaml"
-        else:
-            return "document.yaml"
-
-    base_filename = f"{'-'.join(parts)}.yaml"
+    # Build filename from parts
+    base_filename = _build_filename_from_parts(parts)
 
     # Add resource ordering prefix if requested
-    if add_prefix and kind:
+    if add_prefix and document.get("kind"):
         from .multi_document import get_k8s_resource_prefix
-
         prefix = get_k8s_resource_prefix(document)
         return f"{prefix}-{base_filename}"
 
