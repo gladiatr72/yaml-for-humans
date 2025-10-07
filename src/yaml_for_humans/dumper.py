@@ -166,6 +166,65 @@ def _process_empty_line_markers(yaml_text: str) -> str:
     return _process_content_line_markers(yaml_text)
 
 
+def _select_dumper(preserve_empty_lines: bool, preserve_comments: bool) -> type:
+    """Select appropriate dumper class based on preservation requirements.
+
+    Args:
+        preserve_empty_lines: Whether to preserve empty lines
+        preserve_comments: Whether to preserve comments
+
+    Returns:
+        Dumper class (FormattingAwareDumper or HumanFriendlyDumper)
+    """
+    if preserve_empty_lines or preserve_comments:
+        return FormattingAwareDumper
+    else:
+        return HumanFriendlyDumper
+
+
+def _build_dump_kwargs(dumper_class: type, **user_kwargs: Any) -> dict:
+    """Build kwargs dict for yaml.dump with defaults and user overrides.
+
+    Args:
+        dumper_class: Dumper class to use
+        **user_kwargs: User-provided kwargs to merge
+
+    Returns:
+        Merged kwargs dict with defaults
+    """
+    defaults = {
+        "Dumper": dumper_class,
+        "default_flow_style": False,
+        "indent": 2,
+        "sort_keys": False,
+        "width": 120,
+    }
+    defaults.update(user_kwargs)
+    return defaults
+
+
+def _create_preset_dumper(
+    base_dumper: type, preserve_empty_lines: bool, preserve_comments: bool
+) -> type:
+    """Create dumper class with preservation flags preset.
+
+    Args:
+        base_dumper: Base dumper class to extend
+        preserve_empty_lines: Whether to preserve empty lines
+        preserve_comments: Whether to preserve comments
+
+    Returns:
+        New dumper class with preset flags
+    """
+    class PresetFormattingAwareDumper(base_dumper):
+        def __init__(self, *args, **kwargs):
+            kwargs.setdefault("preserve_empty_lines", preserve_empty_lines)
+            kwargs.setdefault("preserve_comments", preserve_comments)
+            super().__init__(*args, **kwargs)
+
+    return PresetFormattingAwareDumper
+
+
 def dump(
     data: Any, stream: TextIO, preserve_empty_lines: bool = False, preserve_comments: bool = False, **kwargs: Any
 ) -> None:
@@ -189,62 +248,44 @@ def dump(
         with open('output.yaml', 'w') as f:
             dump(data, f, preserve_empty_lines=True)
     """
-    # Choose dumper based on whether we need formatting preservation
-    if preserve_empty_lines or preserve_comments:
-        dumper_class = FormattingAwareDumper
-    else:
-        dumper_class = HumanFriendlyDumper
-
-    # Set sensible defaults for human-friendly output
-    defaults = {
-        "Dumper": dumper_class,
-        "default_flow_style": False,
-        "indent": 2,
-        "sort_keys": False,
-        "width": 120,
-    }
-
-    # Update with user-provided kwargs first
-    defaults.update(kwargs)
-
-    # Handle formatting preservation parameters specially
-    if (preserve_empty_lines or preserve_comments) and dumper_class == FormattingAwareDumper:
-        # Remove formatting parameters from kwargs passed to yaml.dump
-        # since PyYAML doesn't expect them
-        defaults.pop("preserve_empty_lines", None)
-        defaults.pop("preserve_comments", None)
-        # The FormattingAwareDumper will get them via its constructor
-        if "Dumper" in defaults and defaults["Dumper"] == FormattingAwareDumper:
-            # Create a custom dumper class with formatting preservation preset
-            class PresetFormattingAwareDumper(FormattingAwareDumper):
-                def __init__(self, *args, **kwargs):
-                    kwargs.setdefault("preserve_empty_lines", preserve_empty_lines)
-                    kwargs.setdefault("preserve_comments", preserve_comments)
-                    super().__init__(*args, **kwargs)
-
-            defaults["Dumper"] = PresetFormattingAwareDumper
-
     import yaml
 
-    if (preserve_empty_lines or preserve_comments) and dumper_class == FormattingAwareDumper:
-        # For formatting-aware dumping, we need to post-process
+    # 1. Select appropriate dumper class
+    dumper_class = _select_dumper(preserve_empty_lines, preserve_comments)
+
+    # 2. Build dump kwargs with defaults and user overrides
+    dump_kwargs = _build_dump_kwargs(dumper_class, **kwargs)
+
+    # 3. Handle formatting preservation if needed
+    needs_formatting = preserve_empty_lines or preserve_comments
+    if needs_formatting and dumper_class == FormattingAwareDumper:
+        # Remove formatting parameters (PyYAML doesn't expect them)
+        dump_kwargs.pop("preserve_empty_lines", None)
+        dump_kwargs.pop("preserve_comments", None)
+
+        # Create preset dumper with preservation flags
+        if dump_kwargs.get("Dumper") == FormattingAwareDumper:
+            dump_kwargs["Dumper"] = _create_preset_dumper(
+                FormattingAwareDumper, preserve_empty_lines, preserve_comments
+            )
+
+    # 4. Execute dump with post-processing if needed
+    if needs_formatting and dumper_class == FormattingAwareDumper:
         temp_stream = _get_buffer()
         try:
-            # Use yaml.dump with our custom dumper class that stores content markers
-            result = yaml.dump(data, temp_stream, **defaults)
+            result = yaml.dump(data, temp_stream, **dump_kwargs)
             yaml_output = temp_stream.getvalue()
 
-            # Post-process to convert content line markers to actual lines
+            # Post-process to expand markers
             content_markers = _get_content_markers()
             yaml_output = _process_content_line_markers(yaml_output, content_markers)
 
-            # Write to the actual stream
             stream.write(yaml_output)
             return result
         finally:
             _return_buffer(temp_stream)
     else:
-        return yaml.dump(data, stream, **defaults)
+        return yaml.dump(data, stream, **dump_kwargs)
 
 
 def dumps(data: Any, preserve_empty_lines: bool = False, preserve_comments: bool = False, **kwargs: Any) -> str:

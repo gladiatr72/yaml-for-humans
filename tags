@@ -33,15 +33,17 @@ PRIORITY_KEYS	src/yaml_for_humans/formatting_emitter.py	/^    PRIORITY_KEYS = fr
 PRIORITY_ORDER	src/yaml_for_humans/formatting_emitter.py	/^    PRIORITY_ORDER = {$/;"	v	class:FormattingAwareDumper
 PerformanceAnalyzer	ast_analysis.py	/^class PerformanceAnalyzer(ast.NodeVisitor):$/;"	c
 PerformanceAnalyzer	ast_performance_analysis.py	/^class PerformanceAnalyzer(ast.NodeVisitor):$/;"	c
-PresetFormattingAwareDumper	src/yaml_for_humans/dumper.py	/^            class PresetFormattingAwareDumper(FormattingAwareDumper):$/;"	c	function:dump
+PresetFormattingAwareDumper	src/yaml_for_humans/dumper.py	/^    class PresetFormattingAwareDumper(base_dumper):$/;"	c	function:_create_preset_dumper
 ProcessingContext	src/yaml_for_humans/cli.py	/^class ProcessingContext:$/;"	c
 RESOURCE_ORDER	src/yaml_for_humans/multi_document.py	/^    RESOURCE_ORDER = [$/;"	v	class:KubernetesManifestDumper
 RESOURCE_PRIORITIES	src/yaml_for_humans/multi_document.py	/^    RESOURCE_PRIORITIES = {kind: i for i, kind in enumerate(RESOURCE_ORDER)}$/;"	v	class:KubernetesManifestDumper
+TestBuildDumpKwargs	tests/test_dump_helpers.py	/^class TestBuildDumpKwargs:$/;"	c
 TestCLIEmptyLines	tests/test_cli_empty_lines.py	/^class TestCLIEmptyLines:$/;"	c
 TestCLIFunctionality	tests/test_cli.py	/^class TestCLIFunctionality:$/;"	c
 TestCLIInputsFlag	tests/test_integration.py	/^class TestCLIInputsFlag:$/;"	c
 TestCommentPreservation	tests/test_comment_preservation.py	/^class TestCommentPreservation:$/;"	c
 TestConvenienceFunctions	tests/test_multi_document.py	/^class TestConvenienceFunctions:$/;"	c
+TestCreatePresetDumper	tests/test_dump_helpers.py	/^class TestCreatePresetDumper:$/;"	c
 TestDocumentSeparation	tests/test_multi_document.py	/^class TestDocumentSeparation:$/;"	c
 TestEdgeCases	tests/test_multi_document.py	/^class TestEdgeCases:$/;"	c
 TestEmptyLinePreservation	tests/test_empty_line_preservation.py	/^class TestEmptyLinePreservation:$/;"	c
@@ -63,6 +65,7 @@ TestProcessContentLineMarkersIntegration	tests/test_dumper_helpers.py	/^class Te
 TestProcessSingleLine	tests/test_dumper_helpers.py	/^class TestProcessSingleLine:$/;"	c
 TestProcessingContextProperties	tests/test_cli.py	/^class TestProcessingContextProperties:$/;"	c
 TestRealWorldExamples	tests/test_integration.py	/^class TestRealWorldExamples:$/;"	c
+TestSelectDumper	tests/test_dump_helpers.py	/^class TestSelectDumper:$/;"	c
 TestStdinAutoDetection	tests/test_cli.py	/^class TestStdinAutoDetection:$/;"	c
 TestStdinTimeout	tests/test_cli.py	/^class TestStdinTimeout:$/;"	c
 TestYAMLValidity	tests/test_emitter.py	/^class TestYAMLValidity:$/;"	c
@@ -76,7 +79,7 @@ __init__	src/yaml_for_humans/cli.py	/^    def __init__(self, context: Processing
 __init__	src/yaml_for_humans/cli.py	/^    def __init__(self, context: ProcessingContext):$/;"	m	class:InputProcessor
 __init__	src/yaml_for_humans/cli.py	/^    def __init__(self, dir_path: Path):$/;"	m	class:DirectoryOutputWriter
 __init__	src/yaml_for_humans/cli.py	/^    def __init__(self, file_path: Path):$/;"	m	class:FileOutputWriter
-__init__	src/yaml_for_humans/dumper.py	/^                def __init__(self, *args, **kwargs):$/;"	m	class:dump.PresetFormattingAwareDumper
+__init__	src/yaml_for_humans/dumper.py	/^        def __init__(self, *args, **kwargs):$/;"	m	class:_create_preset_dumper.PresetFormattingAwareDumper
 __init__	src/yaml_for_humans/dumper.py	/^    def __init__(self):$/;"	m	class:KeyPreservingResolver
 __init__	src/yaml_for_humans/dumper.py	/^    def __init__(self, stream):$/;"	m	class:KeyPreservingSafeLoader
 __init__	src/yaml_for_humans/emitter.py	/^    def __init__($/;"	m	class:HumanFriendlyDumper
@@ -98,8 +101,10 @@ __repr__	src/yaml_for_humans/formatting_aware.py	/^    def __repr__(self):$/;"	m
 __setitem__	src/yaml_for_humans/formatting_aware.py	/^    def __setitem__(self, key, value):$/;"	m	class:FormattingAwareDict	file:
 _add_mapping_formatting_metadata	src/yaml_for_humans/formatting_aware.py	/^    def _add_mapping_formatting_metadata(self, node):$/;"	m	class:FormattingAwareComposer
 _add_sequence_formatting_metadata	src/yaml_for_humans/formatting_aware.py	/^    def _add_sequence_formatting_metadata(self, node):$/;"	m	class:FormattingAwareComposer
+_build_dump_kwargs	src/yaml_for_humans/dumper.py	/^def _build_dump_kwargs(dumper_class: type, **user_kwargs: Any) -> dict:$/;"	f
 _calculate_end_line	src/yaml_for_humans/formatting_aware.py	/^    def _calculate_end_line(self, node):$/;"	m	class:FormattingAwareComposer
 _check_cli_dependencies	src/yaml_for_humans/cli.py	/^def _check_cli_dependencies() -> None:$/;"	f
+_create_preset_dumper	src/yaml_for_humans/dumper.py	/^def _create_preset_dumper($/;"	f
 _ensure_directory_exists	src/yaml_for_humans/cli.py	/^    def _ensure_directory_exists(self, auto_create: bool) -> None:$/;"	m	class:DirectoryOutputWriter
 _ensure_parent_dirs_exist	src/yaml_for_humans/cli.py	/^    def _ensure_parent_dirs_exist(self, auto_create: bool) -> None:$/;"	m	class:FileOutputWriter
 _ensure_raw_lines	src/yaml_for_humans/formatting_aware.py	/^    def _ensure_raw_lines(self):$/;"	m	class:FormattingAwareComposer
@@ -147,6 +152,7 @@ _process_yaml_content	src/yaml_for_humans/cli.py	/^    def _process_yaml_content
 _read_stdin_with_timeout	src/yaml_for_humans/cli.py	/^def _read_stdin_with_timeout(timeout_ms: int = DEFAULT_TIMEOUT_MS) -> str:$/;"	f
 _remove_boolean_resolvers	src/yaml_for_humans/dumper.py	/^    def _remove_boolean_resolvers(self):$/;"	m	class:KeyPreservingSafeLoader
 _return_buffer	src/yaml_for_humans/dumper.py	/^def _return_buffer(buffer: StringIO) -> None:$/;"	f
+_select_dumper	src/yaml_for_humans/dumper.py	/^def _select_dumper(preserve_empty_lines: bool, preserve_comments: bool) -> type:$/;"	f
 _set_item_comments	src/yaml_for_humans/formatting_aware.py	/^    def _set_item_comments(self, index, comment_metadata):$/;"	m	class:FormattingAwareList
 _set_item_formatting	src/yaml_for_humans/formatting_aware.py	/^    def _set_item_formatting(self, index, formatting):$/;"	m	class:FormattingAwareList
 _set_key_comments	src/yaml_for_humans/formatting_aware.py	/^    def _set_key_comments(self, key, comment_metadata):$/;"	m	class:FormattingAwareDict
@@ -277,6 +283,11 @@ teardown_method	tests/test_integration.py	/^    def teardown_method(self):$/;"	m
 test_auto_format_detection	tests/test_cli.py	/^    def test_auto_format_detection(self, capsys):$/;"	f
 test_backward_compatibility	tests/test_comment_preservation.py	/^    def test_backward_compatibility(self):$/;"	f
 test_backward_compatibility	tests/test_empty_line_preservation.py	/^    def test_backward_compatibility(self):$/;"	f
+test_build_defaults_only	tests/test_dump_helpers.py	/^    def test_build_defaults_only(self):$/;"	m	class:TestBuildDumpKwargs
+test_build_preserves_dumper_class	tests/test_dump_helpers.py	/^    def test_build_preserves_dumper_class(self):$/;"	m	class:TestBuildDumpKwargs
+test_build_user_can_override_dumper	tests/test_dump_helpers.py	/^    def test_build_user_can_override_dumper(self):$/;"	m	class:TestBuildDumpKwargs
+test_build_with_empty_user_kwargs	tests/test_dump_helpers.py	/^    def test_build_with_empty_user_kwargs(self):$/;"	m	class:TestBuildDumpKwargs
+test_build_with_user_overrides	tests/test_dump_helpers.py	/^    def test_build_with_user_overrides(self):$/;"	m	class:TestBuildDumpKwargs
 test_ci_cd_pipeline	tests/test_integration.py	/^    def test_ci_cd_pipeline(self):$/;"	m	class:TestRealWorldExamples
 test_cli_can_disable_empty_lines_with_no_preserve_flag	tests/test_cli_empty_lines.py	/^    def test_cli_can_disable_empty_lines_with_no_preserve_flag(self):$/;"	m	class:TestCLIEmptyLines
 test_cli_disables_empty_lines_with_file_input_and_no_preserve_flag	tests/test_cli_empty_lines.py	/^    def test_cli_disables_empty_lines_with_file_input_and_no_preserve_flag(self, tmp_path):$/;"	m	class:TestCLIEmptyLines
@@ -298,6 +309,11 @@ test_complex_yaml_comment_preservation	tests/test_comment_preservation.py	/^    
 test_complex_yaml_empty_line_preservation	tests/test_empty_line_preservation.py	/^    def test_complex_yaml_empty_line_preservation(self):$/;"	f
 test_content_based_detection	tests/test_cli.py	/^    def test_content_based_detection(self):$/;"	m	class:TestFileTypeDetection
 test_continue_on_invalid_files	tests/test_cli.py	/^    def test_continue_on_invalid_files(self, capsys):$/;"	m	class:TestGlobbingAndDirectorySupport
+test_create_with_both_flags	tests/test_dump_helpers.py	/^    def test_create_with_both_flags(self):$/;"	m	class:TestCreatePresetDumper
+test_create_with_comments	tests/test_dump_helpers.py	/^    def test_create_with_comments(self):$/;"	m	class:TestCreatePresetDumper
+test_create_with_empty_lines	tests/test_dump_helpers.py	/^    def test_create_with_empty_lines(self):$/;"	m	class:TestCreatePresetDumper
+test_create_with_no_flags	tests/test_dump_helpers.py	/^    def test_create_with_no_flags(self):$/;"	m	class:TestCreatePresetDumper
+test_created_dumper_is_unique	tests/test_dump_helpers.py	/^    def test_created_dumper_is_unique(self):$/;"	m	class:TestCreatePresetDumper
 test_custom_dumper_options	tests/test_multi_document.py	/^    def test_custom_dumper_options(self):$/;"	m	class:TestConvenienceFunctions
 test_custom_indent	tests/test_cli.py	/^    def test_custom_indent(self, capsys):$/;"	f
 test_directory_nonexistent	tests/test_cli.py	/^    def test_directory_nonexistent(self, capsys):$/;"	m	class:TestGlobbingAndDirectorySupport
@@ -418,6 +434,10 @@ test_process_with_none_markers	tests/test_dumper_helpers.py	/^    def test_proce
 test_resource_ordering	tests/test_multi_document.py	/^    def test_resource_ordering(self):$/;"	m	class:TestKubernetesManifestDumper
 test_round_trip_complex	tests/test_emitter.py	/^    def test_round_trip_complex(self):$/;"	m	class:TestYAMLValidity
 test_round_trip_simple	tests/test_emitter.py	/^    def test_round_trip_simple(self):$/;"	m	class:TestYAMLValidity
+test_select_no_preservation	tests/test_dump_helpers.py	/^    def test_select_no_preservation(self):$/;"	m	class:TestSelectDumper
+test_select_with_both	tests/test_dump_helpers.py	/^    def test_select_with_both(self):$/;"	m	class:TestSelectDumper
+test_select_with_comments	tests/test_dump_helpers.py	/^    def test_select_with_comments(self):$/;"	m	class:TestSelectDumper
+test_select_with_empty_lines	tests/test_dump_helpers.py	/^    def test_select_with_empty_lines(self):$/;"	m	class:TestSelectDumper
 test_simple_comment_preservation	tests/test_comment_preservation.py	/^    def test_simple_comment_preservation(self):$/;"	m	class:TestCommentPreservation
 test_simple_empty_line_preservation	tests/test_empty_line_preservation.py	/^    def test_simple_empty_line_preservation(self):$/;"	m	class:TestEmptyLinePreservation
 test_simple_string_sequence	tests/test_emitter.py	/^    def test_simple_string_sequence(self):$/;"	m	class:TestHumanFriendlyEmitter
