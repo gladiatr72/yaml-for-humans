@@ -212,6 +212,8 @@ huml	src/yaml_for_humans/cli.py	/^def huml():$/;"	f
 huml_func	benchmark.py	/^            def huml_func():$/;"	f	function:benchmark_serialization.pyyaml_multi
 indent	src/yaml_for_humans/cli.py	/^        indent=indent,$/;"	v
 info	brain/validate_brain.py	/^    def info(self, msg: str):$/;"	m	class:BrainValidator
+is_preservation_enabled	src/yaml_for_humans/cli.py	/^    def is_preservation_enabled(self) -> bool:$/;"	m	class:ProcessingContext
+is_safe_mode	src/yaml_for_humans/cli.py	/^    def is_safe_mode(self) -> bool:$/;"	m	class:ProcessingContext
 items	tests/test_emitter.py	/^            def items(self):$/;"	m	class:TestErrorHandling.test_non_dict_mappings.CustomMapping
 kubernetes_resource_ordering_example	examples/kubernetes_manifests_example.py	/^def kubernetes_resource_ordering_example():$/;"	f
 lines_before_raw	src/yaml_for_humans/formatting_aware.py	/^    def lines_before_raw(self):$/;"	m	class:FormattingMetadata

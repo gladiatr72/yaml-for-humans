@@ -43,6 +43,16 @@ class ProcessingContext:
     preserve_empty_lines: bool = DEFAULT_PRESERVE_EMPTY_LINES
     preserve_comments: bool = DEFAULT_PRESERVE_COMMENTS
 
+    @property
+    def is_preservation_enabled(self) -> bool:
+        """Check if any preservation feature is enabled."""
+        return self.preserve_empty_lines or self.preserve_comments
+
+    @property
+    def is_safe_mode(self) -> bool:
+        """Check if using safe YAML parsing."""
+        return not self.unsafe_inputs
+
     def create_source_factory(self, base_info: dict) -> Callable[[], dict]:
         """Create source factory with counter for multi-document sources."""
         counter = [0]

@@ -14,6 +14,7 @@ import pytest
 import yaml
 
 from yaml_for_humans.cli import (
+    ProcessingContext,
     _generate_k8s_filename,
     _has_items_array,
     _huml_main,
@@ -1594,3 +1595,53 @@ class TestFileTypeDetection:
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
+
+
+class TestProcessingContextProperties:
+    """Test ProcessingContext computed properties."""
+
+    def test_is_preservation_enabled_both_true(self):
+        """Test property returns True when both preservation flags enabled."""
+        ctx = ProcessingContext(
+            unsafe_inputs=False,
+            preserve_empty_lines=True,
+            preserve_comments=True,
+        )
+        assert ctx.is_preservation_enabled is True
+
+    def test_is_preservation_enabled_empty_only(self):
+        """Test property returns True when only empty lines enabled."""
+        ctx = ProcessingContext(
+            unsafe_inputs=False,
+            preserve_empty_lines=True,
+            preserve_comments=False,
+        )
+        assert ctx.is_preservation_enabled is True
+
+    def test_is_preservation_enabled_comments_only(self):
+        """Test property returns True when only comments enabled."""
+        ctx = ProcessingContext(
+            unsafe_inputs=False,
+            preserve_empty_lines=False,
+            preserve_comments=True,
+        )
+        assert ctx.is_preservation_enabled is True
+
+    def test_is_preservation_enabled_both_false(self):
+        """Test property returns False when both preservation flags disabled."""
+        ctx = ProcessingContext(
+            unsafe_inputs=False,
+            preserve_empty_lines=False,
+            preserve_comments=False,
+        )
+        assert ctx.is_preservation_enabled is False
+
+    def test_is_safe_mode_true(self):
+        """Test property returns True when unsafe_inputs is False."""
+        ctx = ProcessingContext(unsafe_inputs=False)
+        assert ctx.is_safe_mode is True
+
+    def test_is_safe_mode_false(self):
+        """Test property returns False when unsafe_inputs is True."""
+        ctx = ProcessingContext(unsafe_inputs=True)
+        assert ctx.is_safe_mode is False
