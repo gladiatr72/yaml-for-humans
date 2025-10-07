@@ -1,0 +1,250 @@
+<pattern-file>
+  <meta>
+    <pattern-id>dataclass-property-pattern</pattern-id>
+    <source>Complexity refactoring sessions 2025-10-06</source>
+    <version>1.0</version>
+    <created>2025-10-06</created>
+  </meta>
+  <pattern>
+      <name>Using @property on Dataclasses for Derived State</name>
+      <when>Dataclass has repeated boolean logic or needs derived/computed values</when>
+      <why>Reduces complexity, makes intent explicit, centralizes logic, simplifies tests</why>
+      <philosophy>Dataclasses are more than data bags - add computed properties for derived state</philosophy>
+      <complete-example>
+        <file>src/ecreshore/cli/core/batch.py refactoring (2025-10-06)</file>
+        <code>
+# BEFORE: Repeated boolean logic scattered throughout code
+
+@dataclass
+class BatchExecutionConfig:
+    """Batch execution configuration."""
+    config_file: str
+    dry_run: bool
+    output: str
+    force: bool
+    verbose: int
+    debug_skip_decisions: bool
+    skip_audit_trail: bool
+    explain_skips: bool
+
+# Usage scattered throughout code (3+ locations):
+skip_debug_enabled = any([
+    config.debug_skip_decisions,
+    config.skip_audit_trail,
+    config.explain_skips
+])
+
+if skip_debug_enabled:
+    _configure_skip_debug_logging(...)
+
+# Later in code (repeated):
+skip_debug_enabled = any([
+    config.debug_skip_decisions,
+    config.skip_audit_trail,
+    config.explain_skips
+])
+
+if skip_debug_enabled and output == "log":
+    raise ValueError("Skip debug incompatible with log output")
+
+
+# AFTER: Computed property centralizes logic
+
+@dataclass
+class BatchExecutionConfig:
+    """Batch execution configuration with computed properties."""
+    config_file: str
+    dry_run: bool
+    output: str
+    force: bool
+    verbose: int
+    debug_skip_decisions: bool
+    skip_audit_trail: bool
+    explain_skips: bool
+
+    @property
+    def skip_debug_enabled(self) -> bool:
+        """Check if any skip debug flag is enabled.
+
+        Returns:
+            True if debug_skip_decisions, skip_audit_trail, or explain_skips is enabled
+
+        Examples:
+            >>> config = BatchExecutionConfig(..., debug_skip_decisions=True, ...)
+            >>> config.skip_debug_enabled
+            True
+
+            >>> config = BatchExecutionConfig(..., all debug flags False, ...)
+            >>> config.skip_debug_enabled
+            False
+        """
+        return self.debug_skip_decisions or self.skip_audit_trail or self.explain_skips
+
+# Usage throughout code (clean and clear):
+if config.skip_debug_enabled:
+    _configure_skip_debug_logging(...)
+
+# Validation (clear intent):
+if config.skip_debug_enabled and output == "log":
+    raise ValueError("Skip debug incompatible with log output")
+
+
+# TESTING: Property logic is testable
+
+class TestBatchExecutionConfig:
+    """Test dataclass and computed properties."""
+
+    def test_skip_debug_enabled_all_false(self):
+        """Test property returns False when no debug flags set."""
+        config = BatchExecutionConfig(
+            config_file="test.yml",
+            dry_run=False,
+            output="console",
+            force=False,
+            verbose=0,
+            debug_skip_decisions=False,
+            skip_audit_trail=False,
+            explain_skips=False,
+        )
+
+        assert config.skip_debug_enabled is False
+
+    def test_skip_debug_enabled_debug_decisions(self):
+        """Test property returns True when debug_skip_decisions enabled."""
+        config = BatchExecutionConfig(
+            config_file="test.yml",
+            dry_run=False,
+            output="console",
+            force=False,
+            verbose=0,
+            debug_skip_decisions=True,
+            skip_audit_trail=False,
+            explain_skips=False,
+        )
+
+        assert config.skip_debug_enabled is True
+
+    def test_skip_debug_enabled_any_flag(self):
+        """Test property returns True for any debug flag."""
+        # Test each flag individually
+        for flag_name in ['debug_skip_decisions', 'skip_audit_trail', 'explain_skips']:
+            kwargs = {
+                'config_file': 'test.yml',
+                'dry_run': False,
+                'output': 'console',
+                'force': False,
+                'verbose': 0,
+                'debug_skip_decisions': False,
+                'skip_audit_trail': False,
+                'explain_skips': False,
+            }
+            kwargs[flag_name] = True
+
+            config = BatchExecutionConfig(**kwargs)
+            assert config.skip_debug_enabled is True, f"Failed for {flag_name}"
+
+# RESULTS:
+# - Eliminated 3+ repeated any([...]) expressions
+# - Reduced complexity in calling code (2-3 decision points removed)
+# - Made intent explicit (property name documents what it checks)
+# - Property logic centralized and testable
+# - Property can evolve without changing call sites
+        </code>
+      </complete-example>
+      <when-to-use>
+        <use-case>Repeated boolean expressions (OR/AND of multiple fields)</use-case>
+        <use-case>Derived calculations (total = sum of parts)</use-case>
+        <use-case>Status checks (is_valid, is_complete, has_errors)</use-case>
+        <use-case>Formatted representations (display_name, summary_text)</use-case>
+        <use-case>Type conversions (as_dict, to_json)</use-case>
+      </when-to-use>
+      <benefits>
+        <benefit>Complexity Reduction: Removes repeated logic from calling code</benefit>
+        <benefit>Intent Clarity: Property name documents what it computes</benefit>
+        <benefit>Centralization: Single source of truth for derived state</benefit>
+        <benefit>Testability: Properties are easily testable</benefit>
+        <benefit>Maintainability: Logic changes in one place</benefit>
+        <benefit>Type Safety: Properties have return type annotations</benefit>
+      </benefits>
+      <property-types>
+        <type name="boolean-or">
+          <description>OR of multiple boolean fields</description>
+          <example>skip_debug_enabled = field1 or field2 or field3</example>
+          <use-case>Feature flag aggregation, permission checks</use-case>
+        </type>
+        <type name="boolean-and">
+          <description>AND of multiple boolean fields</description>
+          <example>is_valid = field1 and field2 and not field3</example>
+          <use-case>Validation status, requirement satisfaction</use-case>
+        </type>
+        <type name="calculation">
+          <description>Computed numeric value</description>
+          <example>total_cost = base_price + tax + shipping</example>
+          <use-case>Derived metrics, aggregations</use-case>
+        </type>
+        <type name="status-check">
+          <description>Complex status determination</description>
+          <example>is_ready = has_data and not is_processing and not has_errors</example>
+          <use-case>State machine status, readiness checks</use-case>
+        </type>
+        <type name="formatted-string">
+          <description>Formatted representation of data</description>
+          <example>display_name = f"{first_name} {last_name}"</example>
+          <use-case>Display text, summaries, labels</use-case>
+        </type>
+      </property-types>
+      <implementation-guidelines>
+        <guideline>Keep properties pure (no I/O, no side effects)</guideline>
+        <guideline>Properties should be cheap to compute (avoid expensive operations)</guideline>
+        <guideline>Add docstring explaining what property computes</guideline>
+        <guideline>Include return type annotation</guideline>
+        <guideline>Test property with various input combinations</guideline>
+        <guideline>Properties should not modify state (read-only)</guideline>
+        <guideline>Avoid properties that depend on external state</guideline>
+      </implementation-guidelines>
+      <testing-strategy>
+        <test>Test property with all fields False/None/empty</test>
+        <test>Test property with individual fields set</test>
+        <test>Test property with all fields set</test>
+        <test>Test property edge cases (boundary values)</test>
+        <test>Use parametrized tests for multiple field combinations</test>
+      </testing-strategy>
+      <anti-patterns>
+        <anti-pattern>
+          <name>Expensive Property</name>
+          <description>Property performs I/O or expensive computation</description>
+          <problem>Properties should appear free - users expect cheap access</problem>
+          <solution>Make it a regular method with clear name (calculate_*, fetch_*)</solution>
+        </anti-pattern>
+        <anti-pattern>
+          <name>Stateful Property</name>
+          <description>Property modifies object state when accessed</description>
+          <problem>Violates principle of least surprise - reading shouldn't mutate</problem>
+          <solution>Use explicit method call instead of property</solution>
+        </anti-pattern>
+        <anti-pattern>
+          <name>Property Depending on External State</name>
+          <description>Property reads environment variables, files, or global state</description>
+          <problem>Makes testing difficult, violates dataclass immutability principle</problem>
+          <solution>Pass external state as constructor argument, compute in property</solution>
+        </anti-pattern>
+      </anti-patterns>
+      <related-patterns>
+        <related>validation-dataclass-pattern - Properties useful for is_valid checks</related>
+        <related>pure-function-extraction-pattern - Properties should be pure</related>
+      </related-patterns>
+      <real-world-examples>
+        <example>
+          <name>BatchExecutionConfig.skip_debug_enabled</name>
+          <file>cli/core/batch.py</file>
+          <description>OR of three debug flag fields</description>
+          <complexity-reduction>Removed 3+ repeated any([...]) calls</complexity-reduction>
+        </example>
+        <example>
+          <name>TransferResult.is_successful (hypothetical)</name>
+          <description>success_count > 0 and failure_count == 0</description>
+          <benefit>Clear intent instead of scattered boolean logic</benefit>
+        </example>
+      </real-world-examples>
+    </pattern>
+</pattern-file>

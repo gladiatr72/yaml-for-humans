@@ -1,0 +1,149 @@
+<pattern-file>
+  <meta>
+    <pattern-id>test-refactoring-pattern</pattern-id>
+    <source>doc/claude-test-brain.xml</source>
+    <version>1.3</version>
+  </meta>
+  <pattern>
+      <name>Refactoring Brittle Tests</name>
+      <when>Tests break on every refactoring, excessive mock setup, implementation detail coupling</when>
+      <symptoms>
+        <symptom>Tests fail when implementation changes but behavior doesn't</symptom>
+        <symptom>20+ lines of mock setup per test</symptom>
+        <symptom>Mocking internal methods with MonkeyPatch</symptom>
+        <symptom>Tests coupled to private method names (_method_name)</symptom>
+      </symptoms>
+      <complete-example>
+        <file>tests/test_image_presence_checker.py refactoring (2025-09-30)</file>
+        <code>
+# BEFORE: Brittle mock-heavy tests (4 tests, all failing on refactoring)
+import pytest
+from unittest.mock import Mock
+
+def test_get_source_image_digest_success(image_presence_checker, monkeypatch):
+    """Brittle test mocking internal implementation details."""
+    # 15+ lines of complex mock setup with MonkeyPatch
+    mock_digest = "sha256:abc123"
+
+    # Mocking internal helper method - BRITTLE!
+    async def mock_get_enhanced_digest(*args, **kwargs):
+        return mock_digest
+
+    # MonkeyPatch module path - breaks if import path changes
+    monkeypatch.setattr(
+        "src.ecreshore.services.image_presence_checker.get_enhanced_digest",
+        mock_get_enhanced_digest
+    )
+
+    result = await image_presence_checker.get_source_image_digest(...)
+    assert result == mock_digest
+
+# PROBLEM: This test broke when implementation changed from:
+#   get_enhanced_digest() directly
+# To:
+#   get_source_platform_specific_digest() &amp;#8594; get_platform_digests() &amp;#8594; get_enhanced_digest()
+# Test was coupled to implementation path, not behavior!
+
+# AFTER: Integration test + pure function extraction (10 tests, resilient)
+
+# Strategy 1: Replace brittle mocks with integration tests
+class TestIntegrationSourceDigestRetrieval:
+    """Integration tests that test behavior, not implementation."""
+
+    @pytest.mark.asyncio
+    async def test_get_source_image_digest_with_buildx_only_mode(
+        self, image_presence_checker
+    ):
+        """Test real digest retrieval flow - NO MOCKS of internal methods."""
+        # Uses real methods, real async execution
+        # Only mocks external boundary (ECR API)
+        result = await image_presence_checker.get_source_image_digest(
+            docker_client=None,  # buildx-only mode
+            source_image="ghcr.io/fluxcd/helm-controller",
+            source_tag="v1.3.0"
+        )
+
+        # Test actual behavior
+        assert result is not None
+        assert result.startswith("sha256:")
+        assert len(result) == 71  # Full SHA256 hash
+
+        # Test survives refactoring as long as behavior unchanged!
+
+# Strategy 2: Extract pure functions for trivial testing
+def normalize_digest(digest: Optional[str]) -&gt; str:
+    """Pure function extracted from comparison logic.
+
+    Converts digest to normalized form (removes sha256: prefix).
+    Trivially testable with no mocks, no async, no I/O.
+    """
+    if not digest:
+        return ""
+
+    if digest.startswith("sha256:"):
+        return digest[7:]
+
+    return digest
+
+class TestPureFunctions:
+    """Pure function tests - fast, no mocks, comprehensive edge cases."""
+
+    def test_normalize_digest_with_prefix(self):
+        assert normalize_digest("sha256:abc123") == "abc123"
+
+    def test_normalize_digest_without_prefix(self):
+        assert normalize_digest("abc123") == "abc123"
+
+    def test_normalize_digest_with_none(self):
+        assert normalize_digest(None) == ""
+
+    def test_normalize_digest_with_empty_string(self):
+        assert normalize_digest("") == ""
+
+    # 6 tests, &lt;0.01s total, 100% edge case coverage, ZERO mocks
+
+# RESULTS:
+# Before: 4 tests, all failing on refactoring, brittle
+# After: 10 tests (4 integration + 6 pure), all passing, resilient
+# Test execution: 4.03s (integration tests include real network calls)
+# Maintenance: Tests survive implementation changes as long as behavior preserved
+</code>
+      </complete-example>
+      <refactoring-decision-tree>
+        <decision>
+          <condition>Tests mock internal methods you own</condition>
+          <action>Replace with integration tests using real methods</action>
+          <rationale>Integration tests validate behavior, survive refactoring</rationale>
+        </decision>
+        <decision>
+          <condition>Complex business logic buried in async/IO code</condition>
+          <action>Extract as pure functions, test separately</action>
+          <rationale>Pure functions: fast, no mocks, trivial to test</rationale>
+        </decision>
+        <decision>
+          <condition>20+ lines of mock setup per test</condition>
+          <action>Create Fake service implementation</action>
+          <rationale>Fakes are reusable, self-documenting, less brittle</rationale>
+        </decision>
+        <decision>
+          <condition>Tests coupled to private method names</condition>
+          <action>Test through public API only</action>
+          <rationale>Private methods are implementation details</rationale>
+        </decision>
+      </refactoring-decision-tree>
+      <critical-rules>
+        <rule>Test behavior, not implementation details</rule>
+        <rule>Prefer integration tests over mocking owned services</rule>
+        <rule>Extract pure functions for business logic</rule>
+        <rule>Only mock external boundaries (AWS, Docker, HTTP)</rule>
+        <rule>If refactoring breaks tests but behavior unchanged → tests are brittle</rule>
+      </critical-rules>
+      <benefits>
+        <benefit>Tests survive refactoring - only break when behavior changes</benefit>
+        <benefit>Integration tests catch real bugs mocks would hide</benefit>
+        <benefit>Pure function tests run in microseconds with 100% coverage</benefit>
+        <benefit>Less mock setup boilerplate (eliminated 34 lines in refactoring)</benefit>
+        <benefit>Better test coverage (23 → 29 tests, 83% → 100% pass rate)</benefit>
+      </benefits>
+    </pattern>
+</pattern-file>

@@ -1,0 +1,85 @@
+<pattern-file>
+  <meta>
+    <pattern-id>factory-fixture-pattern</pattern-id>
+    <source>doc/claude-test-brain.xml</source>
+    <version>1.3</version>
+  </meta>
+  <pattern>
+      <name>Factory Fixtures</name>
+      <when>Need to create multiple similar objects with different parameters</when>
+      <why>Eliminates duplication while allowing customization per test</why>
+      <complete-example>
+        <file>tests/test_skip_if_present_e2e.py</file>
+        <code>
+import pytest
+from datetime import datetime
+from src.ecreshore.services.ecr_repository import ECRImage
+
+@pytest.fixture
+def create_ecr_image():
+    """Factory fixture for creating ECRImage instances with defaults.
+
+    Returns a function that creates ECRImage objects with default values
+    that can be overridden per test.
+    """
+    def _create(
+        digest: str,
+        tag: str = "v1.3.0",
+        repository: str = "helm-controller",
+        **overrides
+    ) -&gt; ECRImage:
+        defaults = {
+            "repository_name": repository,
+            "image_tags": [tag],
+            "image_digest": digest,
+            "size_bytes": 41000000,
+            "pushed_at": datetime.now(),
+            "registry_id": "123456789012",
+            "region": "us-east-2"
+        }
+        return ECRImage(**{**defaults, **overrides})
+
+    return _create
+
+# Usage in tests
+def test_with_matching_digest(create_ecr_image):
+    """Use factory with defaults."""
+    image = create_ecr_image(digest="sha256:abc123")
+    assert image.repository_name == "helm-controller"
+    assert image.image_tags == ["v1.3.0"]
+
+def test_with_custom_tag(create_ecr_image):
+    """Use factory with custom parameters."""
+    image = create_ecr_image(
+        digest="sha256:def456",
+        tag="v2.0.0",
+        repository="custom-repo"
+    )
+    assert image.image_tags == ["v2.0.0"]
+    assert image.repository_name == "custom-repo"
+
+def test_with_size_override(create_ecr_image):
+    """Use factory with keyword override."""
+    image = create_ecr_image(
+        digest="sha256:ghi789",
+        size_bytes=100000000  # Override default
+    )
+    assert image.size_bytes == 100000000
+</code>
+      </complete-example>
+      <critical-rules>
+        <rule>Return a callable function (not a value)</rule>
+        <rule>Use nested function pattern: def _create(...)</rule>
+        <rule>Provide sensible defaults for common use cases</rule>
+        <rule>Support both positional and **kwargs overrides</rule>
+        <rule>Name the factory verb_noun: create_image, build_request, make_config</rule>
+      </critical-rules>
+      <benefits>
+        <benefit>Eliminates 5-10 lines of object creation per test</benefit>
+        <benefit>Provides consistent defaults across tests</benefit>
+        <benefit>Allows per-test customization when needed</benefit>
+        <benefit>Self-documenting - shows common object structure</benefit>
+        <benefit>Easy to update - change defaults in one place</benefit>
+      </benefits>
+    </pattern>
+</pattern-file>

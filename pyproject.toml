@@ -50,4 +50,5 @@ dev = [
     "pytest>=8.3.5",
     "types-pyYAML",
     "mypy",
+    "lxml>=6.0.2",
 ]

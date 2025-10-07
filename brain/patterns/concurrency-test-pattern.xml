@@ -1,0 +1,80 @@
+<pattern-file>
+  <meta>
+    <pattern-id>concurrency-test-pattern</pattern-id>
+    <source>doc/claude-test-brain.xml</source>
+    <version>1.3</version>
+  </meta>
+  <pattern>
+      <name>Testing Concurrency Limits</name>
+      <when>Testing semaphores, rate limiters, connection pools, concurrent execution limits</when>
+      <why-special>Without proper timing, all async calls complete instantly and concurrency is never tested</why-special>
+      <complete-example>
+        <file>tests/test_async_transfer_service.py</file>
+        <code>
+import pytest
+import asyncio
+from unittest.mock import patch
+from src.ecreshore.services.async_transfer_service import AsyncTransferService
+from src.ecreshore.services.transfer_service import TransferRequest, TransferResult
+
+@pytest.mark.asyncio
+async def test_concurrent_transfers_semaphore_limiting():
+    """Test that semaphore correctly limits concurrent execution."""
+    service = AsyncTransferService()
+
+    # Create test requests
+    requests = [
+        TransferRequest("nginx", "latest", "my-nginx", f"v{i}")
+        for i in range(3)
+    ]
+
+    # Track concurrent execution with closure variables
+    current_calls = 0
+    max_concurrent_seen = 0
+
+    async def mock_transfer(request):
+        nonlocal current_calls, max_concurrent_seen
+
+        # Increment counter when entering
+        current_calls += 1
+        max_concurrent_seen = max(max_concurrent_seen, current_calls)
+
+        # CRITICAL: await asyncio.sleep() forces context switch
+        # Without this, all calls complete before any concurrency happens
+        await asyncio.sleep(0.01)
+
+        # Decrement counter when exiting
+        current_calls -= 1
+
+        return TransferResult(request=request, success=True)
+
+    # Patch the transfer method
+    with patch.object(service, 'transfer_image', side_effect=mock_transfer):
+        # Execute with concurrency limit of 2
+        await service.transfer_images_concurrent(requests, max_concurrent=2)
+
+    # Verify concurrency was actually limited
+    assert max_concurrent_seen &lt;= 2, f"Max concurrent was {max_concurrent_seen}, expected &lt;= 2"
+    assert max_concurrent_seen &gt; 0, "No concurrent execution detected"
+</code>
+      </complete-example>
+      <critical-rules>
+        <rule>MUST use await asyncio.sleep(0.01) to force context switching</rule>
+        <rule>Use nonlocal for closure variables tracking state</rule>
+        <rule>Track both current count AND maximum seen</rule>
+        <rule>Use small sleep intervals (0.01-0.1s) for fast tests</rule>
+        <rule>Without sleep: test passes incorrectly, no actual concurrency tested</rule>
+      </critical-rules>
+      <timing-guidance>
+        <interval>0.01s: Good for most concurrency tests</interval>
+        <interval>0.1s: Use for rate limiter tests</interval>
+        <interval>0.001s: Too fast, may not trigger context switch</interval>
+        <interval>1.0s: Too slow, makes tests sluggish</interval>
+      </timing-guidance>
+      <what-breaks>
+        <scenario>No sleep: All calls complete instantly, concurrency never exercised</scenario>
+        <scenario>No tracking vars: Can't verify concurrent execution</scenario>
+        <scenario>Using class variables: Thread safety issues, unreliable results</scenario>
+      </what-breaks>
+    </pattern>
+</pattern-file>

@@ -1,0 +1,250 @@
+<support-file>
+  <meta>
+    <file-id>coverage-interpretation-guide</file-id>
+    <source>Refactoring sessions 2025-10-03</source>
+    <version>1.0</version>
+  </meta>
+  <guide id="coverage-interpretation">
+      <name>Coverage Interpretation Guide</name>
+      <subtitle>Understanding what coverage metrics actually mean</subtitle>
+
+      <anti-pattern>
+        <name>Chasing High Overall Coverage Percentage</name>
+        <problem>Developers aim for 90%+ overall coverage without considering what's being tested</problem>
+        <why-bad>
+          <reason>Leads to testing implementation details instead of behavior</reason>
+          <reason>Encourages testing framework code (Click, FastAPI) instead of business logic</reason>
+          <reason>Creates brittle tests that break on refactoring</reason>
+          <reason>Wastes time testing auto-generated code, display functions, etc.</reason>
+        </why-bad>
+      </anti-pattern>
+
+      <better-approach>
+        <name>Targeted Coverage of Changed/Business Logic</name>
+        <principle>Cover what matters: new code, business logic, complex logic</principle>
+        <principle>Ignore what doesn't: framework integration, UI code, legacy code</principle>
+      </better-approach>
+
+      <real-examples>
+        <example>
+          <name>purge.py Refactoring</name>
+          <overall-coverage>30%</overall-coverage>
+          <business-logic-coverage>100%</business-logic-coverage>
+          <breakdown>
+            <tested>
+              <item>_validate_purge_options(): 100% (9 tests, pure function)</item>
+              <item>_execute_dry_run(): 100% (4 tests, service layer)</item>
+              <item>_execute_with_confirmation(): 100% (5 tests, service layer)</item>
+            </tested>
+            <untested-intentionally>
+              <item>purge() Click command: 0% (framework integration)</item>
+              <item>_display_purge_preview(): 0% (UI/display function)</item>
+              <item>_display_purge_summary(): 0% (UI/display function)</item>
+              <item>_display_purge_results(): 0% (UI/display function)</item>
+              <item>_should_display_repository(): 0% (UI helper)</item>
+            </untested-intentionally>
+          </breakdown>
+          <verdict>✅ EXCELLENT - 100% of business logic tested, UI/framework ignored</verdict>
+        </example>
+
+        <example>
+          <name>batch_progress.py Refactoring</name>
+          <overall-coverage>40%</overall-coverage>
+          <refactored-code-coverage>95%</refactored-code-coverage>
+          <breakdown>
+            <tested>
+              <item>_calculate_batch_summary(): 100% (8 tests, pure calculation)</item>
+              <item>_build_transfer_history(): 96% (5 tests, formatting helper)</item>
+              <item>_display_simple_summary(): 95% (8 tests, simple mode)</item>
+              <item>_display_rich_summary(): 92% (7 tests, rich mode)</item>
+              <item>finish_batch(): 100% (2 integration tests)</item>
+            </tested>
+            <untested-legacy>
+              <item>start_batch(): 0% (legacy code, not refactored)</item>
+              <item>update_transfer(): 0% (legacy code, not refactored)</item>
+              <item>_show_error_summary(): 0% (legacy code, not refactored)</item>
+              <item>Other display methods: 0% (out of scope)</item>
+            </untested-legacy>
+          </breakdown>
+          <verdict>✅ EXCELLENT - 95% of NEW code tested, legacy untouched</verdict>
+        </example>
+
+        <example>
+          <name>Anti-example: Chasing 90% Overall</name>
+          <overall-coverage>90%</overall-coverage>
+          <business-logic-coverage>60%</business-logic-coverage>
+          <breakdown>
+            <tested-wastefully>
+              <item>Click command integration: 20 lines of CliRunner tests</item>
+              <item>Console.print() calls: Mocking Rich console output</item>
+              <item>Enum definitions: Testing TransferStatus.COMPLETED == "completed"</item>
+              <item>Dataclass fields: Testing that PurgeOptions.region stores region</item>
+            </tested-wastefully>
+            <untested-important>
+              <item>Validation logic: Missing edge case tests</item>
+              <item>Error handling: Exception paths not covered</item>
+              <item>Business rules: Complex conditions not tested</item>
+            </untested-important>
+          </breakdown>
+          <verdict>❌ POOR - High % but wrong things tested, important logic missed</verdict>
+        </example>
+      </real-examples>
+
+      <what-to-cover>
+        <high-priority>
+          <item>New code you just wrote or refactored</item>
+          <item>Business logic (calculations, validation, rules)</item>
+          <item>Error handling and edge cases</item>
+          <item>Pure functions (should be 100% covered - they're easy!)</item>
+          <item>Complex conditional logic</item>
+          <item>Data transformations</item>
+        </high-priority>
+        <medium-priority>
+          <item>Service layer orchestration</item>
+          <item>Integration points between components</item>
+          <item>Configuration parsing</item>
+        </medium-priority>
+        <low-priority>
+          <item>Display/UI functions (unless they contain logic)</item>
+          <item>Framework integration (Click, FastAPI, etc.)</item>
+          <item>Legacy code not being modified</item>
+          <item>Auto-generated code</item>
+          <item>Simple getters/setters</item>
+          <item>Enum definitions</item>
+        </low-priority>
+      </what-to-cover>
+
+      <interpreting-percentages>
+        <scenario coverage="100%">
+          <good-if>Small, focused module with all business logic tested</good-if>
+          <bad-if>Testing trivial code to inflate percentage</bad-if>
+        </scenario>
+        <scenario coverage="90%+">
+          <good-if>Core business logic module with minor UI code untested</good-if>
+          <bad-if>Testing framework integration to hit target</bad-if>
+        </scenario>
+        <scenario coverage="70-90%">
+          <good-if>Mixed module with business logic covered, display code not</good-if>
+          <normal>Typical for well-tested production code</normal>
+        </scenario>
+        <scenario coverage="30-50%">
+          <good-if>CLI module: 100% business logic, 0% Click/UI = 30% overall ✅</good-if>
+          <good-if>Refactored module: 95% new code, 0% legacy = 40% overall ✅</good-if>
+          <bad-if>Important business logic untested</bad-if>
+        </scenario>
+        <scenario coverage="&lt;30%">
+          <acceptable-if>Legacy codebase, but new code has 100% coverage</acceptable-if>
+          <bad-if>Recent code lacking tests</bad-if>
+        </scenario>
+      </interpreting-percentages>
+
+      <key-questions>
+        <question>Is the NEW or CHANGED code tested?</question>
+        <why>New bugs come from new code, not unchanged legacy code</why>
+
+        <question>Is the BUSINESS LOGIC tested?</question>
+        <why>Business logic bugs are expensive; UI bugs are cosmetic</why>
+
+        <question>Are EDGE CASES and ERROR PATHS tested?</question>
+        <why>Edge cases are where bugs hide</why>
+
+        <question>Are we testing BEHAVIOR or IMPLEMENTATION?</question>
+        <why>Behavior tests survive refactoring; implementation tests don't</why>
+
+        <question>Could we achieve same confidence with fewer tests?</question>
+        <why>Fewer, better tests > many brittle tests</why>
+      </key-questions>
+
+      <metrics-that-matter-more>
+        <metric>
+          <name>Coverage of Changed Code</name>
+          <how-to>Run coverage only on files you modified</how-to>
+          <target>95%+ for refactored functions</target>
+        </metric>
+        <metric>
+          <name>Coverage of Business Logic</name>
+          <how-to>Exclude UI, framework, display functions</how-to>
+          <target>90%+ for core logic</target>
+        </metric>
+        <metric>
+          <name>Pure Function Coverage</name>
+          <how-to>Filter for functions with no I/O</how-to>
+          <target>100% (they're trivial to test!)</target>
+        </metric>
+        <metric>
+          <name>Test Execution Time</name>
+          <how-to>pytest --durations=10</how-to>
+          <target>&lt;1s for unit tests, &lt;10s for full suite</target>
+        </metric>
+        <metric>
+          <name>Test Failure Clarity</name>
+          <how-to>Do test failures immediately show the problem?</how-to>
+          <target>Yes - clear assertions with helpful messages</target>
+        </metric>
+      </metrics-that-matter-more>
+
+      <coverage-report-interpretation>
+        <example>
+          <output>
+Name                                    Stmts   Miss  Cover   Missing
+---------------------------------------------------------------------
+src/ecreshore/cli/repository/purge.py     249    175    30%   36-153, 165, 176-295, 300-470, 690-737
+---------------------------------------------------------------------
+          </output>
+          <analysis>
+            <step>1. Check "Missing" lines: 36-153, 165, 176-295, 300-470, 690-737</step>
+            <step>2. Map to functions:
+              - Lines 36-153: _display_purge_preview() [UI function - OK to skip]
+              - Lines 176-295: _display_purge_summary() [UI function - OK to skip]
+              - Lines 300-470: _display_purge_results() [UI function - OK to skip]
+              - Lines 690-737: purge() Click command [Framework - OK to skip]
+            </step>
+            <step>3. Verify business logic IS covered:
+              - Lines 475-524: _validate_purge_options() ✅ COVERED
+              - Lines 527-550: _execute_dry_run() ✅ COVERED
+              - Lines 553-624: _execute_with_confirmation() ✅ COVERED
+            </step>
+            <conclusion>✅ 30% overall is EXCELLENT - all business logic covered, only UI/framework missing</conclusion>
+          </analysis>
+        </example>
+      </coverage-report-interpretation>
+
+      <philosophical-guidance>
+        <quote>Coverage tells you what you HAVEN'T tested, not what you HAVE tested well.</quote>
+        <quote>100% coverage with bad tests &lt; 60% coverage with good tests.</quote>
+        <quote>Test behavior, not implementation. Test business logic, not framework.</quote>
+        <quote>If you're mocking the framework to hit coverage targets, you're doing it wrong.</quote>
+      </philosophical-guidance>
+
+      <action-items>
+        <when-you-see situation="Low overall coverage (30-50%)">
+          <action>1. Check: Is business logic covered? (grep for your function names in missing lines)</action>
+          <action>2. Check: Is it mostly UI/framework? (look for _display_, Click decorators)</action>
+          <action>3. If yes to both: Coverage is FINE, document why it's low</action>
+          <action>4. If no: Add tests for business logic first</action>
+        </when-you-see>
+
+        <when-you-see situation="High overall coverage (90%+)">
+          <action>1. Check: Are we testing trivial code? (dataclass fields, enums)</action>
+          <action>2. Check: Are we testing framework? (CliRunner, FastAPI TestClient)</action>
+          <action>3. If yes: Consider removing those tests, focus on business logic</action>
+          <action>4. If no: Great! Verify edge cases are covered</action>
+        </when-you-see>
+
+        <when-you-see situation="Coverage dropped after refactoring">
+          <action>1. Check: Did we extract helpers and split code?</action>
+          <action>2. Check: Are the NEW helpers tested?</action>
+          <action>3. If yes: Coverage drop is EXPECTED and FINE</action>
+          <action>4. Document: "Refactored X → Y helpers. Overall % dropped but coverage of changed code is 100%"</action>
+        </when-you-see>
+      </action-items>
+
+      <summary>
+        <principle>Coverage is a tool, not a goal</principle>
+        <principle>Context matters: 30% can be excellent, 90% can be poor</principle>
+        <principle>Test what matters: business logic > framework integration</principle>
+        <principle>Test what changes: new code > legacy code</principle>
+        <principle>Quality > Quantity: fewer good tests > many brittle tests</principle>
+      </summary>
+    </guide>
+</support-file>

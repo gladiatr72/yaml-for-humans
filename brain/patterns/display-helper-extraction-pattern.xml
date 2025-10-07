@@ -1,0 +1,382 @@
+<pattern-file>
+  <meta>
+    <pattern-id>display-helper-extraction-pattern</pattern-id>
+    <source>Complexity refactoring sessions 2025-10-06</source>
+    <version>1.0</version>
+    <created>2025-10-06</created>
+  </meta>
+  <pattern>
+      <name>Extracting Display Helpers from UI Functions</name>
+      <when>Display function mixes data transformation with UI framework orchestration</when>
+      <why>Separate testable data preparation from framework-specific rendering</why>
+      <philosophy>Display functions should orchestrate UI primitives, not transform data</philosophy>
+      <specialization-of>pure-function-extraction-pattern</specialization-of>
+      <frameworks>Rich (tables, console), Click output, curses, terminal UI</frameworks>
+      <complete-example>
+        <file>src/ecreshore/cli/cluster/scan_formatters.py refactoring (2025-10-06)</file>
+        <code>
+# BEFORE: Display function with mixed concerns (102 lines, complexity 12)
+
+def _display_scan_report(scan_result, progress_reporter, verbose):
+    """Display scan results as console report."""
+    # ... summary output ...
+
+    # Build namespace usage map (DATA TRANSFORMATION - testable)
+    image_namespace_map = {}
+    for workload in scan_result.workload_details:
+        for image_ref in workload.non_ecr_images:
+            if image_ref.image_url not in image_namespace_map:
+                image_namespace_map[image_ref.image_url] = set()
+            image_namespace_map[image_ref.image_url].add(workload.namespace)
+
+    # Populate table (RICH FRAMEWORK - not easily testable)
+    images_table = Table(show_header=True, header_style="bold blue")
+    images_table.add_column("Image", style="cyan")
+    # ...
+
+    for image_url in sorted(scan_result.unique_non_ecr_images):
+        from ...services.k8s_models import ImageReference
+
+        img_ref = ImageReference.parse(image_url)  # DATA TRANSFORMATION
+
+        # Get sorted namespaces for this image (DATA TRANSFORMATION)
+        namespaces = sorted(image_namespace_map.get(image_url, set()))
+        namespace_display = ", ".join(namespaces)
+
+        # Add row (RICH FRAMEWORK)
+        images_table.add_row(
+            image_url,
+            img_ref.registry or "docker.io",
+            img_ref.repository,
+            img_ref.tag_or_digest,
+            namespace_display,
+        )
+
+    console.print(images_table)
+
+    # More complex logic for workload table...
+    if verbose:
+        # Complex string truncation logic (DATA TRANSFORMATION - 15 lines)
+        for workload in scan_result.workload_details:
+            image_urls = [img.image_url for img in workload.non_ecr_images]
+            full_estimate = sum(len(url) for url in image_urls) + (len(image_urls) - 1) * 2
+            if full_estimate &lt;= 50:
+                display_text = ", ".join(image_urls)
+            else:
+                full_string = ", ".join(image_urls)
+                if len(full_string) &gt; 50:
+                    display_text = full_string[:50] + "..."
+                else:
+                    display_text = full_string
+            # ... add to table ...
+
+
+# AFTER: Extract pure data transformation helpers (76 lines, complexity 6)
+
+def _build_image_namespace_map(workload_details):
+    """Build mapping of image URLs to namespaces where they're used.
+
+    PURE FUNCTION: No I/O, no side effects, no Rich dependencies.
+
+    Args:
+        workload_details: List of workload objects
+
+    Returns:
+        Dict mapping image_url (str) -> set of namespace names (str)
+    """
+    image_namespace_map = {}
+    for workload in workload_details:
+        for image_ref in workload.non_ecr_images:
+            if image_ref.image_url not in image_namespace_map:
+                image_namespace_map[image_ref.image_url] = set()
+            image_namespace_map[image_ref.image_url].add(workload.namespace)
+    return image_namespace_map
+
+
+def _format_namespace_list(namespaces):
+    """Format set of namespaces as sorted, comma-separated string.
+
+    PURE FUNCTION: No Rich dependencies.
+
+    Args:
+        namespaces: Set or iterable of namespace strings
+
+    Returns:
+        Comma-separated string of sorted namespace names
+    """
+    return ", ".join(sorted(namespaces))
+
+
+def _format_truncated_image_list(image_urls, max_length=50):
+    """Format list of image URLs, truncating if needed.
+
+    PURE FUNCTION: Optimized to avoid O(n²) string concatenation.
+
+    Args:
+        image_urls: List of image URL strings
+        max_length: Maximum length before truncation
+
+    Returns:
+        Comma-separated string, possibly truncated with "..."
+    """
+    if not image_urls:
+        return ""
+
+    # Estimate full string length
+    full_estimate = sum(len(url) for url in image_urls) + (len(image_urls) - 1) * 2
+
+    if full_estimate &lt;= max_length:
+        return ", ".join(image_urls)
+
+    # Build full string once, then truncate
+    full_string = ", ".join(image_urls)
+    if len(full_string) &gt; max_length:
+        return full_string[:max_length] + "..."
+    return full_string
+
+
+def _build_image_row_data(image_url, image_namespace_map):
+    """Build table row data for a single image.
+
+    PURE FUNCTION: No Rich dependencies, returns plain data.
+
+    Args:
+        image_url: Image URL string to format
+        image_namespace_map: Dict mapping image URLs to namespace sets
+
+    Returns:
+        Tuple of (image_url, registry, repository, tag, namespace_display)
+    """
+    from ...services.k8s_models import ImageReference
+
+    img_ref = ImageReference.parse(image_url)
+    namespaces = image_namespace_map.get(image_url, set())
+    namespace_display = _format_namespace_list(namespaces)
+
+    return (
+        image_url,
+        img_ref.registry or "docker.io",
+        img_ref.repository,
+        img_ref.tag_or_digest,
+        namespace_display,
+    )
+
+
+def _display_scan_report(scan_result, progress_reporter, verbose):
+    """Display scan results as console report.
+
+    THIN SHELL: Pure Rich orchestration, delegates data prep to helpers.
+
+    Complexity: 6 (was 12 before refactoring)
+    """
+    # ... summary output ...
+
+    # Build namespace usage map using pure helper
+    image_namespace_map = _build_image_namespace_map(scan_result.workload_details)
+
+    # Create Rich table (framework-specific)
+    images_table = Table(show_header=True, header_style="bold blue")
+    images_table.add_column("Image", style="cyan")
+    images_table.add_column("Registry", style="dim")
+    # ...
+
+    # Populate images table using pure helper for row data
+    for image_url in sorted(scan_result.unique_non_ecr_images):
+        row_data = _build_image_row_data(image_url, image_namespace_map)
+        images_table.add_row(*row_data)  # Rich orchestration
+
+    console.print(images_table)  # Rich orchestration
+
+    if verbose:
+        # Workload table with pure helper for truncation
+        workloads_table = Table(...)
+        for workload in scan_result.workload_details:
+            image_urls = [img.image_url for img in workload.non_ecr_images]
+            display_text = _format_truncated_image_list(image_urls, max_length=50)
+            workloads_table.add_row(
+                workload.namespace,
+                workload.name,
+                workload.workload_type,
+                display_text,
+            )
+        console.print(workloads_table)
+
+
+# TESTING: Test pure helpers without Rich framework
+
+class TestBuildImageNamespaceMap:
+    """Test data transformation helper."""
+
+    def test_single_workload_single_image(self):
+        """Test simplest case."""
+        workloads = [
+            MockWorkload(
+                namespace="prod",
+                non_ecr_images=[MockImageRef("nginx:latest")]
+            )
+        ]
+
+        result = _build_image_namespace_map(workloads)
+
+        assert result == {"nginx:latest": {"prod"}}
+        # No Rich framework needed - pure assertion
+
+
+class TestFormatTruncatedImageList:
+    """Test string truncation logic."""
+
+    def test_no_truncation_needed(self):
+        """Test short list returns without truncation."""
+        result = _format_truncated_image_list(["nginx:latest", "redis:7"])
+        assert result == "nginx:latest, redis:7"
+        assert "..." not in result
+        # No Rich framework needed
+
+
+# RESULTS:
+# - 29 comprehensive tests (all passing, no Rich framework needed)
+# - Test execution: 0.22s (pure functions, zero mocks)
+# - Complexity: 12 → 6 (50% reduction)
+# - Main function: Pure Rich orchestration (clear responsibilities)
+        </code>
+      </complete-example>
+      <identification-checklist>
+        <item>Display function > 50 lines? → Extract data prep</item>
+        <item>Data transformation mixed with table.add_row()? → Extract</item>
+        <item>String formatting inside display loop? → Extract</item>
+        <item>Calculations or mappings before display? → Extract</item>
+        <item>Parse/convert operations inline? → Extract</item>
+        <item>Complex conditionals for display logic? → Extract decision logic</item>
+      </identification-checklist>
+      <extraction-strategy>
+        <step>1. Identify data transformation vs UI orchestration</step>
+        <step>2. Extract data transformations as pure functions (no framework dependencies)</step>
+        <step>3. Functions should return plain data (tuples, dicts, lists, strings)</step>
+        <step>4. Main function becomes thin shell: create UI objects, call helpers, render</step>
+        <step>5. Test helpers with standard assertions (no framework mocking)</step>
+      </extraction-strategy>
+      <helper-categories>
+        <category name="mapping-builders">
+          <description>Build data structures for lookups</description>
+          <example>_build_image_namespace_map()</example>
+          <returns>Dict, defaultdict, or mapping structure</returns>
+          <testability>Very high - pure data transformation</testability>
+        </category>
+        <category name="formatters">
+          <description>Format data for display</description>
+          <example>_format_namespace_list(), _format_truncated_image_list()</example>
+          <returns>Formatted string</returns>
+          <testability>Very high - string comparison</testability>
+        </category>
+        <category name="row-builders">
+          <description>Prepare row data for tables</description>
+          <example>_build_image_row_data()</example>
+          <returns>Tuple or list of display values</returns>
+          <testability>High - tuple comparison</testability>
+        </category>
+        <category name="aggregators">
+          <description>Compute summaries or statistics</description>
+          <example>_calculate_totals(), _group_by_status()</example>
+          <returns>Numbers, dicts with counts</returns>
+          <testability>Very high - numeric assertions</testability>
+        </category>
+      </helper-categories>
+      <main-function-responsibilities>
+        <responsibility>Create UI framework objects (Table, Console, etc.)</responsibility>
+        <responsibility>Call helper functions for data preparation</responsibility>
+        <responsibility>Orchestrate UI rendering (add_row, print, display)</responsibility>
+        <responsibility>Handle conditional display (if verbose, if errors)</responsibility>
+        <responsibility>Apply UI styling (colors, formatting)</responsibility>
+      </main-function-responsibilities>
+      <helper-function-responsibilities>
+        <responsibility>Transform data structures (list → dict, set → sorted list)</responsibility>
+        <responsibility>Format strings (truncation, joining, templating)</responsibility>
+        <responsibility>Calculate derived values (sums, counts, groupings)</responsibility>
+        <responsibility>Parse or convert data (parse objects, type conversions)</responsibility>
+        <responsibility>Make decisions about data (filter, validate, categorize)</responsibility>
+      </helper-function-responsibilities>
+      <benefits>
+        <benefit>Complexity Reduction: Main function becomes orchestration (30-60% reduction typical)</benefit>
+        <benefit>Testability: Data prep testable without UI framework</benefit>
+        <benefit>Speed: Tests run faster (no Rich/framework overhead)</benefit>
+        <benefit>Clarity: Separation of concerns makes both pieces easier to understand</benefit>
+        <benefit>Reusability: Helpers often useful in other display contexts</benefit>
+        <benefit>Framework Independence: Easier to switch UI frameworks</benefit>
+      </benefits>
+      <testing-approach>
+        <test>Test helpers with minimal mock objects (simple dataclasses)</test>
+        <test>Test formatters with edge cases (empty, single, many, truncation)</test>
+        <test>Test row builders with various input data</test>
+        <test>Test mapping builders with complex scenarios</test>
+        <test>DO NOT test Rich framework calls (table.add_row, console.print)</test>
+        <test>DO NOT use CliRunner or framework-specific test harnesses</test>
+      </testing-approach>
+      <anti-patterns>
+        <anti-pattern>
+          <name>Helper with Framework Dependencies</name>
+          <description>Helper function imports Rich/Click and creates framework objects</description>
+          <problem>Not testable without framework, defeats purpose of extraction</problem>
+          <solution>Helper should return plain data, let main function create Rich objects</solution>
+        </anti-pattern>
+        <anti-pattern>
+          <name>Too Fine-Grained Extraction</name>
+          <description>Extract every tiny operation into separate function</description>
+          <problem>Creates maintenance burden, doesn't reduce complexity</problem>
+          <solution>Extract logical units (whole transformations, not individual steps)</solution>
+        </anti-pattern>
+        <anti-pattern>
+          <name>Incomplete Extraction</name>
+          <description>Leave some data transformation in main function</description>
+          <problem>Main function still has mixed concerns</problem>
+          <solution>Extract ALL data transformation, keep ONLY UI orchestration in main</solution>
+        </anti-pattern>
+      </anti-patterns>
+      <framework-specific-guidance>
+        <framework name="Rich">
+          <extract>Data for tables (row building, formatting)</extract>
+          <extract>Status calculations for colors/styles</extract>
+          <extract>Text content for panels/consoles</extract>
+          <keep-in-main>Table creation, column definitions</keep-in-main>
+          <keep-in-main>Style/color application</keep-in-main>
+          <keep-in-main>console.print() calls</keep-in-main>
+        </framework>
+        <framework name="Click/Console">
+          <extract>Message text building</extract>
+          <extract>Data formatting for output</extract>
+          <extract>Status/error determination</extract>
+          <keep-in-main>click.echo() calls</keep-in-main>
+          <keep-in-main>click.style() color application</keep-in-main>
+          <keep-in-main>Progress bar orchestration</keep-in-main>
+        </framework>
+      </framework-specific-guidance>
+      <metrics>
+        <metric>Target: 30-60% complexity reduction in main function</metric>
+        <metric>Target: Main function &lt; 100 lines (display orchestration)</metric>
+        <metric>Target: All helper functions ≤ 5 complexity (pure transformations)</metric>
+        <metric>Target: 100% helper coverage with fast tests (&lt; 0.5s total)</metric>
+        <metric>Target: 0% framework call coverage (intentional - don't test Rich/Click)</metric>
+      </metrics>
+      <real-world-examples>
+        <example>
+          <name>_display_scan_report() refactoring</name>
+          <file>cli/cluster/scan_formatters.py</file>
+          <helpers>4 pure helpers extracted</helpers>
+          <complexity-reduction>12 → 6 (50%)</complexity-reduction>
+          <tests>29 tests, 0.22s execution, zero Rich dependencies</tests>
+          <main-function-lines>102 → 76 (25% reduction)</main-function-lines>
+        </example>
+        <example>
+          <name>_display_purge_results() refactoring</name>
+          <file>cli/repository/purge.py</file>
+          <helpers>2 pure helpers + 1 dataclass</helpers>
+          <complexity-reduction>14 → 6 (57%)</complexity-reduction>
+          <code-duplication-eliminated>84 lines of repeated formatting</code-duplication-eliminated>
+          <tests>19 tests, all pure function tests</tests>
+        </example>
+      </real-world-examples>
+      <related-patterns>
+        <related>pure-function-extraction-pattern - Display helper is specialization</related>
+        <related>cli-testing-pattern - Both emphasize testability without frameworks</related>
+      </related-patterns>
+    </pattern>
+</pattern-file>

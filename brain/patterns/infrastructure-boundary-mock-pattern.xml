@@ -1,0 +1,286 @@
+<pattern-file>
+  <meta>
+    <pattern-id>infrastructure-boundary-mock-pattern</pattern-id>
+    <source>TODO.md - Skip-If-Present Integration Test Analysis</source>
+    <version>1.0</version>
+    <created>2025-10-06</created>
+  </meta>
+  <pattern>
+      <name>Infrastructure-Boundary Mocking for Fast Tests</name>
+      <when>Integration tests too slow for CI (>5s) but you need to test real business logic</when>
+      <when-not>Don't use if test is already fast enough (&lt;1s) or if you need true end-to-end validation</when-not>
+      <philosophy>Mock I/O boundaries (return data structures), keep business logic real (no hallucination)</philosophy>
+
+      <problem>
+        <scenario>Integration tests with real Docker/AWS calls take 15-80+ seconds</scenario>
+        <example>test_skip_if_present takes 15.6s even with optimizations (8s Docker + 5s ECR + 2.6s overhead)</example>
+        <constraint>Tests marked @pytest.mark.skip - unusable in CI</constraint>
+        <goal>Reduce to &lt;1s while testing real 250+ line decision logic without hallucination</goal>
+      </problem>
+
+      <strategy>
+        <principle>Mock at infrastructure boundaries ONLY - return data structures, not decisions</principle>
+        <principle>Keep ALL business logic real - the algorithms under test must execute unchanged</principle>
+        <principle>Keep ALL pure functions real - no mocking of computations/comparisons</principle>
+        <principle>Keep ALL dataclasses real - let validation and structure remain intact</principle>
+      </strategy>
+
+      <what-to-mock priority="ONLY">
+        <mock type="docker-daemon">
+          <interface>AsyncDockerImageClient.inspect_image()</interface>
+          <returns>Dictionary with digest/manifest data</returns>
+          <rationale>Eliminates 8s Docker daemon I/O</rationale>
+          <fixture-name>mock_docker_inspect</fixture-name>
+        </mock>
+        <mock type="aws-api">
+          <interface>ECRRepositoryService.list_images()</interface>
+          <returns>List[ECRImage] with digest/tags</returns>
+          <rationale>Eliminates 5s ECR API calls</rationale>
+          <fixture-name>mock_ecr_list_images</fixture-name>
+        </mock>
+        <mock type="subprocess">
+          <interface>get_platform_digests()</interface>
+          <returns>Dict[str, str] mapping platforms to digests</returns>
+          <rationale>Eliminates subprocess execution overhead</rationale>
+          <fixture-name>mock_buildx_inspect</fixture-name>
+        </mock>
+        <critical-rule>Mocks return DATA STRUCTURES only, never decisions or boolean results</critical-rule>
+      </what-to-mock>
+
+      <what-not-to-mock priority="NEVER">
+        <keep-real category="pure-functions">
+          <function>normalize_digest()</function>
+          <function>compare_source_target_digests()</function>
+          <function>compare_platform_digests()</function>
+          <rationale>Pure string/dict manipulation - fast and must be tested</rationale>
+        </keep-real>
+        <keep-real category="business-logic">
+          <class-method>ImagePresenceChecker.should_skip_transfer()</class-method>
+          <lines-of-code>250+</lines-of-code>
+          <rationale>The core decision algorithm under test - MUST execute real code</rationale>
+        </keep-real>
+        <keep-real category="dataclasses">
+          <types>TransferRequest, TransferResult, ECRImage, DigestComparison</types>
+          <rationale>Validation logic and structure must remain intact</rationale>
+        </keep-real>
+        <critical-rule>If you mock these, the test hallucinates - you're testing mock behavior, not real code</critical-rule>
+      </what-not-to-mock>
+
+      <complete-example>
+        <file>tests/fixtures/skip_if_present_fixtures.py</file>
+        <code>
+import pytest
+from unittest.mock import AsyncMock, Mock
+from src.ecreshore.services.ecr_models import ECRImage
+
+@pytest.fixture
+def mock_docker_inspect():
+    """Mock Docker daemon inspect_image - returns data structure, not decision."""
+    async def _inspect(image_ref: str):
+        # Return realistic Docker inspect data structure
+        return {
+            "RepoDigests": ["ghcr.io/fluxcd/helm-controller@sha256:abc123def456"],
+            "Architecture": "amd64",
+            "Os": "linux"
+        }
+    return AsyncMock(side_effect=_inspect)
+
+@pytest.fixture
+def mock_ecr_list_images():
+    """Mock ECR API list_images - returns data structures, not decisions."""
+    async def _list_images(repo_name: str, tag_filter: str = None):
+        # Return list of ECRImage instances (real dataclass)
+        return [
+            ECRImage(
+                digest="sha256:abc123def456",
+                tags=["v1.3.0"],
+                pushed_at="2024-01-15T10:00:00Z",
+                size_bytes=50000000
+            )
+        ]
+    return AsyncMock(side_effect=_list_images)
+
+@pytest.fixture
+def mock_buildx_inspect():
+    """Mock buildx subprocess - returns platform digest mapping."""
+    def _get_platform_digests(image_ref: str):
+        # Return platform-to-digest mapping (data structure)
+        return {
+            "linux/amd64": "sha256:abc123def456",
+            "linux/arm64": "sha256:def456abc123"
+        }
+    return Mock(side_effect=_get_platform_digests)
+</code>
+      </complete-example>
+
+      <complete-example>
+        <file>tests/test_skip_if_present_fast.py</file>
+        <code>
+import pytest
+from unittest.mock import patch
+from src.ecreshore.services.image_presence_checker import ImagePresenceChecker
+from src.ecreshore.services.transfer_request import TransferRequest
+
+@pytest.mark.asyncio
+async def test_should_skip_when_digest_matches(
+    mock_docker_inspect,
+    mock_ecr_list_images,
+    mock_buildx_inspect
+):
+    """Test skip decision with infrastructure mocks - real business logic executes.
+
+    What's mocked:
+    - Docker daemon I/O (returns digest data structure)
+    - ECR API I/O (returns ECRImage list)
+    - Buildx subprocess I/O (returns platform digest map)
+
+    What's REAL (250+ lines executing):
+    - ImagePresenceChecker.should_skip_transfer() decision logic
+    - normalize_digest() string manipulation
+    - compare_source_target_digests() comparison algorithm
+    - All dataclass validation and structure
+
+    This test runs in ~0.05s vs 15.6s with real I/O.
+    """
+    # Create real service instance with mocked I/O boundaries
+    with patch('src.ecreshore.services.docker_client.AsyncDockerImageClient.inspect_image', mock_docker_inspect), \
+         patch('src.ecreshore.services.ecr_repository.ECRRepositoryService.list_images', mock_ecr_list_images), \
+         patch('src.ecreshore.services.buildx_util.get_platform_digests', mock_buildx_inspect):
+
+        checker = ImagePresenceChecker(region_name="us-east-2")
+
+        # Build real request (real dataclass validation)
+        request = TransferRequest(
+            source_registry="ghcr.io",
+            source_repository="fluxcd/helm-controller",
+            source_tag="v1.3.0",
+            target_repository="helm-controller",
+            target_tag="v1.3.0",
+            skip_if_present=True
+        )
+
+        # Execute real business logic (250+ lines)
+        result = await checker.should_skip_transfer(request)
+
+        # Verify real algorithm made correct decision
+        assert result.should_skip is True
+        assert result.reason == "Target image exists with matching digest"
+        assert result.source_digest == "sha256:abc123def456"
+        assert result.target_digest == "sha256:abc123def456"
+
+        # Verify I/O boundaries were called (not the decision logic)
+        mock_docker_inspect.assert_called_once()
+        mock_ecr_list_images.assert_called_once()
+</code>
+      </complete-example>
+
+      <critical-rules>
+        <rule>Mock ONLY external I/O (Docker, AWS, subprocess) - return data structures</rule>
+        <rule>NEVER mock pure functions (normalize, compare, parse) - they must execute</rule>
+        <rule>NEVER mock business logic (should_skip_transfer, calculate_*) - that's what you're testing</rule>
+        <rule>NEVER mock dataclasses - validation and structure must be real</rule>
+        <rule>Mocks return realistic data structures that match production shape</rule>
+        <rule>Test verifies OUTCOMES of real algorithms, not mock return values</rule>
+        <rule>If test passes with wrong mock data, your test is hallucinating</rule>
+      </critical-rules>
+
+      <validation-checklist>
+        <check>Can the test pass with incorrect mock data? (RED FLAG: hallucinating)</check>
+        <check>Does the test execute the core algorithm being tested? (Must be YES)</check>
+        <check>Are any pure functions mocked? (Must be NO)</check>
+        <check>Are dataclasses fully constructed with real validation? (Must be YES)</check>
+        <check>Do mocks only return data, never decisions? (Must be YES)</check>
+        <check>Does test run in &lt;1s? (Target achieved)</check>
+      </validation-checklist>
+
+      <metrics>
+        <before>
+          <time>15.6s (skip-if-present optimized path)</time>
+          <breakdown>8s Docker inspect + 5s ECR API + 2.6s overhead</breakdown>
+          <consequence>Tests marked @pytest.mark.skip, unusable in CI</consequence>
+        </before>
+        <after>
+          <time>&lt;0.1s (infrastructure mocks)</time>
+          <breakdown>0.05s test execution (real logic) + 0.05s pytest overhead</breakdown>
+          <benefit>99% speedup, 250+ lines of real logic tested, CI-friendly</benefit>
+        </after>
+        <coverage>
+          <real-code-executed>250+ lines of business logic</real-code-executed>
+          <pure-functions-tested>All digest normalization and comparison</pure-functions-tested>
+          <not-tested>Docker daemon integration, ECR API integration (use @pytest.mark.integration for E2E)</not-tested>
+        </coverage>
+      </metrics>
+
+      <comparison-to-other-patterns>
+        <vs-integration-test>
+          <integration>Uses real Docker/ECR, tests true end-to-end flow, 15-80s, requires credentials</integration>
+          <infrastructure-mock>Mocks I/O boundaries, tests business logic only, &lt;1s, no credentials needed</infrastructure-mock>
+          <use-both>Keep integration tests for E2E validation, use infrastructure-mock for fast CI</use-both>
+        </vs-integration-test>
+        <vs-pure-unit-test>
+          <unit>Mocks everything including owned services, fast but may hallucinate</unit>
+          <infrastructure-mock>Mocks only I/O boundaries, keeps business logic real, fast and accurate</infrastructure-mock>
+          <when-to-use>Use infrastructure-mock when business logic is complex (250+ lines) and must be tested accurately</when-to-use>
+        </vs-pure-unit-test>
+      </comparison-to-other-patterns>
+
+      <anti-patterns>
+        <anti-pattern>
+          <name>Mocking the decision logic</name>
+          <wrong>
+# BAD: Mocking the algorithm you're trying to test
+mock_checker = Mock()
+mock_checker.should_skip_transfer = AsyncMock(return_value=True)
+result = await mock_checker.should_skip_transfer(request)
+assert result is True  # This is hallucination - not testing real code!
+          </wrong>
+          <correct>
+# GOOD: Mock I/O boundaries, test real algorithm
+with patch('docker_client.inspect_image', return_value={"digest": "sha256:abc"}):
+    real_checker = ImagePresenceChecker()  # Real instance
+    result = await real_checker.should_skip_transfer(request)  # Real logic executes
+    assert result.should_skip is True  # Testing real decision algorithm
+          </correct>
+        </anti-pattern>
+
+        <anti-pattern>
+          <name>Mocking pure functions</name>
+          <wrong>
+# BAD: Mocking the comparison function
+mock_compare = Mock(return_value=True)
+with patch('compare_digests', mock_compare):
+    result = should_skip(source="sha256:a", target="sha256:b")
+    # Test passes even though digests don't match - hallucination!
+          </wrong>
+          <correct>
+# GOOD: Let pure functions execute
+result = compare_digests(source="sha256:abc", target="sha256:abc")
+assert result is True  # Real comparison algorithm tested
+          </correct>
+        </anti-pattern>
+
+        <anti-pattern>
+          <name>Returning decisions instead of data</name>
+          <wrong>
+# BAD: Mock returns a decision (boolean)
+mock_ecr.image_exists = AsyncMock(return_value=True)
+# Now business logic can't make its own decision!
+          </wrong>
+          <correct>
+# GOOD: Mock returns data structure, let business logic decide
+mock_ecr.list_images = AsyncMock(return_value=[
+    ECRImage(digest="sha256:abc", tags=["v1.0"])
+])
+# Business logic receives data and makes its own decision
+          </correct>
+        </anti-pattern>
+      </anti-patterns>
+
+      <related-patterns>
+        <pattern-id>integration-test-pattern</pattern-id>
+        <pattern-id>async-mock-pattern</pattern-id>
+        <pattern-id>fake-service-pattern</pattern-id>
+        <pattern-id>fixture-pattern</pattern-id>
+      </related-patterns>
+    </pattern>
+</pattern-file>

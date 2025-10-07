@@ -1,0 +1,357 @@
+<support-file>
+  <meta>
+    <file-id>complexity-reduction-workflow</file-id>
+    <category>workflow</category>
+    <version>1.0</version>
+    <created>2025-10-06</created>
+  </meta>
+  <workflow>
+    <name>Systematic Complexity Reduction Workflow</name>
+    <purpose>Repeatable process for refactoring high-complexity functions</purpose>
+    <proven-success>10 functions completed (40-60% reduction typical)</proven-success>
+    <target-audience>Developers tackling TODO.md complexity backlog</target-audience>
+
+    <phases>
+      <phase number="1" name="Analysis">
+        <name>Analyze Function Complexity</name>
+        <goal>Understand current complexity and identify decision points</goal>
+        <steps>
+          <step>Calculate cyclomatic complexity using AST</step>
+          <step>Identify all decision points (if, for, while, except, bool ops)</step>
+          <step>Document current complexity grade (A=1-5, B=6-10, C=11-15, D=16-20, F=21+)</step>
+          <step>Read function code to understand responsibilities</step>
+          <step>Check for existing tests (if any)</step>
+        </steps>
+        <tools>
+          <tool>radon cc -s (complexity calculation)</tool>
+          <tool>AST-based Python script for detailed analysis</tool>
+          <tool>Manual code reading</tool>
+        </tools>
+        <example-script>
+```python
+import ast
+
+with open('file.py', 'r') as f:
+    tree = ast.parse(f.read())
+
+for node in ast.walk(tree):
+    if isinstance(node, ast.FunctionDef) and node.name == 'target_function':
+        complexity = 1
+        for child in ast.walk(node):
+            if isinstance(child, (ast.If, ast.While, ast.For, ast.ExceptHandler)):
+                complexity += 1
+        print(f'Complexity: {complexity}')
+```
+        </example-script>
+        <output>
+          <item>Current complexity number (e.g., 12)</item>
+          <item>List of decision points with line numbers</item>
+          <item>Current grade (e.g., C)</item>
+        </output>
+      </phase>
+
+      <phase number="2" name="Planning">
+        <name>Plan Helper Extraction</name>
+        <goal>Identify what to extract and which patterns to apply</goal>
+        <steps>
+          <step>Identify function type (CLI command, display, service, pure logic)</step>
+          <step>Select appropriate pattern based on function type</step>
+          <step>Identify extraction candidates (validation, formatting, calculations)</step>
+          <step>Estimate target complexity after refactoring</step>
+          <step>Plan helper function names and signatures</step>
+        </steps>
+        <function-type-pattern-map>
+          <mapping>
+            <function-type>CLI Command (Click/Typer)</function-type>
+            <pattern>cli-testing-pattern</pattern>
+            <extract>Validation → pure function, Execution → service helpers</extract>
+            <target-complexity>4-6</target-complexity>
+          </mapping>
+          <mapping>
+            <function-type>Display Function (Rich, console)</function-type>
+            <pattern>display-helper-extraction-pattern</pattern>
+            <extract>Data transformation → pure helpers, Keep UI orchestration</extract>
+            <target-complexity>4-6</target-complexity>
+          </mapping>
+          <mapping>
+            <function-type>Service Layer</function-type>
+            <pattern>pure-function-extraction-pattern</pattern>
+            <extract>Pure logic → functions, Keep I/O orchestration</extract>
+            <target-complexity>6-8</target-complexity>
+          </mapping>
+          <mapping>
+            <function-type>Complex Logic</function-type>
+            <pattern>pure-function-extraction-pattern</pattern>
+            <extract>Decision logic → pure functions, Calculations → helpers</extract>
+            <target-complexity>5-7</target-complexity>
+          </mapping>
+        </function-type-pattern-map>
+        <output>
+          <item>Pattern to apply</item>
+          <item>List of helpers to extract (names + signatures)</item>
+          <item>Target complexity goal</item>
+          <item>Estimated number of tests needed</item>
+        </output>
+      </phase>
+
+      <phase number="3" name="Extraction">
+        <name>Extract Helper Functions</name>
+        <goal>Create pure, testable helper functions</goal>
+        <steps>
+          <step>Extract helpers one at a time (not all at once)</step>
+          <step>Make helpers pure when possible (no I/O, no side effects)</step>
+          <step>Add comprehensive docstrings with examples</step>
+          <step>Use clear naming (_validate_, _format_, _build_, _extract_)</step>
+          <step>Keep helpers focused (single responsibility)</step>
+          <step>Target helper complexity ≤ 5</step>
+        </steps>
+        <helper-naming-conventions>
+          <convention>
+            <prefix>_validate_</prefix>
+            <returns>dataclass or raises ValueError</returns>
+            <example>_validate_batch_flags()</example>
+          </convention>
+          <convention>
+            <prefix>_format_</prefix>
+            <returns>formatted string</returns>
+            <example>_format_truncated_image_list()</example>
+          </convention>
+          <convention>
+            <prefix>_build_</prefix>
+            <returns>data structure (dict, list, tuple)</returns>
+            <example>_build_image_namespace_map()</example>
+          </convention>
+          <convention>
+            <prefix>_extract_</prefix>
+            <returns>subset of data</returns>
+            <example>_extract_deleted_images()</example>
+          </convention>
+          <convention>
+            <prefix>_calculate_</prefix>
+            <returns>numeric result</returns>
+            <example>_calculate_batch_summary()</example>
+          </convention>
+        </helper-naming-conventions>
+        <quality-checklist>
+          <check>Helper has clear, single responsibility</check>
+          <check>Helper is pure (when possible)</check>
+          <check>Helper has comprehensive docstring</check>
+          <check>Helper complexity ≤ 5</check>
+          <check>Helper has clear return type annotation</check>
+          <check>Helper name follows conventions</check>
+        </quality-checklist>
+      </phase>
+
+      <phase number="4" name="Refactoring">
+        <name>Refactor Main Function</name>
+        <goal>Simplify main function to use helpers</goal>
+        <steps>
+          <step>Replace inline logic with helper calls</step>
+          <step>Add numbered orchestration comments (for CLI commands)</step>
+          <step>Simplify conditional logic using helpers</step>
+          <step>Remove code duplication via helpers</step>
+          <step>Keep main function focused on orchestration</step>
+        </steps>
+        <main-function-guidelines>
+          <guideline>Main function should orchestrate, not implement</guideline>
+          <guideline>Use numbered steps for CLI commands (# 1., # 2., etc.)</guideline>
+          <guideline>Each helper call should have clear purpose</guideline>
+          <guideline>Target: main function &lt; 100 lines</guideline>
+          <guideline>Target: main function complexity &lt; 8</guideline>
+        </main-function-guidelines>
+      </phase>
+
+      <phase number="5" name="Testing">
+        <name>Write Comprehensive Tests</name>
+        <goal>100% coverage of helper functions</goal>
+        <steps>
+          <step>Test each helper function in isolation</step>
+          <step>Test edge cases and error conditions</step>
+          <step>Test valid paths and invalid paths</step>
+          <step>Use parametrized tests for multiple scenarios</step>
+          <step>Verify tests run fast (&lt; 1s total)</step>
+        </steps>
+        <test-categories>
+          <category>
+            <name>Validation Tests</name>
+            <description>Test validation helpers with valid/invalid inputs</description>
+            <typical-count>10-15</typical-count>
+            <example>test_validate_flags_both_simple_and_rich()</example>
+          </category>
+          <category>
+            <name>Formatter Tests</name>
+            <description>Test string formatting with edge cases</description>
+            <typical-count>5-10</typical-count>
+            <example>test_format_truncated_at_boundary()</example>
+          </category>
+          <category>
+            <name>Builder Tests</name>
+            <description>Test data structure builders with various inputs</description>
+            <typical-count>5-10</typical-count>
+            <example>test_build_map_multiple_workloads()</example>
+          </category>
+          <category>
+            <name>Integration Tests</name>
+            <description>Test helper composition</description>
+            <typical-count>2-5</typical-count>
+            <example>test_full_workflow_end_to_end()</example>
+          </category>
+        </test-categories>
+        <quality-metrics>
+          <metric>Target: 100% helper coverage</metric>
+          <metric>Target: &lt; 1s test execution</metric>
+          <metric>Target: 0% main function coverage (CLI) or minimal (service)</metric>
+          <metric>Target: Zero mocks for pure functions</metric>
+        </quality-metrics>
+      </phase>
+
+      <phase number="6" name="Verification">
+        <name>Verify Complexity Reduction</name>
+        <goal>Confirm refactoring achieved target reduction</goal>
+        <steps>
+          <step>Recalculate complexity using AST</step>
+          <step>Verify complexity reduction percentage</step>
+          <step>Verify all tests pass</step>
+          <step>Check helper complexity (all should be ≤ 5)</step>
+          <step>Generate summary statistics</step>
+        </steps>
+        <verification-script>
+```python
+import ast
+
+functions_to_analyze = ['main_function', 'helper1', 'helper2', ...]
+
+for node in ast.walk(tree):
+    if isinstance(node, ast.FunctionDef) and node.name in functions_to_analyze:
+        complexity = calculate_complexity(node)
+        print(f'{node.name}: {complexity}')
+```
+        </verification-script>
+        <success-criteria>
+          <criterion>Main function complexity reduced by 40-60%</criterion>
+          <criterion>Main function grade improved (C→A, D→B, etc.)</criterion>
+          <criterion>All helper functions ≤ 5 complexity</criterion>
+          <criterion>All tests passing</criterion>
+          <criterion>Test execution &lt; 1s</criterion>
+        </success-criteria>
+      </phase>
+
+      <phase number="7" name="Documentation">
+        <name>Document Completion</name>
+        <goal>Record refactoring results for future reference</goal>
+        <steps>
+          <step>Update TODO.md with completion details</step>
+          <step>Add detailed entry to doc/TODO-complete.md</step>
+          <step>Update Recent Completions section</step>
+          <step>Document pattern applied and lessons learned</step>
+          <step>Record metrics (complexity reduction, tests added, time taken)</step>
+        </steps>
+        <documentation-template>
+```markdown
+### Complexity Refactoring: function_name() ✅
+**Date:** YYYY-MM-DD
+**Function:** file.py:line - function_name()
+**Impact:** Complexity X→Y (Z% reduction), N tests added
+
+**Pattern Applied:** pattern-name
+
+**Extracted Helpers:**
+- helper1() - description (complexity: X)
+- helper2() - description (complexity: X)
+
+**Results:**
+- Complexity: X → Y (Z% reduction)
+- Tests added: N comprehensive tests
+- Test execution: Xs
+- Main function reduced to Y lines
+
+**Lessons Learned:**
+- Lesson 1
+- Lesson 2
+```
+        </documentation-template>
+      </phase>
+    </phases>
+
+    <real-world-metrics>
+      <metric>
+        <name>Functions Completed</name>
+        <value>10</value>
+        <date-range>2025-10-03 to 2025-10-06</date-range>
+      </metric>
+      <metric>
+        <name>Average Complexity Reduction</name>
+        <value>50%</value>
+        <range>40-60%</range>
+      </metric>
+      <metric>
+        <name>Total Tests Added</name>
+        <value>200+</value>
+        <breakdown>Validation: ~60, Formatters: ~50, Builders: ~50, Integration: ~40</breakdown>
+      </metric>
+      <metric>
+        <name>Average Test Execution Time</name>
+        <value>0.22s</value>
+        <range>0.15-0.30s per test file</range>
+      </metric>
+      <metric>
+        <name>Grade Improvements</name>
+        <typical>C→A (12→6), D→B (18→8)</typical>
+      </metric>
+    </real-world-metrics>
+
+    <common-pitfalls>
+      <pitfall>
+        <name>Extracting Too Early</name>
+        <description>Extracting before understanding full function</description>
+        <solution>Complete analysis phase before extraction</solution>
+      </pitfall>
+      <pitfall>
+        <name>Helpers with Side Effects</name>
+        <description>Extracted helpers still do I/O or mutations</description>
+        <solution>Make helpers pure when possible, document side effects</solution>
+      </pitfall>
+      <pitfall>
+        <name>Incomplete Extraction</name>
+        <description>Leave some transformations in main function</description>
+        <solution>Extract ALL transformations, main should only orchestrate</solution>
+      </pitfall>
+      <pitfall>
+        <name>Over-Extraction</name>
+        <description>Create too many tiny helpers (2-3 lines each)</description>
+        <solution>Extract logical units, not individual operations</solution>
+      </pitfall>
+      <pitfall>
+        <name>Skipping Tests</name>
+        <description>Refactor without writing comprehensive tests</description>
+        <solution>Write tests in parallel with extraction</solution>
+      </pitfall>
+    </common-pitfalls>
+
+    <tools>
+      <tool>
+        <name>radon</name>
+        <purpose>Complexity calculation</purpose>
+        <command>radon cc -s file.py</command>
+      </tool>
+      <tool>
+        <name>AST Python Script</name>
+        <purpose>Detailed complexity analysis</purpose>
+        <file>analyze_performance.py</file>
+      </tool>
+      <tool>
+        <name>pytest</name>
+        <purpose>Test execution and coverage</purpose>
+        <command>pytest tests/ -v --cov</command>
+      </tool>
+    </tools>
+
+    <related-patterns>
+      <related>cli-testing-pattern - For Click/Typer commands</related>
+      <related>display-helper-extraction-pattern - For UI/display functions</related>
+      <related>pure-function-extraction-pattern - For general complexity</related>
+      <related>validation-dataclass-pattern - For validation helpers</related>
+      <related>dataclass-property-pattern - For computed properties</related>
+    </related-patterns>
+  </workflow>
+</support-file>

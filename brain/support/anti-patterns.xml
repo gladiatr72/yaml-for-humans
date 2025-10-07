@@ -1,0 +1,244 @@
+<support-file>
+  <name>Anti-Patterns</name>
+  <anti-patterns>
+
+    <anti-pattern id="mock-not-asyncmock">
+      <symptom>TypeError: object Mock can't be used in 'await' expression</symptom>
+      <wrong>
+mock_service = Mock()
+mock_service.async_method = Mock(return_value=result)
+await mock_service.async_method()  # FAILS
+</wrong>
+      <correct>
+mock_service = Mock()
+mock_service.async_method = AsyncMock(return_value=result)
+await mock_service.async_method()  # WORKS
+</correct>
+      <why-wrong>Mock objects are not awaitable - they don't implement __await__</why-wrong>
+      <fix>Always use AsyncMock for async methods</fix>
+    </anti-pattern>
+
+    <anti-pattern id="missing-asyncio-decorator">
+      <symptom>RuntimeError: no running event loop</symptom>
+      <wrong>
+async def test_something():  # Missing @pytest.mark.asyncio
+    result = await async_function()
+</wrong>
+      <correct>
+@pytest.mark.asyncio
+async def test_something():
+    result = await async_function()
+</correct>
+      <why-wrong>pytest doesn't know to create event loop without decorator</why-wrong>
+      <fix>Add @pytest.mark.asyncio to all async test functions</fix>
+    </anti-pattern>
+
+    <anti-pattern id="missing-await">
+      <symptom>Test passes but coroutine never executes</symptom>
+      <wrong>
+@pytest.mark.asyncio
+async def test_something():
+    result = service.async_method()  # Missing await
+    assert result  # Asserts coroutine object is truthy - always passes!
+</wrong>
+      <correct>
+@pytest.mark.asyncio
+async def test_something():
+    result = await service.async_method()
+    assert result  # Actually tests the result
+</correct>
+      <why-wrong>Without await, you get coroutine object, not the result</why-wrong>
+      <fix>Add await before all async function calls</fix>
+    </anti-pattern>
+
+    <anti-pattern id="no-context-switch-concurrency">
+      <symptom>Concurrency test passes but doesn't verify concurrent execution</symptom>
+      <wrong>
+async def mock_work(item):
+    return process(item)  # Returns immediately, no context switch
+
+# Test passes even if semaphore is broken
+</wrong>
+      <correct>
+async def mock_work(item):
+    await asyncio.sleep(0.01)  # Forces context switch
+    return process(item)  # Now actually tests concurrency
+</correct>
+      <why-wrong>Without sleep, all calls complete instantly before any context switch</why-wrong>
+      <fix>Add await asyncio.sleep(0.01) in async mocks for concurrency tests</fix>
+    </anti-pattern>
+
+    <anti-pattern id="mock-owned-service">
+      <symptom>Tests break on refactoring, excessive mock setup, brittle tests</symptom>
+      <wrong>
+mock_service = Mock(spec=MyOwnService)
+mock_service.method1 = Mock(return_value=x)
+mock_service.method2 = Mock(side_effect=y)
+# 20 more lines of mock setup...
+</wrong>
+      <correct>
+class FakeMyOwnService:
+    def __init__(self):
+        self.calls = []
+
+    def method1(self):
+        return x
+
+    def method2(self):
+        return y
+
+fake_service = FakeMyOwnService()  # Clean and reusable
+</correct>
+      <why-wrong>Mocking services you own makes tests brittle and verbose</why-wrong>
+      <fix>Create Fake implementations for services you own</fix>
+    </anti-pattern>
+
+    <anti-pattern id="mock-dataclass">
+      <symptom>Unnecessary complexity, mock setup boilerplate</symptom>
+      <wrong>
+mock_request = Mock(spec=TransferRequest)
+mock_request.source_image = "nginx"
+mock_request.source_tag = "latest"
+mock_request.target_repository = "my-nginx"
+mock_request.target_tag = "v1.0"
+</wrong>
+      <correct>
+request = TransferRequest(
+    source_image="nginx",
+    source_tag="latest",
+    target_repository="my-nginx",
+    target_tag="v1.0"
+)
+</correct>
+      <why-wrong>Dataclasses are cheap to create, mocking adds no value</why-wrong>
+      <fix>Create real instances of dataclasses</fix>
+    </anti-pattern>
+
+    <anti-pattern id="test-internal-methods">
+      <symptom>Tests break on refactoring internal implementation</symptom>
+      <wrong>
+def test_internal_helper():
+    service = MyService()
+    result = service._internal_helper("data")  # Testing private method
+    assert result == "expected"
+</wrong>
+      <correct>
+def test_public_behavior():
+    service = MyService()
+    result = service.public_method("data")  # Test through public API
+    assert result.success is True
+</correct>
+      <why-wrong>Internal methods are implementation details that should be free to change</why-wrong>
+      <fix>Test through public API only</fix>
+    </anti-pattern>
+
+    <anti-pattern id="test-interdependence">
+      <symptom>Tests fail when run in isolation, order-dependent tests</symptom>
+      <wrong>
+shared_state = {}
+
+def test_step_1():
+    shared_state['data'] = process()
+
+def test_step_2():
+    assert shared_state['data'] is not None  # Depends on test_step_1
+</wrong>
+      <correct>
+def test_step_1():
+    data = process()
+    assert data is not None
+
+def test_step_2():
+    data = process()  # Create own state
+    assert validate(data)
+</correct>
+      <why-wrong>Tests must be independent and order-agnostic</why-wrong>
+      <fix>Each test creates its own state</fix>
+    </anti-pattern>
+
+    <anti-pattern id="wrong-async-fixture-decorator">
+      <symptom>RuntimeWarning: coroutine 'fixture_name' was never awaited</symptom>
+      <symptom>AttributeError: 'coroutine' object has no attribute 'X'</symptom>
+      <wrong>
+import pytest
+
+@pytest.fixture  # Wrong decorator for async fixture
+async def async_fixture():
+    result = await async_operation()
+    return result
+
+# Test receives coroutine object, not result
+async def test_something(async_fixture):
+    # async_fixture is a coroutine, not the value
+    assert async_fixture.some_property  # AttributeError!
+</wrong>
+      <correct>
+import pytest
+import pytest_asyncio
+
+@pytest_asyncio.fixture  # Correct decorator for async fixture
+async def async_fixture():
+    result = await async_operation()
+    return result
+
+# Test receives the awaited result
+async def test_something(async_fixture):
+    # async_fixture is the actual value
+    assert async_fixture.some_property  # Works!
+</correct>
+      <why-wrong>@pytest.fixture doesn't automatically await async fixtures in pytest-asyncio 1.x+</why-wrong>
+      <fix>Use @pytest_asyncio.fixture for async fixtures</fix>
+    </anti-pattern>
+
+    <anti-pattern id="duplicated-test-setup">
+      <symptom>Same 5-10 lines of setup code repeated in every test</symptom>
+      <symptom>Hard to update object defaults - must change many tests</symptom>
+      <wrong>
+def test_case_1():
+    # Repeated setup
+    obj = ComplexObject(
+        field1="default1",
+        field2="default2",
+        field3="default3",
+        field4="default4"
+    )
+    assert obj.method() == expected1
+
+def test_case_2():
+    # Same setup repeated
+    obj = ComplexObject(
+        field1="default1",
+        field2="default2",
+        field3="default3",
+        field4="default4"
+    )
+    assert obj.method() == expected2
+</wrong>
+      <correct>
+@pytest.fixture
+def create_complex_object():
+    """Factory fixture with sensible defaults."""
+    def _create(**overrides):
+        defaults = {
+            "field1": "default1",
+            "field2": "default2",
+            "field3": "default3",
+            "field4": "default4"
+        }
+        return ComplexObject(**{**defaults, **overrides})
+    return _create
+
+def test_case_1(create_complex_object):
+    obj = create_complex_object()
+    assert obj.method() == expected1
+
+def test_case_2(create_complex_object):
+    obj = create_complex_object(field1="custom")  # Override when needed
+    assert obj.method() == expected2
+</correct>
+      <why-wrong>Duplication makes tests brittle and hard to maintain</why-wrong>
+      <fix>Use factory fixtures to eliminate duplication</fix>
+    </anti-pattern>
+
+  </anti-patterns>
+</support-file>

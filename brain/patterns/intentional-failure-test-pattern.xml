@@ -1,0 +1,88 @@
+<pattern-file>
+  <meta>
+    <pattern-id>intentional-failure-test-pattern</pattern-id>
+    <source>doc/claude-test-brain.xml</source>
+    <version>1.3</version>
+  </meta>
+  <pattern>
+      <name>Testing Error Reporting with Intentional Failures</name>
+      <when>Validating error handling, error aggregation, error categorization systems</when>
+      <why>Error paths are rarely exercised in success-focused tests</why>
+      <complete-example>
+        <file>test-error-reporting.yaml</file>
+        <code>
+# Test configuration designed to trigger specific error categories
+settings:
+  concurrent_transfers: 2
+  retry_attempts: 1
+  verify_digests: false
+  region: us-east-2
+
+transfers:
+  # Transfer 1: Non-existent source image &amp;#8594; NOT_FOUND
+  - source: ghcr.io/nonexistent/fake-image-that-does-not-exist
+    source_tag: v99.99.99
+    target: test-fake-image
+    target_tag: v99.99.99
+
+  # Transfer 2: Missing ECR repository &amp;#8594; NOT_FOUND
+  - source: docker.io/library/alpine
+    source_tag: "3.18"
+    target: test-missing-repository-abc123
+    target_tag: "3.18"
+
+  # Transfer 3: Rate limiting from Docker Hub &amp;#8594; RATE_LIMITED
+  - source: docker.io/library/busybox
+    source_tag: "1.36"
+    target: test-busybox
+    target_tag: "1.36"
+
+  # Transfer 4: Valid transfer (control case) &amp;#8594; SUCCESS
+  - source: ghcr.io/fluxcd/helm-controller
+    source_tag: v1.3.0
+    target: helm-controller
+    target_tag: v1.3.0
+
+# Run test to validate error reporting quality
+$ uv run ecreshore batch test-error-reporting.yaml --simple
+
+# Expected output shows:
+# - Clean error summary by category
+# - Actionable user guidance
+# - No verbose stack traces (if log levels correct)
+# - Recommended actions based on error patterns
+
+# Validates:
+# &amp;#10003; Error categorization works (NOT_FOUND, RATE_LIMITED, etc.)
+# &amp;#10003; Error aggregation groups correctly
+# &amp;#10003; User guidance is helpful
+# &amp;#10003; Error summary appears after batch completion
+# &amp;#10003; Both simple and rich modes display cleanly
+</code>
+      </complete-example>
+      <critical-rules>
+        <rule>Design test configs to trigger specific error categories</rule>
+        <rule>Include both failure and success cases (control)</rule>
+        <rule>Test both simple and rich output modes</rule>
+        <rule>Validate error messages are user-friendly, not technical</rule>
+        <rule>Check that actionable guidance appears</rule>
+        <rule>Ensure no verbose logging pollutes output</rule>
+      </critical-rules>
+      <error-categories-to-test>
+        <category name="NOT_FOUND">Non-existent source images, missing ECR repos</category>
+        <category name="AUTHENTICATION">Invalid AWS credentials</category>
+        <category name="AUTHORIZATION">Insufficient ECR permissions</category>
+        <category name="RATE_LIMITED">Docker Hub rate limits, AWS throttling</category>
+        <category name="NETWORK_TIMEOUT">Network connectivity issues</category>
+        <category name="DOCKER_DAEMON">Docker not running</category>
+      </error-categories-to-test>
+      <validation-criteria>
+        <criterion>Error summary appears after batch completes</criterion>
+        <criterion>Errors grouped by category with counts</criterion>
+        <criterion>User guidance provided for each category</criterion>
+        <criterion>Actionable recommendations shown (specific to error patterns)</criterion>
+        <criterion>No verbose stack traces during execution</criterion>
+        <criterion>Both simple and rich modes work correctly</criterion>
+      </validation-criteria>
+    </pattern>
+</pattern-file>

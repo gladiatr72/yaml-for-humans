@@ -1,0 +1,124 @@
+<support-file>
+  <name>Debugging Guide</name>
+  <debugging-guide>
+
+    <issue id="test-hangs-forever">
+      <symptoms>
+        <symptom>Test execution hangs indefinitely</symptom>
+        <symptom>No output, no timeout, no error</symptom>
+      </symptoms>
+      <probable-causes>
+        <cause>Missing await on async function call</cause>
+        <cause>Deadlock in async code (waiting for condition that never happens)</cause>
+        <cause>Infinite loop in async generator</cause>
+      </probable-causes>
+      <diagnostic-steps>
+        <step>Check for async function calls without await</step>
+        <step>Look for await in loop conditions</step>
+        <step>Add print/logging to identify where it hangs</step>
+      </diagnostic-steps>
+      <fixes>
+        <fix>Add await to all async function calls</fix>
+        <fix>Add timeout to test: @pytest.mark.timeout(5)</fix>
+        <fix>Use pytest.raises(asyncio.TimeoutError) for expected timeouts</fix>
+      </fixes>
+    </issue>
+
+    <issue id="no-event-loop">
+      <symptoms>
+        <symptom>RuntimeError: no running event loop</symptom>
+        <symptom>RuntimeError: There is no current event loop</symptom>
+      </symptoms>
+      <probable-causes>
+        <cause>Missing @pytest.mark.asyncio decorator</cause>
+        <cause>Calling async function from sync context</cause>
+      </probable-causes>
+      <fixes>
+        <fix>Add @pytest.mark.asyncio to test function</fix>
+        <fix>Make test function async: async def test_name()</fix>
+        <fix>Use await when calling async functions</fix>
+      </fixes>
+    </issue>
+
+    <issue id="cannot-await-mock">
+      <symptoms>
+        <symptom>TypeError: object Mock can't be used in 'await' expression</symptom>
+      </symptoms>
+      <probable-causes>
+        <cause>Using Mock() instead of AsyncMock() for async method</cause>
+      </probable-causes>
+      <fixes>
+        <fix>Replace Mock with AsyncMock for async methods</fix>
+        <fix>mock.async_method = AsyncMock(return_value=result)</fix>
+      </fixes>
+    </issue>
+
+    <issue id="concurrency-test-passes-incorrectly">
+      <symptoms>
+        <symptom>Concurrency test passes even with broken semaphore</symptom>
+        <symptom>max_concurrent_seen is always 1 or matches number of requests</symptom>
+      </symptoms>
+      <probable-causes>
+        <cause>No await asyncio.sleep() in mock - all calls complete instantly</cause>
+        <cause>Tracking variables not working (scope issues)</cause>
+      </probable-causes>
+      <fixes>
+        <fix>Add await asyncio.sleep(0.01) in mock function</fix>
+        <fix>Use nonlocal for closure variables</fix>
+        <fix>Verify max_concurrent_seen is between 1 and limit</fix>
+      </fixes>
+    </issue>
+
+    <issue id="test-passes-unexpectedly">
+      <symptoms>
+        <symptom>Test passes but shouldn't</symptom>
+        <symptom>Removing implementation code doesn't fail test</symptom>
+      </symptoms>
+      <probable-causes>
+        <cause>Missing await - testing coroutine object, not result</cause>
+        <cause>Weak assertion (assert result always passes)</cause>
+        <cause>Mocking wrong thing</cause>
+      </probable-causes>
+      <fixes>
+        <fix>Add await to all async calls</fix>
+        <fix>Make assertions specific: assert result.success is True</fix>
+        <fix>Verify mock is being called: mock.assert_called_once()</fix>
+      </fixes>
+    </issue>
+
+    <issue id="async-fixture-not-awaited">
+      <symptoms>
+        <symptom>RuntimeWarning: coroutine 'fixture_name' was never awaited</symptom>
+        <symptom>AttributeError: 'coroutine' object has no attribute 'X'</symptom>
+        <symptom>Test receives coroutine object instead of fixture value</symptom>
+      </symptoms>
+      <probable-causes>
+        <cause>Using @pytest.fixture instead of @pytest_asyncio.fixture</cause>
+        <cause>Missing pytest_asyncio import</cause>
+      </probable-causes>
+      <fixes>
+        <fix>Replace @pytest.fixture with @pytest_asyncio.fixture</fix>
+        <fix>Add import: import pytest_asyncio</fix>
+        <fix>Verify fixture is async def (not just def)</fix>
+      </fixes>
+    </issue>
+
+    <issue id="repeated-test-setup">
+      <symptoms>
+        <symptom>Same 5-10 lines of setup code in every test</symptom>
+        <symptom>Tests break when object structure changes</symptom>
+        <symptom>Hard to maintain consistent test data</symptom>
+      </symptoms>
+      <probable-causes>
+        <cause>Not using fixtures for common setup</cause>
+        <cause>Not using factory fixtures for similar objects</cause>
+      </probable-causes>
+      <fixes>
+        <fix>Extract repeated setup into @pytest.fixture</fix>
+        <fix>Use factory fixture pattern for variations</fix>
+        <fix>Create fixtures for common test data</fix>
+      </fixes>
+    </issue>
+
+  </debugging-guide>
+</support-file>

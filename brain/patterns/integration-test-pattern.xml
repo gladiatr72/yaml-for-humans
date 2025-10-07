@@ -1,0 +1,86 @@
+<pattern-file>
+  <meta>
+    <pattern-id>integration-test-pattern</pattern-id>
+    <source>doc/claude-test-brain.xml</source>
+    <version>1.3</version>
+  </meta>
+  <pattern>
+      <name>Integration Test with Real Services</name>
+      <when>Testing complete workflows end-to-end with real service composition</when>
+      <philosophy>Zero mocks for services you own - only mock external APIs (AWS, Docker)</philosophy>
+      <complete-example>
+        <file>tests/test_skip_if_present_integration.py</file>
+        <code>
+import pytest
+from src.ecreshore.services.hybrid_transfer_service import HybridTransferService
+from src.ecreshore.services.transfer_request_builder import TransferRequestBuilder
+
+@pytest.fixture
+def hybrid_transfer_service():
+    """Create real HybridTransferService for testing."""
+    return HybridTransferService(
+        region_name="us-east-2",
+        registry_id="123456789012"
+    )
+
+@pytest.mark.asyncio
+async def test_skip_if_present_enabled_image_exists(hybrid_transfer_service):
+    """Test skip when image exists with matching digest - uses real ECR calls.
+
+    This is a true integration test:
+    - Real HybridTransferService instance
+    - Real AWS ECR API calls
+    - Real service composition
+    - NO MOCKS for owned services
+    """
+    # Build real request using builder pattern
+    request = TransferRequestBuilder() \
+        .source("ghcr.io/fluxcd/helm-controller", "v1.3.0") \
+        .target("helm-controller", "v1.3.0") \
+        .skip_if_present(True) \
+        .build()
+
+    # Execute with real service - NO MOCKS
+    result = await hybrid_transfer_service.transfer_image(request)
+
+    # Verify result structure
+    assert hasattr(result, 'success')
+    assert hasattr(result, 'skipped')
+    assert hasattr(result, 'skip_reason')
+    assert hasattr(result, 'transfer_method')
+
+    # If it was skipped, verify skip fields
+    if result.skipped:
+        assert result.success is True
+        assert result.skip_reason is not None
+        assert "already exists" in result.skip_reason
+        assert result.transfer_method == "skipped"
+
+    # If not skipped, verify transfer was attempted
+    if not result.skipped:
+        assert result.transfer_method in ["buildx", "docker"]
+</code>
+      </complete-example>
+      <critical-rules>
+        <rule>NO mocks for services you own (TransferService, BatchProcessor, etc.)</rule>
+        <rule>Use real service instances</rule>
+        <rule>May require AWS credentials to run</rule>
+        <rule>Handle multiple valid outcomes (may/may not skip based on ECR state)</rule>
+        <rule>Document expected behaviors in test docstring</rule>
+      </critical-rules>
+      <requires>
+        <requirement>AWS credentials configured</requirement>
+        <requirement>ECR repository access</requirement>
+        <requirement>May be slow (1-5s) due to real API calls</requirement>
+      </requires>
+      <what-this-tests>
+        <tests>Real AWS SDK integration</tests>
+        <tests>Real service composition and delegation</tests>
+        <tests>Actual network behavior</tests>
+        <tests>Error handling with real errors</tests>
+        <catches>Integration bugs mocks would hide</catches>
+        <catches>AWS SDK breaking changes</catches>
+        <catches>Service composition issues</catches>
+      </what-this-tests>
+    </pattern>
+</pattern-file>

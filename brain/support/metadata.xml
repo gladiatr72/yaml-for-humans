@@ -1,0 +1,153 @@
+<support-file>
+  <name>metadata</name>
+  <test-writing-checklist>
+    <phase name="before-writing">
+      <item>Determine test category: unit/integration/E2E?</item>
+      <item>Identify what to mock (use decision tree)</item>
+      <item>Check for existing fixtures to reuse</item>
+      <item>Check exemplar files for similar patterns</item>
+    </phase>
+
+    <phase name="writing">
+      <item>Use @pytest.mark.asyncio for async tests</item>
+      <item>Use async def for async test functions</item>
+      <item>Use @pytest_asyncio.fixture for async fixtures (not @pytest.fixture)</item>
+      <item>Use AsyncMock for async methods (not Mock)</item>
+      <item>Use Fake classes for owned services (not Mock)</item>
+      <item>Use factory fixtures to eliminate repeated setup (3+ uses)</item>
+      <item>Add await to all async function calls</item>
+      <item>Add await asyncio.sleep(0.01) for concurrency tests</item>
+      <item>Write descriptive test name: test_what_condition</item>
+      <item>Add docstring explaining what's tested</item>
+      <item>Test edge cases and error conditions</item>
+      <item>Make assertions specific and meaningful</item>
+    </phase>
+
+    <phase name="after-writing">
+      <item>Run test in isolation: pytest test_file.py::test_name</item>
+      <item>Run test multiple times to check for flakiness</item>
+      <item>Verify test fails when implementation is broken</item>
+      <item>Check test execution time (&lt;0.1s unit, &lt;1s integration)</item>
+      <item>Review mock usage - can any be replaced with fakes?</item>
+      <item>Add to appropriate test class/file</item>
+    </phase>
+  </test-writing-checklist>
+  <quality-targets>
+    <coverage>
+      <line-coverage>90%+ required</line-coverage>
+      <branch-coverage>80%+ recommended</branch-coverage>
+    </coverage>
+    <performance>
+      <unit-test-speed>Less than 0.1s per test</unit-test-speed>
+      <integration-test-speed>Less than 1s per test</integration-test-speed>
+      <e2e-test-speed>Less than 10s per test</e2e-test-speed>
+      <full-suite>Less than 30s total</full-suite>
+    </performance>
+    <maintainability>
+      <mock-ratio>Less than 6% of test code</mock-ratio>
+      <test-isolation>100% - all tests independent</test-isolation>
+      <flakiness>0% - zero flaky tests tolerated</flakiness>
+    </maintainability>
+  </quality-targets>
+  <commands>
+    <command name="run-all-tests">uv run pytest</command>
+    <command name="run-specific-file">uv run pytest tests/test_file.py</command>
+    <command name="run-specific-test">uv run pytest tests/test_file.py::test_name</command>
+    <command name="run-async-tests-only">uv run pytest -m asyncio</command>
+    <command name="run-with-coverage">uv run pytest --cov=src/ecreshore --cov-report=html</command>
+    <command name="run-verbose">uv run pytest -v</command>
+    <command name="run-parallel">uv run pytest -n auto</command>
+    <command name="stop-on-first-failure">uv run pytest -x</command>
+    <command name="run-last-failed">uv run pytest --lf</command>
+    <command name="run-with-pdb-on-failure">uv run pytest --pdb</command>
+    <command name="show-slowest-tests">uv run pytest --durations=10</command>
+  </commands>
+  <exemplar-files>
+    <exemplar file="tests/test_error_handler.py">
+      <reason>Pure business logic, 0% mocks, 100% coverage</reason>
+      <what-to-learn>How to test pure functions without any mocking</what-to-learn>
+    </exemplar>
+
+    <exemplar file="tests/test_batch_config.py">
+      <reason>Real file I/O with NamedTemporaryFile, 0% mocks</reason>
+      <what-to-learn>How to test file operations without mocking filesystem</what-to-learn>
+    </exemplar>
+
+    <exemplar file="tests/test_skip_if_present_integration.py">
+      <reason>True integration tests with real AWS calls, 0% mocks</reason>
+      <what-to-learn>How to write integration tests that test real behavior</what-to-learn>
+    </exemplar>
+
+    <exemplar file="tests/test_image_parser.py">
+      <reason>Pure string parsing functions, 0% mocks</reason>
+      <what-to-learn>Testing pure transformations</what-to-learn>
+    </exemplar>
+
+    <exemplar file="tests/test_async_transfer_service.py">
+      <reason>Good async patterns, concurrency testing</reason>
+      <what-to-learn>Async testing patterns, AsyncMock usage, concurrency verification</what-to-learn>
+    </exemplar>
+
+    <exemplar file="tests/test_skip_if_present_e2e.py">
+      <reason>Demonstrates fake services, factory fixtures, async fixtures, and parameterization</reason>
+      <what-to-learn>How to replace mocks with fakes, use factory fixtures, create async fixtures with pytest_asyncio, and parameterize similar test cases</what-to-learn>
+    </exemplar>
+  </exemplar-files>
+  <import-patterns>
+    <pattern name="basic-async-test">
+      <imports>
+import pytest
+import asyncio
+</imports>
+    </pattern>
+
+    <pattern name="async-with-mocking">
+      <imports>
+import pytest
+import asyncio
+from unittest.mock import Mock, AsyncMock, patch
+</imports>
+    </pattern>
+
+    <pattern name="integration-test">
+      <imports>
+import pytest
+from src.ecreshore.services.hybrid_transfer_service import HybridTransferService
+from src.ecreshore.services.transfer_request_builder import TransferRequestBuilder
+</imports>
+    </pattern>
+
+    <pattern name="fixture-based-test">
+      <imports>
+import pytest
+from unittest.mock import Mock
+from datetime import datetime
+</imports>
+    </pattern>
+
+    <pattern name="async-fixture-test">
+      <imports>
+import pytest
+import pytest_asyncio
+from src.ecreshore.services.digest_verification import get_enhanced_digest
+</imports>
+    </pattern>
+
+    <pattern name="factory-fixture-test">
+      <imports>
+import pytest
+from typing import List, Optional
+from datetime import datetime
+</imports>
+    </pattern>
+
+    <pattern name="fake-service-with-fixtures">
+      <imports>
+import pytest
+import pytest_asyncio
+from typing import List, Optional
+from datetime import datetime
+</imports>
+    </pattern>
+  </import-patterns>
+</support-file>

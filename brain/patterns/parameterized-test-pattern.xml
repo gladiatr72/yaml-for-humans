@@ -1,0 +1,180 @@
+<pattern-file>
+  <meta>
+    <pattern-id>parameterized-test-pattern</pattern-id>
+    <source>doc/claude-test-brain.xml</source>
+    <version>1.3</version>
+  </meta>
+  <pattern>
+      <name>Parameterized Testing for Multiple Similar Cases</name>
+      <when>Testing same logic with different inputs and expected outputs</when>
+      <why>Reduces duplication, increases coverage, makes adding new cases trivial</why>
+      <complete-example>
+        <file>tests/test_skip_if_present_e2e.py</file>
+        <code>
+# BEFORE: Separate test functions for each case (repetitive)
+def test_compare_digests_exact_match():
+    """Test digests that match exactly."""
+    result = compare_source_target_digests("sha256:abc", "sha256:abc")
+    assert result is True
+
+def test_compare_digests_normalized_match():
+    """Test digests match after normalization."""
+    result = compare_source_target_digests("abc", "sha256:abc")
+    assert result is True
+
+def test_compare_digests_none_source():
+    """Test with None source digest."""
+    result = compare_source_target_digests(None, "sha256:abc")
+    assert result is False
+
+def test_compare_digests_none_target():
+    """Test with None target digest."""
+    result = compare_source_target_digests("sha256:abc", None)
+    assert result is False
+
+# Problem: 4 separate functions, lots of duplication
+
+
+# AFTER: Single parameterized test covering all cases
+import pytest
+
+@pytest.mark.parametrize("source_digest,target_digest,expected_result", [
+    # Test ID: exact-match
+    ("sha256:abc123", "sha256:abc123", True),
+
+    # Test ID: source-normalized
+    ("abc123", "sha256:abc123", True),
+
+    # Test ID: target-normalized
+    ("sha256:abc123", "abc123", True),
+
+    # Test ID: both-normalized
+    ("abc123", "abc123", True),
+
+    # Test ID: different-digests
+    ("sha256:abc123", "sha256:def456", False),
+
+    # Test ID: none-source
+    (None, "sha256:abc123", False),
+
+    # Test ID: none-target
+    ("sha256:abc123", None, False),
+
+    # Test ID: both-none
+    (None, None, False),
+
+    # Test ID: empty-strings
+    ("", "", False),
+])
+def test_compare_source_target_digests_comprehensive(
+    source_digest, target_digest, expected_result
+):
+    """Test digest comparison with various input combinations.
+
+    Parameterized test covering:
+    - Exact matches
+    - Normalized matches (with/without sha256: prefix)
+    - None values
+    - Empty strings
+    - Mismatches
+    """
+    result = compare_source_target_digests(source_digest, target_digest)
+    assert result == expected_result
+
+
+# PYTEST OUTPUT shows clear test IDs:
+# test_compare_source_target_digests_comprehensive[exact-match] PASSED
+# test_compare_source_target_digests_comprehensive[source-normalized] PASSED
+# test_compare_source_target_digests_comprehensive[target-normalized] PASSED
+# test_compare_source_target_digests_comprehensive[both-normalized] PASSED
+# test_compare_source_target_digests_comprehensive[different-digests] PASSED
+# test_compare_source_target_digests_comprehensive[none-source] PASSED
+# test_compare_source_target_digests_comprehensive[none-target] PASSED
+# test_compare_source_target_digests_comprehensive[both-none] PASSED
+# test_compare_source_target_digests_comprehensive[empty-strings] PASSED
+
+
+# ADVANCED: Custom test IDs for better readability
+@pytest.mark.parametrize("source,target,expected", [
+    pytest.param("sha256:abc", "sha256:abc", True, id="exact_match"),
+    pytest.param("abc", "sha256:abc", True, id="normalized_match"),
+    pytest.param(None, "sha256:abc", False, id="none_source"),
+    pytest.param("sha256:abc", None, False, id="none_target"),
+    pytest.param("", "", False, id="empty_strings"),
+])
+def test_digest_comparison_edge_cases(source, target, expected):
+    """Edge case testing with custom test IDs."""
+    result = compare_source_target_digests(source, target)
+    assert result == expected
+
+
+# MULTIPLE PARAMETERS: Test combinations
+@pytest.mark.parametrize("region", ["us-east-1", "us-east-2", "eu-west-1"])
+@pytest.mark.parametrize("registry_type", ["public", "private"])
+def test_ecr_authentication(region, registry_type):
+    """Test authentication across regions and registry types.
+
+    Creates 6 test cases (3 regions &amp;#215; 2 types) from single function.
+    """
+    service = ECRService(region=region, registry_type=registry_type)
+    assert service.authenticate() is True
+
+
+# RESULTS:
+# Before: 4 test functions, ~40 lines of duplicated code
+# After: 1 parameterized test, 9 test cases, ~20 lines
+# Benefits: 50% less code, easier to add cases, clear test structure
+</code>
+      </complete-example>
+      <critical-rules>
+        <rule>Use @pytest.mark.parametrize decorator</rule>
+        <rule>First argument is comma-separated parameter names</rule>
+        <rule>Second argument is list of tuples with test values</rule>
+        <rule>Test function receives parameters as arguments</rule>
+        <rule>Each tuple creates one test case</rule>
+        <rule>Use pytest.param() for custom test IDs</rule>
+      </critical-rules>
+      <syntax-examples>
+        <basic>
+@pytest.mark.parametrize("input,expected", [
+    (1, 2),
+    (2, 4),
+    (3, 6),
+])
+def test_double(input, expected):
+    assert double(input) == expected
+</basic>
+        <multiple-params>
+@pytest.mark.parametrize("x", [1, 2, 3])
+@pytest.mark.parametrize("y", [10, 20])
+def test_add(x, y):
+    # Creates 6 tests: (1,10), (1,20), (2,10), (2,20), (3,10), (3,20)
+    assert add(x, y) == x + y
+</multiple-params>
+        <custom-ids>
+@pytest.mark.parametrize("value,expected", [
+    pytest.param(0, False, id="zero"),
+    pytest.param(1, True, id="positive"),
+    pytest.param(-1, True, id="negative"),
+])
+def test_is_nonzero(value, expected):
+    assert bool(value) == expected
+</custom-ids>
+      </syntax-examples>
+      <when-to-use>
+        <use>Testing same function with different inputs</use>
+        <use>Edge case testing (None, empty, negative, boundary values)</use>
+        <use>Testing across multiple configurations</use>
+        <use>Validation logic with many valid/invalid combinations</use>
+        <use>When you find yourself copying test functions</use>
+      </when-to-use>
+      <benefits>
+        <benefit>Reduces code duplication by 50-75%</benefit>
+        <benefit>Makes adding new test cases trivial (one line)</benefit>
+        <benefit>Clear test structure - data separated from logic</benefit>
+        <benefit>Easy to see all cases at a glance</benefit>
+        <benefit>Test IDs show exactly what's being tested</benefit>
+        <benefit>Individual cases can be run separately</benefit>
+      </benefits>
+    </pattern>
+</pattern-file>

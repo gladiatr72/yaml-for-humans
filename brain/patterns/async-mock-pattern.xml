@@ -1,0 +1,85 @@
+<pattern-file>
+  <meta>
+    <pattern-id>async-mock-pattern</pattern-id>
+    <source>doc/claude-test-brain.xml</source>
+    <version>1.3</version>
+  </meta>
+  <pattern>
+      <name>Mocking Async Methods</name>
+      <when>Need to mock external async API calls (AWS, Docker, HTTP)</when>
+      <when-not>Do NOT use for your own services - use fakes instead</when-not>
+      <complete-example>
+        <file>tests/test_batch_processor.py</file>
+        <code>
+import pytest
+from unittest.mock import Mock, AsyncMock, patch
+from src.ecreshore.services.batch_processor import BatchProcessor
+from src.ecreshore.services.async_transfer_service import AsyncTransferService
+from src.ecreshore.services.batch_config import BatchRequest, BatchTransferRequest, BatchSettings
+from src.ecreshore.services.transfer_service import TransferResult
+
+@pytest.mark.asyncio
+async def test_batch_processing_with_async_mock():
+    """Test batch processor with mocked async transfer service."""
+    processor = BatchProcessor()
+
+    # Create mock async transfer service
+    mock_transfer_service = Mock(spec=AsyncTransferService)
+
+    # Setup successful transfer results
+    successful_result = TransferResult(
+        request=Mock(),
+        success=True,
+        source_digest="sha256:abc123",
+        target_digest="sha256:abc123"
+    )
+    successful_result.retry_count = 0
+
+    # CRITICAL: Use AsyncMock for async methods, not Mock
+    mock_transfer_service.transfer_image = AsyncMock(return_value=successful_result)
+
+    # Create batch request
+    transfers = [
+        BatchTransferRequest(source="nginx", target="my-nginx"),
+        BatchTransferRequest(source="redis", target="my-redis")
+    ]
+    settings = BatchSettings(concurrent_transfers=1)
+    batch_request = BatchRequest(transfers=transfers, settings=settings)
+
+    # Mock progress reporter
+    mock_progress = Mock()
+    from contextlib import nullcontext
+    mock_progress.live_display = nullcontext
+
+    # Execute test
+    with patch.object(processor, '_get_transfer_service', return_value=mock_transfer_service):
+        result = await processor.process_batch(batch_request, mock_progress)
+
+    # Verify results
+    assert result.success_count == 2
+    assert result.failure_count == 0
+    assert result.overall_success is True
+
+    # Verify async method was called
+    assert mock_transfer_service.transfer_image.call_count == 2
+</code>
+      </complete-example>
+      <critical-rules>
+        <rule>Use AsyncMock for async methods, never Mock</rule>
+        <rule>Mock(return_value=x) is NOT awaitable</rule>
+        <rule>AsyncMock(return_value=x) IS awaitable</rule>
+        <rule>Can use side_effect for sequences: AsyncMock(side_effect=[result1, result2])</rule>
+        <rule>Can use side_effect for exceptions: AsyncMock(side_effect=Exception("error"))</rule>
+      </critical-rules>
+      <anti-pattern>
+        <wrong>
+mock_service.async_method = Mock(return_value=result)
+await mock_service.async_method()  # TypeError: object Mock can't be used in 'await'
+</wrong>
+        <correct>
+mock_service.async_method = AsyncMock(return_value=result)
+await mock_service.async_method()  # Works correctly
+</correct>
+      </anti-pattern>
+    </pattern>
+</pattern-file>

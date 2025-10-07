@@ -1,0 +1,939 @@
+<refactor-notes>
+  <session date="2025-10-07" type="test-analysis">
+    <summary>
+      Comprehensive analysis of yaml-for-humans test suite to identify brain pattern augmentation opportunities and refactoring recommendations based on existing brain patterns.
+    </summary>
+
+    <test-suite-overview>
+      <statistics>
+        <total-lines>3453</total-lines>
+        <total-tests>133</total-tests>
+        <test-files>9</test-files>
+        <test-classes>20</test-classes>
+        <assertions>467</assertions>
+        <mock-usage>22</mock-usage>
+        <parameterized-tests>0</parameterized-tests>
+      </statistics>
+
+      <organization-pattern>
+        <approach>Feature-based test class organization</approach>
+        <structure>
+          <file name="test_cli.py" lines="1595" tests="68">
+            <classes>
+              <class name="TestStdinTimeout" tests="6"/>
+              <class name="TestCLIFunctionality" tests="10"/>
+              <class name="TestInputsFlag" tests="20+"/>
+              <class name="TestOutputFlag" tests="15+"/>
+              <class name="TestStdinAutoDetection" tests="5+"/>
+              <class name="TestGlobbingAndDirectorySupport" tests="8+"/>
+              <class name="TestFileTypeDetection" tests="4+"/>
+            </classes>
+          </file>
+          <file name="test_comment_preservation.py" lines="285" tests="10+"/>
+          <file name="test_empty_line_preservation.py" lines="162"/>
+          <file name="test_integration.py" lines="471"/>
+          <file name="test_emitter.py" lines="285"/>
+          <file name="test_multi_document.py" lines="356"/>
+          <file name="test_multiline_scalars.py" lines="138"/>
+        </structure>
+        <strengths>
+          <strength>Clear separation of concerns</strength>
+          <strength>Descriptive class names</strength>
+          <strength>Logical grouping by feature domain</strength>
+          <strength>Integration tests separated from unit tests</strength>
+        </strengths>
+      </organization-pattern>
+
+      <quality-assessment score="8/10">
+        <strengths>
+          <item>Well-organized with clear test class structure</item>
+          <item>Low mock usage (22 patches) indicates good integration test focus</item>
+          <item>High assertion count (467) shows thorough verification</item>
+          <item>Already following CLI testing pattern intuitively</item>
+          <item>Good use of setup_method/teardown_method for resource management</item>
+        </strengths>
+        <areas-for-improvement>
+          <item>Zero parameterized tests - significant duplication opportunity</item>
+          <item>No fixtures for common test data (K8s manifests repeated)</item>
+          <item>Service classes tested through integration, not directly</item>
+          <item>Some pure helper functions embedded in integration tests</item>
+        </areas-for-improvement>
+      </quality-assessment>
+    </test-suite-overview>
+
+    <brain-pattern-opportunities>
+      <new-pattern priority="high">
+        <pattern-id>feature-based-test-organization</pattern-id>
+        <status>Not currently in brain/patterns/</status>
+        <when>Organizing tests for a library with multiple distinct features</when>
+        <philosophy>Group tests by feature domain, not by technical layer</philosophy>
+        <evidence>
+          <file>test_comment_preservation.py - single feature, isolated</file>
+          <file>test_empty_line_preservation.py - single feature, isolated</file>
+          <file>test_cli.py - CLI features grouped with sub-classes</file>
+          <file>test_integration.py - real-world scenarios grouped</file>
+        </evidence>
+        <why-this-works>
+          <reason>Easy to locate tests for a feature</reason>
+          <reason>Clear feature boundaries</reason>
+          <reason>Integration tests separated from unit tests</reason>
+          <reason>Each file can have different testing philosophy</reason>
+        </why-this-works>
+        <recommendation>Add to brain/patterns/ documenting yaml-for-humans' successful test organization strategy</recommendation>
+      </new-pattern>
+
+      <new-pattern priority="medium">
+        <pattern-id>class-setup-teardown-pattern</pattern-id>
+        <status>Partially covered in fixture-pattern.xml</status>
+        <enhancement>Add class-level setup/teardown examples</enhancement>
+        <example>
+          <file>test_cli.py:789</file>
+          <code><![CDATA[
+class TestOutputFlag:
+    def setup_method(self):
+        """Set up test environment."""
+        self.temp_dir = tempfile.mkdtemp()
+
+    def teardown_method(self):
+        """Clean up test environment."""
+        import shutil
+        shutil.rmtree(self.temp_dir)
+]]></code>
+        </example>
+        <why-capture>
+          <reason>Clean pattern for temporary file/directory management</reason>
+          <reason>Avoids resource leaks in tests</reason>
+          <reason>Alternative to pytest fixtures for class-scoped setup</reason>
+          <reason>Could be enhanced with @pytest.fixture(scope="class")</reason>
+        </why-capture>
+        <recommendation>Create brain/patterns/class-setup-teardown-pattern.xml or enhance existing fixture-pattern.xml</recommendation>
+      </new-pattern>
+
+      <pattern-enhancement priority="high">
+        <pattern-id>cli-testing-pattern</pattern-id>
+        <current-file>brain/patterns/cli-testing-pattern.xml</current-file>
+        <enhancement>Add section on "Testing Format Detection Helpers"</enhancement>
+        <evidence>
+          <helper-functions>
+            <function name="_looks_like_json">Pure detection function</function>
+            <function name="_is_multi_document_yaml">Pure detection function</function>
+            <function name="_is_json_lines">Pure detection function</function>
+            <function name="_has_items_array">Pure detection function</function>
+            <function name="_is_valid_file_type">Pure detection function</function>
+            <function name="_generate_k8s_filename">Pure naming function</function>
+          </helper-functions>
+          <test-pattern>
+            <code><![CDATA[
+class TestStdinTimeout:
+    def test_looks_like_json(self):
+        assert _looks_like_json('{"key": "value"}')
+        assert _looks_like_json('["item1", "item2"]')
+        assert not _looks_like_json("key: value")
+
+    def test_is_multi_document_yaml(self): ...
+    def test_is_json_lines(self): ...
+    def test_has_items_array(self): ...
+]]></code>
+          </test-pattern>
+        </evidence>
+        <why-excellent>
+          <reason>100% of business logic tested without CliRunner</reason>
+          <reason>Fast, focused unit tests</reason>
+          <reason>Each helper has clear responsibility</reason>
+          <reason>Follows cli-testing-pattern philosophy perfectly</reason>
+        </why-excellent>
+        <recommendation>Update brain/patterns/cli-testing-pattern.xml with yaml-for-humans as exemplar for format detection helpers</recommendation>
+      </pattern-enhancement>
+
+      <new-pattern priority="high">
+        <pattern-id>immutable-context-pattern</pattern-id>
+        <status>Related to validation-dataclass-pattern.xml but distinct</status>
+        <when>Passing configuration context through multiple layers</when>
+        <philosophy>Use frozen dataclasses for immutable, type-safe configuration</philosophy>
+        <evidence>
+          <file>cli.py:38</file>
+          <code><![CDATA[
+@dataclass(frozen=True)
+class ProcessingContext:
+    """Immutable context for processing operations."""
+    unsafe_inputs: bool = False
+    preserve_empty_lines: bool = DEFAULT_PRESERVE_EMPTY_LINES
+    preserve_comments: bool = DEFAULT_PRESERVE_COMMENTS
+
+    def create_source_factory(self, base_info: dict) -> Callable[[], dict]:
+        """Create source factory with counter for multi-document sources."""
+        # ... factory method on immutable context
+]]></code>
+        </evidence>
+        <why-excellent>
+          <reason>frozen=True prevents accidental mutation</reason>
+          <reason>Type-safe configuration</reason>
+          <reason>Clear defaults</reason>
+          <reason>Self-documenting intent</reason>
+          <reason>Can have methods while remaining immutable</reason>
+        </why-excellent>
+        <current-gap>brain/patterns/validation-dataclass-pattern.xml focuses on validation functions returning dataclasses, not immutable configuration contexts</current-gap>
+        <recommendation>Create brain/patterns/immutable-context-pattern.xml or add section to existing dataclass pattern</recommendation>
+      </new-pattern>
+
+      <new-pattern priority="medium">
+        <pattern-id>service-class-extraction-pattern</pattern-id>
+        <status>Not in brain/</status>
+        <when>CLI logic becomes complex and needs organization beyond pure functions</when>
+        <philosophy>Extract single-responsibility service classes as alternative/complement to pure function extraction</philosophy>
+        <evidence>
+          <class name="FilePathExpander">
+            <purpose>Handles file path expansion with glob and directory support</purpose>
+            <methods>
+              <method>expand_paths(inputs_str: str) -> list[str]</method>
+              <method>_expand_single_path(path: str) -> list[str]</method>
+              <method>_expand_directory(dir_path: str) -> list[str]</method>
+              <method>_expand_glob(glob_pattern: str) -> list[str]</method>
+            </methods>
+          </class>
+          <class name="ContentProcessor">
+            <purpose>Processes JSON/YAML content from various sources</purpose>
+            <initialization>__init__(self, context: ProcessingContext)</initialization>
+            <methods>
+              <method>_process_json_content(...)</method>
+              <method>_process_yaml_content(...)</method>
+            </methods>
+          </class>
+          <class name="FileProcessor">
+            <purpose>Processes multiple input files with error aggregation</purpose>
+            <method>process_files(file_paths: list[str])</method>
+          </class>
+          <class name="DirectoryOutputWriter">
+            <purpose>Writes documents to directory with naming logic</purpose>
+          </class>
+          <class name="FileOutputWriter">
+            <purpose>Writes documents to a single file</purpose>
+          </class>
+        </evidence>
+        <why-excellent>
+          <reason>Each class has one clear purpose</reason>
+          <reason>Testable in isolation</reason>
+          <reason>Click command becomes pure orchestration</reason>
+          <reason>Follows SOLID principles</reason>
+          <reason>Maintains state when needed, stateless when not</reason>
+        </why-excellent>
+        <current-testing>Classes tested through integration, could benefit from direct unit tests</current-testing>
+        <recommendation>Create brain/patterns/service-class-extraction-pattern.xml documenting this as alternative/complement to pure function extraction</recommendation>
+      </new-pattern>
+    </brain-pattern-opportunities>
+
+    <test-refactoring-opportunities>
+      <opportunity priority="high" impact="30% code reduction">
+        <name>Parameterize Format Detection Tests</name>
+        <applies-pattern>brain/patterns/parameterized-test-pattern.xml</applies-pattern>
+        <current-state>
+          <file>test_cli.py:32-116</file>
+          <problem>Multiple assertions in single test, difficult to identify failing case</problem>
+          <example><![CDATA[
+def test_looks_like_json(self):
+    assert _looks_like_json('{"key": "value"}')
+    assert _looks_like_json('["item1", "item2"]')
+    assert _looks_like_json('  {"key": "value"}  ')
+    assert not _looks_like_json("key: value")
+    assert not _looks_like_json("- item1")
+    assert not _looks_like_json("")
+]]></example>
+        </current-state>
+        <refactored>
+          <example><![CDATA[
+@pytest.mark.parametrize("content,expected", [
+    pytest.param('{"key": "value"}', True, id="simple_object"),
+    pytest.param('["item1", "item2"]', True, id="simple_array"),
+    pytest.param('  {"key": "value"}  ', True, id="with_whitespace"),
+    pytest.param("key: value", False, id="yaml_syntax"),
+    pytest.param("- item1", False, id="yaml_list"),
+    pytest.param("", False, id="empty_string"),
+])
+def test_looks_like_json(content, expected):
+    """Test JSON detection heuristic with various inputs."""
+    assert _looks_like_json(content) == expected
+]]></example>
+        </refactored>
+        <benefits>
+          <benefit>Reduces 6 assertions to 1 parameterized test</benefit>
+          <benefit>Easier to add new edge cases (one line each)</benefit>
+          <benefit>Clear test IDs in pytest output</benefit>
+          <benefit>Data separated from logic</benefit>
+        </benefits>
+        <impact>Could reduce test_cli.py by ~30-40% while increasing coverage</impact>
+        <affected-tests>
+          <test>test_looks_like_json</test>
+          <test>test_is_multi_document_yaml</test>
+          <test>test_is_json_lines</test>
+          <test>test_has_items_array</test>
+          <test>test_generate_k8s_filename</test>
+        </affected-tests>
+      </opportunity>
+
+      <opportunity priority="high" impact="reduce duplication">
+        <name>Extract Test Fixtures for Common Data</name>
+        <applies-pattern>brain/patterns/fixture-pattern.xml, factory-fixture-pattern.xml</applies-pattern>
+        <current-state>
+          <problem>Duplicate test data across multiple tests</problem>
+          <example><![CDATA[
+# test_integration.py - Kubernetes deployment repeated (50+ lines)
+def test_kubernetes_deployment(self):
+    deployment = {
+        "apiVersion": "apps/v1",
+        "kind": "Deployment",
+        "metadata": {"name": "test-app", ...},
+        "spec": {...}
+    }
+
+# test_cli.py - Similar K8s data
+def test_output_directory_single_document(self):
+    k8s_input = '{"kind": "Pod", "metadata": {"name": "test-pod"}, "spec": {}}'
+]]></example>
+        </current-state>
+        <refactored>
+          <example><![CDATA[
+# conftest.py or test file
+@pytest.fixture
+def k8s_deployment():
+    """Kubernetes deployment manifest for testing."""
+    return {
+        "apiVersion": "apps/v1",
+        "kind": "Deployment",
+        # ... full manifest
+    }
+
+@pytest.fixture
+def k8s_manifest_factory():
+    """Factory for creating K8s manifests with custom values."""
+    def _factory(kind="Pod", name="test", **kwargs):
+        return {
+            "kind": kind,
+            "metadata": {"name": name},
+            **kwargs
+        }
+    return _factory
+
+# Usage
+def test_kubernetes_deployment(k8s_deployment):
+    yaml_str = dumps(k8s_deployment)
+    # ... assertions
+
+def test_custom_manifest(k8s_manifest_factory):
+    service = k8s_manifest_factory(kind="Service", name="api")
+    # ... test logic
+]]></example>
+        </refactored>
+        <benefits>
+          <benefit>Reduce duplication across integration tests</benefit>
+          <benefit>Single source of truth for test data</benefit>
+          <benefit>Factory pattern allows customization per test</benefit>
+          <benefit>Easier to maintain when K8s API changes</benefit>
+        </benefits>
+      </opportunity>
+
+      <opportunity priority="high" impact="faster tests, better isolation">
+        <name>Add Unit Tests for Service Classes</name>
+        <applies-pattern>brain/patterns/cli-testing-pattern.xml</applies-pattern>
+        <current-state>
+          <problem>Service classes tested through integration only</problem>
+          <classes>
+            <class>FilePathExpander</class>
+            <class>ContentProcessor</class>
+            <class>FileProcessor</class>
+            <class>DirectoryOutputWriter</class>
+            <class>FileOutputWriter</class>
+          </classes>
+          <current-testing>Integration tests in TestGlobbingAndDirectorySupport</current-testing>
+        </current-state>
+        <enhancement>
+          <example><![CDATA[
+class TestFilePathExpander:
+    """Unit tests for FilePathExpander service class."""
+
+    def test_expand_paths_single_file(self):
+        expander = FilePathExpander()
+        result = expander.expand_paths("test.json")
+        assert result == ["test.json"]
+
+    @pytest.mark.parametrize("pattern,expected_count", [
+        ("*.json", 3),
+        ("test_*.py", 9),
+        ("**/*.yaml", 15),
+    ])
+    def test_expand_glob_patterns(self, pattern, expected_count, tmp_path):
+        # Setup temp files...
+        expander = FilePathExpander()
+        result = expander.expand_paths(pattern)
+        assert len(result) == expected_count
+
+    def test_expand_directory(self, tmp_path):
+        # Create temp directory with files
+        (tmp_path / "file1.json").touch()
+        (tmp_path / "file2.yaml").touch()
+
+        expander = FilePathExpander()
+        result = expander.expand_paths(f"{tmp_path}/")
+        assert len(result) == 2
+]]></example>
+        </enhancement>
+        <benefits>
+          <benefit>Faster tests (no CLI framework)</benefit>
+          <benefit>More precise error messages</benefit>
+          <benefit>Better coverage of edge cases</benefit>
+          <benefit>Follows brain pattern philosophy</benefit>
+        </benefits>
+      </opportunity>
+
+      <opportunity priority="medium" impact="clearer tests">
+        <name>Extract Pure Helper Functions from Integration Tests</name>
+        <applies-pattern>brain/patterns/pure-function-extraction-pattern.xml</applies-pattern>
+        <current-state>
+          <file>test_integration.py:98</file>
+          <problem>Key ordering verification logic embedded in integration test</problem>
+          <example><![CDATA[
+container_text = "\n".join(container_section)
+
+# Verify priority key ordering in containers
+assert "name: web" in container_text
+assert container_text.find("name:") < container_text.find("ports:")
+assert container_text.find("image:") < container_text.find("resources:")
+]]></example>
+        </current-state>
+        <refactored>
+          <example><![CDATA[
+# Extract to testable helper
+def get_key_positions(yaml_text: str, keys: list[str]) -> dict[str, int]:
+    """Get positions of keys in YAML text. Returns -1 if not found."""
+    return {key: yaml_text.find(f"{key}:") for key in keys}
+
+def verify_key_ordering(yaml_text: str, ordered_keys: list[str]) -> bool:
+    """Verify keys appear in specified order."""
+    positions = get_key_positions(yaml_text, ordered_keys)
+    for i in range(len(ordered_keys) - 1):
+        if positions[ordered_keys[i]] >= positions[ordered_keys[i+1]]:
+            return False
+    return True
+
+# Unit test the helper
+@pytest.mark.parametrize("text,keys,expected", [
+    ("name: a\nimage: b\nports: c", ["name", "image", "ports"], True),
+    ("ports: c\nname: a", ["name", "ports"], False),
+])
+def test_verify_key_ordering(text, keys, expected):
+    assert verify_key_ordering(text, keys) == expected
+
+# Use in integration test
+def test_kubernetes_deployment(self):
+    yaml_str = dumps(deployment)
+    assert verify_key_ordering(yaml_str, ["name", "image", "ports"])
+]]></example>
+        </refactored>
+        <benefits>
+          <benefit>Pure function is trivially testable</benefit>
+          <benefit>Integration test becomes more readable</benefit>
+          <benefit>Reusable across multiple tests</benefit>
+          <benefit>Separates "what" from "how"</benefit>
+        </benefits>
+      </opportunity>
+
+      <opportunity priority="high" impact="catch regressions">
+        <name>Add Smoke Tests for Real-World Files</name>
+        <applies-pattern>brain/patterns/integration-test-pattern.xml</applies-pattern>
+        <current-state>
+          <gap>No automated test for kustomization.yaml mentioned in CLAUDE.md</gap>
+          <existing-file>tests/test-data/kustomization.yaml</existing-file>
+          <documentation>CLAUDE.md mentions: "compare tests/test-data/kustomization.yaml to output of huml -i"</documentation>
+        </current-state>
+        <enhancement>
+          <example><![CDATA[
+class TestRealWorldFiles:
+    """Integration tests using actual project files."""
+
+    def test_kustomization_comment_preservation(self):
+        """Test comment preservation with real kustomization.yaml."""
+        input_path = "tests/test-data/kustomization.yaml"
+
+        # Load with formatting
+        with open(input_path) as f:
+            original = f.read()
+
+        data = load_with_formatting(original)
+        output = dumps(data, preserve_comments=True, preserve_empty_lines=True)
+
+        # Verify comments preserved
+        assert "# " in output  # Has comments
+
+        # Verify round-trip validity
+        reparsed = load_with_formatting(output)
+        assert dumps(reparsed) == output  # Stable output
+
+    def test_cli_kustomization_roundtrip(self):
+        """Test CLI with kustomization.yaml per CLAUDE.md."""
+        # Validates documentation example
+        from yaml_for_humans.cli import _huml_main
+        # ... test implementation
+]]></example>
+        </enhancement>
+        <benefits>
+          <benefit>Catches regressions with real data</benefit>
+          <benefit>Validates CLAUDE.md documentation</benefit>
+          <benefit>Integration test without mocks</benefit>
+          <benefit>Tests comment preservation on real use case</benefit>
+        </benefits>
+      </opportunity>
+    </test-refactoring-opportunities>
+
+    <code-refactoring-opportunities>
+      <opportunity priority="medium">
+        <name>Reduce Complexity in _huml_main</name>
+        <applies-pattern>brain/patterns/complexity-reduction-workflow.xml, cli-testing-pattern.xml</applies-pattern>
+        <current-state>
+          <file>cli.py</file>
+          <function>_huml_main</function>
+          <estimated-complexity>Likely 100+ lines with multiple responsibilities</estimated-complexity>
+          <issues>
+            <issue>Mixed validation, processing, and output logic</issue>
+            <issue>Multiple branching paths (stdin vs files, single vs multi-doc)</issue>
+            <issue>Could benefit from numbered orchestration steps</issue>
+          </issues>
+        </current-state>
+        <recommended-refactoring>
+          <example><![CDATA[
+def _huml_main(timeout, inputs, output, indent, ...):
+    """Main CLI orchestration.
+
+    Flow: validate → process → output
+    """
+    # 1. Validate flags and configuration
+    config = _validate_cli_options(timeout, inputs, output, ...)
+
+    # 2. Determine input source
+    source_type = _determine_input_source(inputs)
+
+    # 3. Process input based on source
+    if source_type == "stdin":
+        documents = _process_stdin_input(timeout, config)
+    else:
+        documents = _process_file_input(inputs, config)
+
+    # 4. Write output
+    _write_output(documents, output, config)
+]]></example>
+        </recommended-refactoring>
+        <benefits>
+          <benefit>Each helper is testable independently</benefit>
+          <benefit>Main function becomes documentation</benefit>
+          <benefit>Complexity moves from single function to multiple simple functions</benefit>
+          <benefit>Follows brain pattern for CLI testing</benefit>
+        </benefits>
+        <next-step>Run ast_performance_analysis.py to measure actual complexity</next-step>
+      </opportunity>
+
+      <opportunity priority="low">
+        <name>Convert Classes to Dataclasses Where Appropriate</name>
+        <applies-pattern>brain/patterns/dataclass-property-pattern.xml</applies-pattern>
+        <current-state>
+          <classes>
+            <class>FilePathExpander</class>
+            <class>ContentProcessor</class>
+            <class>FileProcessor</class>
+          </classes>
+          <question>Do these classes have state? Are they mutable?</question>
+        </current-state>
+        <potential-enhancement>
+          <example><![CDATA[
+@dataclass
+class FilePathExpander:
+    """Handles file path expansion with glob and directory support."""
+
+    # If state is needed:
+    base_dir: Path = Path.cwd()
+    follow_symlinks: bool = False
+
+    def expand_paths(self, inputs_str: str) -> list[str]:
+        ...
+]]></example>
+        </potential-enhancement>
+        <benefit>Clearer intent about state vs stateless utilities</benefit>
+      </opportunity>
+
+      <opportunity priority="medium">
+        <name>Apply Numbered Orchestration to CLI Functions</name>
+        <applies-pattern>brain/patterns/cli-testing-pattern.xml (orchestration-technique)</applies-pattern>
+        <current-state>
+          <observation>CLI code already well-structured but could benefit from explicit numbering</observation>
+        </current-state>
+        <enhancement>
+          <example><![CDATA[
+def huml(ctx, inputs, output, indent, timeout, ...):
+    """Convert YAML/JSON to human-friendly YAML.
+
+    Orchestration: validate → process → output
+    """
+    # 1. Build processing context
+    context = ProcessingContext(
+        unsafe_inputs=unsafe_inputs,
+        preserve_empty_lines=preserve_empty_lines,
+        preserve_comments=preserve_comments,
+    )
+
+    # 2. Determine input source and validate
+    if inputs:
+        # File-based processing
+        _process_file_inputs(inputs, output, context, indent, auto)
+    else:
+        # Stdin-based processing
+        _process_stdin_input(timeout, output, context, indent)
+]]></example>
+        </enhancement>
+        <benefits>
+          <benefit>Code review: Reference steps by number</benefit>
+          <benefit>Debugging: "Error in step N" is precise</benefit>
+          <benefit>Self-documenting orchestration flow</benefit>
+        </benefits>
+      </opportunity>
+    </code-refactoring-opportunities>
+
+    <prioritization-matrix>
+      <high-priority>
+        <item type="brain-pattern" impact="knowledge-capture">
+          <name>Add feature-based-test-organization.xml</name>
+          <effort>1-2 hours</effort>
+          <value>Captures yaml-for-humans' excellent test organization</value>
+        </item>
+        <item type="brain-pattern" impact="knowledge-capture">
+          <name>Update cli-testing-pattern.xml with format detection example</name>
+          <effort>30 minutes</effort>
+          <value>Adds yaml-for-humans as exemplar</value>
+        </item>
+        <item type="brain-pattern" impact="knowledge-capture">
+          <name>Add service-class-extraction-pattern.xml</name>
+          <effort>2-3 hours</effort>
+          <value>Documents alternative to pure function extraction</value>
+        </item>
+        <item type="test-refactoring" impact="30% code reduction">
+          <name>Parameterize format detection tests</name>
+          <effort>2-3 hours</effort>
+          <affected-files>test_cli.py</affected-files>
+          <expected-outcome>~500 lines reduced to ~200, better coverage</expected-outcome>
+        </item>
+        <item type="test-refactoring" impact="catch regressions">
+          <name>Add kustomization.yaml smoke test</name>
+          <effort>1 hour</effort>
+          <value>Validates CLAUDE.md documentation, tests real use case</value>
+        </item>
+        <item type="test-enhancement" impact="faster, more focused">
+          <name>Add unit tests for FilePathExpander, ContentProcessor</name>
+          <effort>3-4 hours</effort>
+          <expected-outcome>20+ new tests, ~20% faster test suite</expected-outcome>
+        </item>
+      </high-priority>
+
+      <medium-priority>
+        <item type="brain-pattern" impact="knowledge-capture">
+          <name>Add immutable-context-pattern.xml</name>
+          <effort>1-2 hours</effort>
+          <value>Documents frozen dataclass configuration pattern</value>
+        </item>
+        <item type="brain-pattern" impact="knowledge-enhancement">
+          <name>Enhance fixture-pattern.xml with setup/teardown</name>
+          <effort>30 minutes</effort>
+          <value>Adds class-level resource management example</value>
+        </item>
+        <item type="test-refactoring" impact="reduce duplication">
+          <name>Extract test fixtures for K8s manifests</name>
+          <effort>2 hours</effort>
+          <affected-files>test_integration.py, test_cli.py</affected-files>
+        </item>
+        <item type="test-refactoring" impact="clearer tests">
+          <name>Extract pure assertion helpers</name>
+          <effort>1-2 hours</effort>
+          <value>verify_key_ordering and similar utilities</value>
+        </item>
+        <item type="code-refactoring" impact="maintainability">
+          <name>Apply numbered orchestration to CLI</name>
+          <effort>1 hour</effort>
+          <value>Self-documenting orchestration</value>
+        </item>
+        <item type="code-refactoring" impact="complexity reduction">
+          <name>Refactor _huml_main if complex</name>
+          <effort>3-4 hours</effort>
+          <prerequisite>Run complexity analysis first</prerequisite>
+        </item>
+      </medium-priority>
+
+      <low-priority>
+        <item type="code-refactoring" impact="clarity">
+          <name>Convert utility classes to dataclasses</name>
+          <effort>1-2 hours</effort>
+          <value>Clearer state management intent</value>
+        </item>
+      </low-priority>
+    </prioritization-matrix>
+
+    <metrics>
+      <current-state>
+        <tests>133 test cases</tests>
+        <organization>Well-organized by feature</organization>
+        <coverage>High (based on assertion count and breadth)</coverage>
+        <patterns-applied>CLI testing pattern (intuitively, not explicitly)</patterns-applied>
+        <mock-usage>Low (22 patches - good integration focus)</mock-usage>
+        <parameterization>None (0 parameterized tests)</parameterization>
+      </current-state>
+
+      <projected-impact>
+        <brain-patterns>+4 new patterns, +2 enhanced patterns</brain-patterns>
+        <test-code-reduction>~30% via parameterization</test-code-reduction>
+        <test-speed>+20% faster via unit tests for helpers</test-speed>
+        <maintainability>Significantly improved via fixtures</maintainability>
+        <coverage>+15% via service class unit tests</coverage>
+        <regression-protection>Enhanced via real-world file tests</regression-protection>
+      </projected-impact>
+    </metrics>
+
+    <implementation-order>
+      <phase number="1" duration="1 week">
+        <name>Quick Wins - Brain Pattern Capture</name>
+        <tasks>
+          <task>Update cli-testing-pattern.xml with format detection example</task>
+          <task>Add feature-based-test-organization.xml</task>
+          <task>Add kustomization.yaml smoke test</task>
+        </tasks>
+        <rationale>Low effort, high value, captures knowledge immediately</rationale>
+      </phase>
+
+      <phase number="2" duration="1-2 weeks">
+        <name>Test Refactoring - Parameterization</name>
+        <tasks>
+          <task>Parameterize format detection tests</task>
+          <task>Extract K8s manifest fixtures</task>
+          <task>Add unit tests for FilePathExpander</task>
+        </tasks>
+        <rationale>High impact on test maintainability and speed</rationale>
+      </phase>
+
+      <phase number="3" duration="1-2 weeks">
+        <name>Advanced Pattern Capture</name>
+        <tasks>
+          <task>Add service-class-extraction-pattern.xml</task>
+          <task>Add immutable-context-pattern.xml</task>
+          <task>Add unit tests for ContentProcessor, FileProcessor</task>
+        </tasks>
+        <rationale>Documents advanced patterns, completes test coverage</rationale>
+      </phase>
+
+      <phase number="4" duration="as-needed">
+        <name>Code Refactoring (Optional)</name>
+        <tasks>
+          <task>Run complexity analysis on cli.py</task>
+          <task>Refactor _huml_main if needed</task>
+          <task>Apply numbered orchestration</task>
+        </tasks>
+        <rationale>Code already good, only refactor if complexity analysis shows issues</rationale>
+      </phase>
+    </implementation-order>
+
+    <conclusion>
+      <summary>
+        yaml-for-humans has excellent testing foundations and is already following many brain patterns intuitively.
+        The opportunities are about:
+        1. Codifying what works (for the brain)
+        2. Refining the edges (parameterization, fixtures, unit tests for helpers)
+      </summary>
+      <key-insight>
+        The codebase demonstrates successful application of CLI testing principles (helper extraction,
+        service classes, pure functions) even without explicit reference to brain patterns. This validates
+        the patterns and provides real-world examples for documentation.
+      </key-insight>
+      <recommendation>
+        Focus on Phase 1 and Phase 2 for maximum impact. Phases 3 and 4 can be done as time permits.
+        The test suite will benefit most from parameterization and fixture extraction.
+      </recommendation>
+    </conclusion>
+
+    <huml-main-complexity-analysis>
+      <summary>Analysis of _huml_main function in src/yaml_for_humans/cli.py</summary>
+
+      <metrics>
+        <total-lines>65</total-lines>
+        <function-start>Line 621</function-start>
+        <function-end>Line 685</function-end>
+        <parameters>8</parameters>
+        <complexity-estimate>Low (4-6)</complexity-estimate>
+      </metrics>
+
+      <current-structure>
+        <orchestration-flow>
+          <step number="1">Create processing context (lines 645-649)</step>
+          <step number="2">Process input from files or stdin (line 653)</step>
+          <step number="3">Handle empty documents (lines 656-663)</step>
+          <step number="4">Handle output generation (lines 666-674)</step>
+          <step number="5">Exception handling (lines 676-684)</step>
+        </orchestration-flow>
+
+        <helper-functions-used>
+          <helper>ProcessingContext (dataclass instantiation)</helper>
+          <helper>InputProcessor (class instantiation)</helper>
+          <helper>_process_input_source (extracted helper, 30 lines)</helper>
+          <helper>_handle_output_generation (extracted helper, 37 lines)</helper>
+        </helper-functions-used>
+      </current-structure>
+
+      <code-quality-assessment score="9/10">
+        <strengths>
+          <strength>Already well-refactored - follows CLI testing pattern perfectly</strength>
+          <strength>Thin orchestration layer (65 lines)</strength>
+          <strength>Helper extraction complete (_process_input_source, _handle_output_generation)</strength>
+          <strength>Clear separation of concerns</strength>
+          <strength>Immutable context pattern applied (ProcessingContext)</strength>
+          <strength>Service class architecture (InputProcessor)</strength>
+        </strengths>
+
+        <minor-improvements>
+          <improvement>Could add numbered comments to steps for documentation</improvement>
+          <improvement>Could extract empty document validation to helper</improvement>
+        </minor-improvements>
+      </code-quality-assessment>
+
+      <comparison-to-brain-patterns>
+        <pattern-match pattern="cli-testing-pattern">
+          <score>10/10</score>
+          <evidence>
+            <item>Thin CLI function (65 lines)</item>
+            <item>Business logic extracted to helpers</item>
+            <item>Service classes for complex operations (InputProcessor)</item>
+            <item>Pure functions for detection (_looks_like_json, etc.)</item>
+          </evidence>
+        </pattern-match>
+
+        <pattern-match pattern="immutable-context-pattern">
+          <score>10/10</score>
+          <evidence>
+            <item>ProcessingContext is frozen dataclass</item>
+            <item>Context flows through all processing layers</item>
+            <item>No mutation of configuration</item>
+          </evidence>
+        </pattern-match>
+
+        <pattern-match pattern="numbered-orchestration">
+          <score>6/10</score>
+          <evidence>
+            <item>Steps are logical but not numbered</item>
+            <item>Could benefit from explicit step comments</item>
+          </evidence>
+          <recommendation>Add numbered step comments for clarity</recommendation>
+        </pattern-match>
+      </comparison-to-brain-patterns>
+
+      <recommended-enhancement priority="low">
+        <name>Add Numbered Orchestration Comments</name>
+        <effort>5 minutes</effort>
+        <benefit>Self-documenting, easier code review</benefit>
+        <example><![CDATA[
+def _huml_main(
+    indent: int = DEFAULT_INDENT,
+    timeout: int = DEFAULT_TIMEOUT_MS,
+    inputs: str | None = None,
+    output: str | None = None,
+    auto: bool = False,
+    unsafe_inputs: bool = False,
+    preserve_empty_lines: bool = DEFAULT_PRESERVE_EMPTY_LINES,
+    preserve_comments: bool = DEFAULT_PRESERVE_COMMENTS,
+) -> None:
+    """
+    Convert YAML or JSON input to human-friendly YAML.
+
+    Orchestration: context → process → output
+    """
+    _check_cli_dependencies()
+
+    try:
+        # 1. Create immutable processing context
+        context = ProcessingContext(
+            unsafe_inputs=unsafe_inputs,
+            preserve_empty_lines=preserve_empty_lines,
+            preserve_comments=preserve_comments,
+        )
+        processor = InputProcessor(context)
+
+        # 2. Process input from files or stdin
+        documents, document_sources = _process_input_source(inputs, processor, timeout)
+
+        # 3. Validate we have documents to process
+        if len(documents) == 0:
+            if inputs:
+                return  # No valid files, not an error
+            else:
+                print("Error: No documents to process", file=sys.stderr)
+                sys.exit(1)
+
+        # 4. Generate output (file/directory or stdout)
+        _handle_output_generation(
+            documents,
+            document_sources,
+            output,
+            auto,
+            indent,
+            preserve_empty_lines,
+            preserve_comments,
+        )
+
+    except json.JSONDecodeError as e:
+        print(f"Error: Invalid JSON input - {e}", file=sys.stderr)
+        sys.exit(1)
+    except yaml.YAMLError as e:
+        print(f"Error: Invalid YAML input - {e}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+]]></example>
+      </recommended-enhancement>
+
+      <architecture-highlights>
+        <highlight>
+          <name>Excellent Helper Extraction</name>
+          <description>_process_input_source and _handle_output_generation are well-named, focused helpers</description>
+          <benefit>Each helper is testable in isolation</benefit>
+        </highlight>
+
+        <highlight>
+          <name>Service Class Usage</name>
+          <description>InputProcessor encapsulates complex processing logic</description>
+          <classes>
+            <class>InputProcessor - processes files and stdin</class>
+            <class>FilePathExpander - expands globs and directories</class>
+            <class>ContentProcessor - handles JSON/YAML content</class>
+            <class>OutputWriter - handles file/directory output</class>
+          </classes>
+          <benefit>Clear separation of responsibilities</benefit>
+        </highlight>
+
+        <highlight>
+          <name>Pure Format Detection Functions</name>
+          <description>Format detection extracted to pure functions</description>
+          <functions>
+            <function>_looks_like_json</function>
+            <function>_is_multi_document_yaml</function>
+            <function>_is_json_lines</function>
+            <function>_has_items_array</function>
+            <function>_generate_k8s_filename</function>
+          </functions>
+          <benefit>100% testable without CliRunner</benefit>
+        </highlight>
+      </architecture-highlights>
+
+      <conclusion>
+        _huml_main is already an exemplar of the cli-testing-pattern. It demonstrates:
+        - Thin orchestration (65 lines)
+        - Complete helper extraction
+        - Service class architecture
+        - Immutable context pattern
+        - Pure function extraction for detection logic
+
+        No significant refactoring needed. Minor enhancement of numbered step comments would
+        make it even more self-documenting, but current state is production-quality.
+      </conclusion>
+    </huml-main-complexity-analysis>
+  </session>
+</refactor-notes>

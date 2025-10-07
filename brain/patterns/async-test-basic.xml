@@ -1,0 +1,44 @@
+<pattern-file>
+  <meta>
+    <pattern-id>async-test-basic</pattern-id>
+    <source>doc/claude-test-brain.xml</source>
+    <version>1.3</version>
+  </meta>
+  <pattern>
+      <name>Basic Async Test</name>
+      <when>Testing any async function or coroutine</when>
+      <complete-example>
+        <file>tests/test_example.py</file>
+        <code>
+import pytest
+from src.ecreshore.services.async_transfer_service import AsyncTransferService
+from src.ecreshore.services.transfer_service import TransferRequest, TransferResult
+
+@pytest.mark.asyncio
+async def test_transfer_image_success():
+    """Test async transfer image operation."""
+    service = AsyncTransferService()
+    request = TransferRequest(
+        source_image="nginx",
+        source_tag="latest",
+        target_repository="my-nginx",
+        target_tag="v1.0"
+    )
+
+    # Call async method with await
+    result = await service.transfer_image(request)
+
+    # Standard assertions
+    assert result is not None
+    assert hasattr(result, 'success')
+</code>
+      </complete-example>
+      <critical-rules>
+        <rule>MUST use @pytest.mark.asyncio decorator</rule>
+        <rule>MUST use async def for test function</rule>
+        <rule>MUST await all async function calls</rule>
+        <rule>Missing decorator causes: RuntimeError: no running event loop</rule>
+        <rule>Missing await causes: test gets coroutine object, not result</rule>
+      </critical-rules>
+    </pattern>
+</pattern-file>

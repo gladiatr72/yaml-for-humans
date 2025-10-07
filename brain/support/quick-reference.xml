@@ -1,0 +1,130 @@
+<support-file>
+  <name>Quick Reference</name>
+  <quick-reference>
+    <scenario>
+      <query>How do I test an async function?</query>
+      <pattern-id>async-test-basic</pattern-id>
+      <quick-answer>Use @pytest.mark.asyncio and await the function call</quick-answer>
+    </scenario>
+
+    <scenario>
+      <query>How do I mock an async method?</query>
+      <pattern-id>async-mock-pattern</pattern-id>
+      <quick-answer>Use AsyncMock, not Mock: mock.method = AsyncMock(return_value=x)</quick-answer>
+    </scenario>
+
+    <scenario>
+      <query>How do I test concurrency limits?</query>
+      <pattern-id>concurrency-test-pattern</pattern-id>
+      <quick-answer>Track concurrent calls with closure vars, use await asyncio.sleep(0.01)</quick-answer>
+    </scenario>
+
+    <scenario>
+      <query>How do I test streaming/async generator?</query>
+      <pattern-id>async-generator-pattern</pattern-id>
+      <quick-answer>Define async def with yield, assign to mock attribute</quick-answer>
+    </scenario>
+
+    <scenario>
+      <query>Should I mock this service?</query>
+      <decision-tree-id>mock-vs-fake-decision</decision-tree-id>
+      <quick-answer>External API: Mock. Your service: Fake. Simple function: No mock</quick-answer>
+    </scenario>
+
+    <scenario>
+      <query>My test hangs forever</query>
+      <debugging-id>test-hangs-forever</debugging-id>
+      <quick-answer>Missing await or missing @pytest.mark.asyncio decorator</quick-answer>
+    </scenario>
+
+    <scenario>
+      <query>RuntimeError: no running event loop</query>
+      <debugging-id>no-event-loop</debugging-id>
+      <quick-answer>Add @pytest.mark.asyncio decorator</quick-answer>
+    </scenario>
+
+    <scenario>
+      <query>TypeError: can't await Mock</query>
+      <debugging-id>cannot-await-mock</debugging-id>
+      <quick-answer>Use AsyncMock instead of Mock</quick-answer>
+    </scenario>
+
+    <scenario>
+      <query>How do I create an async fixture?</query>
+      <pattern-id>async-fixture-pattern</pattern-id>
+      <quick-answer>Use @pytest_asyncio.fixture (not @pytest.fixture) for async fixtures</quick-answer>
+    </scenario>
+
+    <scenario>
+      <query>Coroutine was never awaited in fixture</query>
+      <debugging-id>async-fixture-not-awaited</debugging-id>
+      <quick-answer>Use @pytest_asyncio.fixture instead of @pytest.fixture</quick-answer>
+    </scenario>
+
+    <scenario>
+      <query>How do I eliminate repeated test setup?</query>
+      <pattern-id>factory-fixture-pattern</pattern-id>
+      <quick-answer>Use factory fixtures that return a callable function</quick-answer>
+    </scenario>
+
+    <scenario>
+      <query>How do I create objects with different parameters?</query>
+      <pattern-id>factory-fixture-pattern</pattern-id>
+      <quick-answer>Factory fixtures with defaults and **overrides support</quick-answer>
+    </scenario>
+
+    <scenario>
+      <query>Should I implement this feature or check what exists?</query>
+      <pattern-id>validate-before-implement-pattern</pattern-id>
+      <quick-answer>ALWAYS validate first: Read files, Grep patterns, test behavior, then estimate</quick-answer>
+    </scenario>
+
+    <scenario>
+      <query>How do I test error reporting and aggregation?</query>
+      <pattern-id>intentional-failure-test-pattern</pattern-id>
+      <quick-answer>Create test configs with intentional failures to trigger error categories</quick-answer>
+    </scenario>
+
+    <scenario>
+      <query>My batch output is polluted with verbose logs</query>
+      <pattern-id>log-level-management-pattern</pattern-id>
+      <quick-answer>Use logger.debug() for internal diagnostics, logger.error() only for user-facing failures</quick-answer>
+    </scenario>
+
+    <scenario>
+      <query>Stack traces appearing in CLI output</query>
+      <pattern-id>log-level-management-pattern</pattern-id>
+      <quick-answer>Change logger.error(exc_info=True) to logger.debug(exc_info=True)</quick-answer>
+    </scenario>
+
+    <scenario>
+      <query>Tests break on refactoring but behavior unchanged</query>
+      <pattern-id>test-refactoring-pattern</pattern-id>
+      <quick-answer>Replace mocks with integration tests, extract pure functions</quick-answer>
+    </scenario>
+
+    <scenario>
+      <query>How do I make business logic testable?</query>
+      <pattern-id>pure-function-extraction-pattern</pattern-id>
+      <quick-answer>Extract as pure function (no I/O, no async, no side effects)</quick-answer>
+    </scenario>
+
+    <scenario>
+      <query>How do I test multiple similar cases?</query>
+      <pattern-id>parameterized-test-pattern</pattern-id>
+      <quick-answer>Use @pytest.mark.parametrize with list of test cases</quick-answer>
+    </scenario>
+
+    <scenario>
+      <query>How do I know if my tests are well-designed?</query>
+      <section-id>test-smell-detection</section-id>
+      <quick-answer>Check for brittle coupling, missing edge cases, implicit dependencies</quick-answer>
+    </scenario>
+
+    <scenario>
+      <query>20+ lines of mock setup per test</query>
+      <section-id>test-smell-detection</section-id>
+      <quick-answer>Create Fake service or use integration tests instead</quick-answer>
+    </scenario>
+  </quick-reference>
+</support-file>

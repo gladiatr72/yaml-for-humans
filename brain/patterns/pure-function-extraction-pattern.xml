@@ -1,0 +1,172 @@
+<pattern-file>
+  <meta>
+    <pattern-id>pure-function-extraction-pattern</pattern-id>
+    <source>doc/claude-test-brain.xml</source>
+    <version>1.3</version>
+  </meta>
+  <pattern>
+      <name>Extracting Pure Functions from Async/IO Code for Testability</name>
+      <when>Complex business logic buried in async functions or I/O-heavy code</when>
+      <why>Pure functions: Fast to test (no async), no mocks needed, no I/O, easy to reason about</why>
+      <philosophy>Separate business logic from effects - pure core, imperative shell</philosophy>
+      <complete-example>
+        <file>src/ecreshore/services/image_presence_checker.py</file>
+        <code>
+# BEFORE: Business logic buried in async comparison function
+async def compare_source_target_digests(
+    self,
+    source_digest: Optional[str],
+    target_digest: Optional[str]
+) -&gt; bool:
+    """Compare source and target digests for equality.
+
+    Problem: Digest normalization logic (removing sha256: prefix) is buried
+    in this async function, making edge case testing require async setup.
+    """
+    if not source_digest or not target_digest:
+        return False
+
+    # Business logic: normalize digests (remove sha256: prefix)
+    source_normalized = source_digest[7:] if source_digest.startswith("sha256:") else source_digest
+    target_normalized = target_digest[7:] if target_digest.startswith("sha256:") else target_digest
+
+    return source_normalized == target_normalized
+
+
+# AFTER: Extract pure function for business logic
+
+def normalize_digest(digest: Optional[str]) -&gt; str:
+    """Normalize digest by removing sha256: prefix if present.
+
+    PURE FUNCTION: No I/O, no async, no side effects.
+
+    Args:
+        digest: Digest string, may have sha256: prefix or be None
+
+    Returns:
+        Normalized digest without prefix, or empty string if None
+
+    Examples:
+        &gt;&gt;&gt; normalize_digest("sha256:abc123")
+        'abc123'
+        &gt;&gt;&gt; normalize_digest("abc123")
+        'abc123'
+        &gt;&gt;&gt; normalize_digest(None)
+        ''
+    """
+    if not digest:
+        return ""
+
+    if digest.startswith("sha256:"):
+        return digest[7:]
+
+    return digest
+
+
+async def compare_source_target_digests(
+    self,
+    source_digest: Optional[str],
+    target_digest: Optional[str]
+) -&gt; bool:
+    """Compare source and target digests for equality.
+
+    Now uses pure normalize_digest() function - testable separately.
+    """
+    if not source_digest or not target_digest:
+        return False
+
+    # Use pure function - simple, clear, testable
+    source_normalized = normalize_digest(source_digest)
+    target_normalized = normalize_digest(target_digest)
+
+    return source_normalized == target_normalized
+
+
+# TESTING: Pure function is trivially testable
+
+class TestPureFunctions:
+    """Test pure business logic with zero mocks, zero async."""
+
+    def test_normalize_digest_with_prefix(self):
+        """Test normal case with sha256: prefix."""
+        result = normalize_digest("sha256:abc123def456")
+        assert result == "abc123def456"
+
+    def test_normalize_digest_without_prefix(self):
+        """Test digest already normalized."""
+        result = normalize_digest("abc123def456")
+        assert result == "abc123def456"
+
+    def test_normalize_digest_with_none(self):
+        """Test None input returns empty string."""
+        result = normalize_digest(None)
+        assert result == ""
+
+    def test_normalize_digest_with_empty_string(self):
+        """Test empty string returns empty string."""
+        result = normalize_digest("")
+        assert result == ""
+
+    def test_normalize_digest_with_full_sha256(self):
+        """Test full SHA256 hash normalization."""
+        full_hash = "sha256:3b723f60dccf097d7993b76db84d8ad16cd554b94ee5d24178ccb743a4508c5a"
+        result = normalize_digest(full_hash)
+        assert result == "3b723f60dccf097d7993b76db84d8ad16cd554b94ee5d24178ccb743a4508c5a"
+        assert len(result) == 64  # Verify it's a valid SHA256 hash
+
+    def test_normalize_digest_idempotent(self):
+        """Test that normalizing twice produces same result."""
+        digest = "sha256:abc123"
+        once = normalize_digest(digest)
+        twice = normalize_digest(once)
+        assert once == twice
+
+# RESULTS:
+# - 6 comprehensive edge case tests
+# - &lt;0.01s execution time (no async, no I/O)
+# - Zero mocks, zero fixtures needed
+# - 100% coverage of normalization logic
+# - Easy to understand and maintain
+</code>
+      </complete-example>
+      <identification-checklist>
+        <item>String manipulation buried in async function? → Extract</item>
+        <item>Calculation logic mixed with database queries? → Extract</item>
+        <item>Validation logic in API call function? → Extract</item>
+        <item>Formatting logic in file I/O function? → Extract</item>
+        <item>Business rules in async service method? → Extract</item>
+        <item>Data transformation before/after I/O? → Extract</item>
+      </identification-checklist>
+      <extraction-process>
+        <step>1. Identify pure business logic (no I/O, no side effects)</step>
+        <step>2. Extract as module-level or class method</step>
+        <step>3. Make it accept only data (strings, numbers, dataclasses)</step>
+        <step>4. Return only data (no futures, no coroutines)</step>
+        <step>5. Add comprehensive docstring with examples</step>
+        <step>6. Write exhaustive edge case tests (trivial now!)</step>
+        <step>7. Update caller to use pure function</step>
+      </extraction-process>
+      <critical-rules>
+        <rule>Pure function = same input always produces same output</rule>
+        <rule>No I/O (no files, network, database)</rule>
+        <rule>No async (regular def, not async def)</rule>
+        <rule>No side effects (no mutation of shared state)</rule>
+        <rule>No dependencies on external state</rule>
+        <rule>Test with simple assertions, no mocks needed</rule>
+      </critical-rules>
+      <benefits>
+        <benefit>Tests execute in microseconds (no async overhead)</benefit>
+        <benefit>Zero mocks or fixtures needed</benefit>
+        <benefit>Comprehensive edge case coverage becomes trivial</benefit>
+        <benefit>Easy to reason about and debug</benefit>
+        <benefit>Can be tested in isolation from I/O complexity</benefit>
+        <benefit>Self-documenting with clear input/output contracts</benefit>
+      </benefits>
+      <what-not-to-extract>
+        <do-not-extract>Logic that requires I/O to function</do-not-extract>
+        <do-not-extract>Code that coordinates multiple async operations</do-not-extract>
+        <do-not-extract>Very simple operations (single line)</do-not-extract>
+        <do-not-extract>Logic tightly coupled to specific I/O operations</do-not-extract>
+      </what-not-to-extract>
+    </pattern>
+</pattern-file>

@@ -1,0 +1,113 @@
+<pattern-file>
+  <meta>
+    <pattern-id>fake-service-pattern</pattern-id>
+    <source>doc/claude-test-brain.xml</source>
+    <version>1.3</version>
+  </meta>
+  <pattern>
+      <name>Fake Service Implementation</name>
+      <when>Replacing your own service classes in tests (NOT external APIs)</when>
+      <why>Better than mocks: reusable, self-documenting, refactoring-safe, less boilerplate</why>
+      <complete-example>
+        <file>tests/fixtures/fake_services.py</file>
+        <code>
+"""Fake service implementations for testing."""
+
+from typing import List, Optional
+from src.ecreshore.services.transfer_service import TransferRequest, TransferResult
+
+class FakeAsyncTransferService:
+    """Fake implementation of AsyncTransferService for testing.
+
+    Use this instead of Mock(spec=AsyncTransferService) for more realistic
+    and maintainable tests.
+    """
+
+    def __init__(self, responses: Optional[List[TransferResult]] = None):
+        """Initialize fake service.
+
+        Args:
+            responses: Pre-configured responses to return. If None, returns success.
+        """
+        self.responses = responses or []
+        self.calls: List[TransferRequest] = []
+        self.transfer_image_call_count = 0
+
+    async def transfer_image(self, request: TransferRequest) -&gt; TransferResult:
+        """Fake transfer_image implementation."""
+        self.calls.append(request)
+        self.transfer_image_call_count += 1
+
+        # Return pre-configured response if available
+        if self.responses:
+            return self.responses.pop(0)
+
+        # Default: return success
+        return TransferResult(
+            request=request,
+            success=True,
+            source_digest="sha256:fake123",
+            target_digest="sha256:fake123"
+        )
+
+    async def transfer_images_concurrent(
+        self,
+        requests: List[TransferRequest],
+        max_concurrent: int = 3
+    ) -&gt; List[TransferResult]:
+        """Fake concurrent transfer implementation."""
+        results = []
+        for request in requests:
+            result = await self.transfer_image(request)
+            results.append(result)
+        return results
+
+# Usage in tests
+@pytest.mark.asyncio
+async def test_batch_processor_with_fake_service():
+    """Test batch processor using fake transfer service."""
+    # Create fake with pre-configured responses
+    fake_service = FakeAsyncTransferService(responses=[
+        TransferResult(request=Mock(), success=True),
+        TransferResult(request=Mock(), success=False, error_message="Network error"),
+        TransferResult(request=Mock(), success=True)
+    ])
+
+    processor = BatchProcessor(fake_service)
+
+    # Create batch request
+    transfers = [
+        BatchTransferRequest(source="nginx", target="my-nginx"),
+        BatchTransferRequest(source="redis", target="my-redis"),
+        BatchTransferRequest(source="postgres", target="my-postgres")
+    ]
+    batch = BatchRequest(transfers=transfers)
+
+    # Execute
+    result = await processor.process_batch(batch)
+
+    # Verify using fake's tracking
+    assert len(fake_service.calls) == 3
+    assert fake_service.transfer_image_call_count == 3
+    assert result.success_count == 2
+    assert result.failure_count == 1
+</code>
+      </complete-example>
+      <benefits>
+        <benefit>Reusable across many tests</benefit>
+        <benefit>Self-documenting - implements real interface</benefit>
+        <benefit>Refactoring-safe - tests don't break on internal changes</benefit>
+        <benefit>Less boilerplate than mock setup</benefit>
+        <benefit>Can add realistic behavior (state tracking, validation)</benefit>
+        <benefit>Type-safe - IDE autocomplete works</benefit>
+      </benefits>
+      <when-to-create-fake>
+        <create>Your own service classes (TransferService, BatchProcessor)</create>
+        <create>When same mock setup repeated across 3+ tests</create>
+        <create>When mock setup exceeds 10 lines</create>
+        <do-not-create>External APIs (use Mock/AsyncMock)</do-not-create>
+        <do-not-create>Simple functions (call directly)</do-not-create>
+        <do-not-create>Dataclasses (create real instances)</do-not-create>
+      </when-to-create-fake>
+    </pattern>
+</pattern-file>

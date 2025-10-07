@@ -1,0 +1,587 @@
+<pattern-file>
+  <meta>
+    <pattern-id>cli-testing-pattern</pattern-id>
+    <source>Refactoring sessions 2025-10-03</source>
+    <version>1.0</version>
+  </meta>
+  <pattern>
+      <name>Testing CLI Commands Without Framework Complexity</name>
+      <when>Testing Click/Typer CLI commands with business logic</when>
+      <why>Avoid brittle framework integration tests while achieving excellent business logic coverage</why>
+      <philosophy>Test business logic, not framework integration. Extract testable helpers, leave Click shell thin.</philosophy>
+      <complete-example>
+        <file>src/ecreshore/cli/repository/purge.py refactoring (2025-10-03)</file>
+        <code>
+# BEFORE: Monolithic Click command (132 lines, untestable without CliRunner)
+
+@click.command()
+@click.argument("repository_name", required=False)
+@click.option("-A", "--all", is_flag=True)
+@click.option("--dry-run", is_flag=True)
+@click.pass_context
+def purge(ctx, repository_name, all, dry_run):
+    """Purge images from ECR repositories."""
+    verbose = ctx.obj.get("verbose", False)
+
+    # Validation mixed with business logic
+    if not repository_name and not all:
+        progress_reporter = ProgressReporter(console=console, verbose=verbose)
+        progress_reporter.error("Must specify either a repository name or -A/--all")
+        sys.exit(1)
+
+    if repository_name and all:
+        progress_reporter = ProgressReporter(console=console, verbose=verbose)
+        progress_reporter.error("Cannot specify both repository name and -A/--all")
+        sys.exit(1)
+
+    # Business logic buried in CLI command
+    try:
+        purge_service = ECRPurgeService(region_name=region, registry_id=registry_id)
+
+        if dry_run:
+            result = purge_service.purge(...)
+            _display_purge_preview(result, progress_reporter, keep_latest)
+        else:
+            # Duplicate service call for preview
+            result_preview = purge_service.purge(..., dry_run=True)
+            _display_purge_summary(result_preview, ...)
+
+            if not click.confirm("Do you want to proceed?"):
+                return
+
+            result = purge_service.purge(..., dry_run=False)
+            _display_purge_results(result, ...)
+    except Exception as e:
+        progress_reporter.error(str(e))
+        sys.exit(1)
+
+# PROBLEM: Cannot test validation, execution flow, or business logic without CliRunner
+# PROBLEM: 132 lines of mixed concerns in Click command
+
+
+# AFTER: Extracted helpers with thin Click shell (48 lines orchestration)
+
+@dataclass
+class PurgeOptions:
+    """Validated purge operation parameters."""
+    repository_name: Optional[str]
+    all_repositories: bool
+    region: Optional[str]
+    registry_id: Optional[str]
+    name_filter: Optional[str]
+    exclude_repositories: set[str]
+    keep_latest: bool
+    dry_run: bool
+
+def _validate_purge_options(
+    repository_name: Optional[str],
+    all_repositories: bool,
+    name_filter: Optional[str],
+    exclude: tuple[str, ...],
+    region: Optional[str],
+    registry_id: Optional[str],
+    keep_latest: bool,
+    dry_run: bool,
+) -> PurgeOptions:
+    """Validate purge options and return structured config.
+
+    PURE FUNCTION: No I/O, easily testable.
+
+    Raises:
+        ValueError: If validation fails
+    """
+    if not repository_name and not all_repositories:
+        raise ValueError("Must specify either a repository name or -A/--all")
+
+    if repository_name and all_repositories:
+        raise ValueError("Cannot specify both repository name and -A/--all")
+
+    if repository_name and (name_filter or exclude):
+        raise ValueError("--filter and --exclude can only be used with -A/--all")
+
+    return PurgeOptions(
+        repository_name=repository_name,
+        all_repositories=all_repositories,
+        region=region,
+        registry_id=registry_id,
+        name_filter=name_filter,
+        exclude_repositories=set(exclude) if exclude else set(),
+        keep_latest=keep_latest,
+        dry_run=dry_run,
+    )
+
+def _execute_dry_run(service, options: PurgeOptions, reporter) -> None:
+    """Execute dry run and display preview.
+
+    SERVICE LAYER: Testable with mocked service.
+    """
+    reporter.info("Getting purge preview...")
+    result = service.purge(
+        repository_name=options.repository_name,
+        all_repositories=options.all_repositories,
+        keep_latest=options.keep_latest,
+        dry_run=True,
+        name_filter=options.name_filter,
+        exclude_repositories=options.exclude_repositories,
+    )
+
+    if result.repositories_processed == 0:
+        reporter.info("No repositories found to purge")
+        return
+
+    _display_purge_preview(result, reporter, options.keep_latest)
+
+def _execute_with_confirmation(service, options: PurgeOptions, reporter) -> None:
+    """Execute purge with user confirmation.
+
+    SERVICE LAYER: Testable with mocked service and confirmation.
+    """
+    preview = service.purge(..., dry_run=True)
+
+    if preview.repositories_processed == 0:
+        reporter.info("No repositories found to purge")
+        return
+
+    _display_purge_summary(preview, reporter, options.keep_latest)
+
+    if not click.confirm("Do you want to proceed with this destructive operation?"):
+        reporter.info("Purge cancelled by user")
+        return
+
+    result = service.purge(..., dry_run=False)
+    _display_purge_results(result, reporter, reporter.verbose)
+
+@click.command()
+@click.argument("repository_name", required=False)
+@click.option("-A", "--all", is_flag=True)
+@click.option("--dry-run", is_flag=True)
+@click.pass_context
+def purge(ctx, repository_name, all, region, registry_id, filter, exclude, keep_latest, dry_run):
+    """Purge images from ECR repositories.
+
+    THIN SHELL: Only orchestration, no business logic.
+    """
+    verbose = ctx.obj.get("verbose", False)
+    progress_reporter = ProgressReporter(console=console, verbose=verbose)
+
+    # 1. Validate (pure function - testable)
+    try:
+        options = _validate_purge_options(
+            repository_name=repository_name,
+            all_repositories=all,
+            name_filter=filter,
+            exclude=exclude,
+            region=region,
+            registry_id=registry_id,
+            keep_latest=keep_latest,
+            dry_run=dry_run,
+        )
+    except ValueError as e:
+        progress_reporter.error(str(e))
+        sys.exit(1)
+
+    # 2. Execute (service layer - testable)
+    try:
+        purge_service = ECRPurgeService(region_name=options.region, registry_id=options.registry_id)
+
+        if options.dry_run:
+            _execute_dry_run(purge_service, options, progress_reporter)
+        else:
+            _execute_with_confirmation(purge_service, options, progress_reporter)
+
+    except ECRAuthenticationError as e:
+        progress_reporter.error(str(e))
+        sys.exit(1)
+
+
+# TESTING: Test helpers, NOT Click command
+
+class TestValidatePurgeOptions:
+    """Pure function tests - no Click, no CliRunner."""
+
+    def test_valid_single_repository(self):
+        options = _validate_purge_options(
+            repository_name='my-repo',
+            all_repositories=False,
+            name_filter=None,
+            exclude=(),
+            region='us-west-2',
+            registry_id='123456789012',
+            keep_latest=True,
+            dry_run=True,
+        )
+
+        assert options.repository_name == 'my-repo'
+        assert options.keep_latest is True
+
+    def test_error_neither_repo_nor_all(self):
+        with pytest.raises(ValueError, match="Must specify either a repository name or -A/--all"):
+            _validate_purge_options(
+                repository_name=None,
+                all_repositories=False,
+                # ...
+            )
+
+class TestExecuteDryRun:
+    """Service layer tests - mock service, not Click."""
+
+    @patch('src.ecreshore.cli.repository.purge._display_purge_preview')
+    def test_successful_dry_run(self, mock_display, mock_purge_service, mock_reporter):
+        options = PurgeOptions(...)
+
+        _execute_dry_run(mock_purge_service, options, mock_reporter)
+
+        mock_purge_service.purge.assert_called_once()
+        mock_display.assert_called_once()
+
+# RESULTS:
+# - 18 tests, 100% business logic coverage
+# - 0% Click framework coverage (intentional)
+# - No CliRunner complexity
+# - Fast, focused, maintainable tests
+        </code>
+      </complete-example>
+      <extraction-strategy>
+        <step>1. Identify validation logic → Extract as pure function returning dataclass</step>
+        <step>2. Identify execution flows → Extract as service-layer helpers</step>
+        <step>3. Leave Click command as thin orchestration (validate → execute)</step>
+        <step>4. Test extracted functions with standard pytest, ignore Click decorator</step>
+      </extraction-strategy>
+      <critical-rules>
+        <rule>NEVER test Click decorators with CliRunner for business logic</rule>
+        <rule>Extract validation as pure function (no I/O, raises ValueError)</rule>
+        <rule>Extract execution as service helpers (inject dependencies)</rule>
+        <rule>Click command should be &lt;50 lines of orchestration only</rule>
+        <rule>Test helpers with mocks, not framework integration</rule>
+        <rule>Validation returns dataclass, not tuple/dict</rule>
+      </critical-rules>
+      <benefits>
+        <benefit>100% business logic coverage without CliRunner complexity</benefit>
+        <benefit>Tests run faster (no framework overhead)</benefit>
+        <benefit>Tests are clearer (test one concern at a time)</benefit>
+        <benefit>Easier to debug (isolated functions vs framework integration)</benefit>
+        <benefit>Click command becomes documentation (pure orchestration)</benefit>
+      </benefits>
+      <what-to-extract>
+        <extract>Validation logic → Pure function with ValueError</extract>
+        <extract>Service calls → Service-layer helpers</extract>
+        <extract>Conditional flows (dry-run vs real) → Separate helpers</extract>
+        <extract>User confirmation logic → Helper with injected confirm function</extract>
+      </what-to-extract>
+      <what-not-to-extract>
+        <do-not-extract>Click decorators and options</do-not-extract>
+        <do-not-extract>ctx.obj access (keep in main command)</do-not-extract>
+        <do-not-extract>sys.exit() calls (error handling stays in command)</do-not-extract>
+      </what-not-to-extract>
+      <metrics>
+        <metric>Target: &lt;50 lines in Click command (orchestration only)</metric>
+        <metric>Target: 100% coverage of extracted helpers</metric>
+        <metric>Target: 0% coverage of Click decorator (intentional)</metric>
+        <metric>Complexity reduction: ~70% (18→5 typical)</metric>
+      </metrics>
+      <orchestration-technique name="numbered-steps">
+        <name>Numbered Orchestration Steps</name>
+        <when>Click command refactored to thin orchestration shell</when>
+        <why>Makes flow explicit, self-documenting, easier code review</why>
+        <complete-example>
+          <file>src/ecreshore/cli/core/batch.py refactoring (2025-10-06)</file>
+          <code>
+# BEFORE: Unnumbered orchestration (harder to follow)
+
+def batch(ctx, config_file, dry_run, output, ...):
+    """Execute batch transfers."""
+    verbose = ctx.obj.get("verbose", False)
+
+    # Validation
+    try:
+        _validate_batch_flags(...)
+    except ValueError as e:
+        console.print(f"Error: {e}")
+        sys.exit(1)
+
+    # UI mode determination
+    use_rich_ui = _determine_ui_mode(...)
+
+    # Config creation
+    config = BatchExecutionConfig(...)
+
+    # Environment setup
+    if config.skip_debug_enabled:
+        _setup_skip_debug_environment(config)
+
+    # Output configuration
+    _configure_output_mode(...)
+
+    # Progress reporter
+    progress_reporter = _create_progress_reporter(...)
+
+    # Execution
+    result = asyncio.run(run_batch())
+
+
+# AFTER: Numbered orchestration steps (self-documenting)
+
+def batch(ctx, config_file, dry_run, output, ...):
+    """Execute batch transfers from YAML configuration file.
+
+    Orchestration flow: validate → configure → execute
+    """
+    verbose = ctx.obj.get("verbose", False)
+
+    # 1. Validate flags (pure function - testable)
+    try:
+        _validate_batch_flags(
+            simple=simple,
+            rich=rich,
+            output=output,
+            debug_skip_decisions=debug_skip_decisions,
+            skip_audit_trail=skip_audit_trail,
+            explain_skips=explain_skips,
+        )
+    except ValueError as e:
+        console.print(f"[bold red]Error:[/bold red] {e}")
+        sys.exit(1)
+
+    # 2. Determine UI mode
+    use_rich_ui = _determine_ui_mode(simple, rich, output, verbose)
+
+    # 3. Build configuration object
+    config = BatchExecutionConfig(
+        config_file=config_file,
+        dry_run=dry_run,
+        output=output,
+        use_rich_ui=use_rich_ui,
+        force=force,
+        verbose=verbose,
+        debug_skip_decisions=debug_skip_decisions,
+        skip_audit_trail=skip_audit_trail,
+        explain_skips=explain_skips,
+    )
+
+    # 4. Configure skip debug logging and environment
+    if config.skip_debug_enabled:
+        _configure_skip_debug_logging(...)
+        _setup_skip_debug_environment(config)
+
+    # 5. Configure output mode
+    _configure_output_mode(output, verbose)
+
+    # 6. Create progress reporter for real-time skip tracking
+    progress_reporter = None
+    if output == "console":
+        progress_reporter = BatchProgressReporter(...)
+
+    # 7. Execute batch with connected progress reporter
+    batch_processor = BatchProcessor()
+    result_data = asyncio.run(batch_processor.execute_batch_enhanced(...))
+
+
+# BENEFITS:
+# - Easy code review: "Can you explain step 4?" instead of line numbers
+# - Natural breaking points: Each step is candidate for helper extraction
+# - Self-documenting: Numbers show sequence and importance
+# - Easier debugging: "Error in step 5" is precise location
+# - Clear flow: Reader can see orchestration at a glance
+          </code>
+        </complete-example>
+        <guidelines>
+          <guideline>Number major orchestration steps (1, 2, 3, ...)</guideline>
+          <guideline>Each step should be logically cohesive</guideline>
+          <guideline>Include brief description after number</guideline>
+          <guideline>Add parenthetical notes for testability: "(pure function - testable)"</guideline>
+          <guideline>Typical CLI has 5-10 numbered steps</guideline>
+          <guideline>Steps should follow logical flow: validate → configure → execute</guideline>
+        </guidelines>
+        <step-categories>
+          <category>
+            <name>Validation</name>
+            <typical-step>1</typical-step>
+            <description>Validate inputs, check flag combinations</description>
+            <note>(pure function - testable)</note>
+          </category>
+          <category>
+            <name>Configuration</name>
+            <typical-step>2-4</typical-step>
+            <description>Build config objects, determine modes, setup environment</description>
+            <note>(testable with mocks)</note>
+          </category>
+          <category>
+            <name>Resource Creation</name>
+            <typical-step>5-6</typical-step>
+            <description>Create service instances, reporters, connections</description>
+            <note>(orchestration)</note>
+          </category>
+          <category>
+            <name>Execution</name>
+            <typical-step>7+</typical-step>
+            <description>Execute main operation, handle results</description>
+            <note>(async orchestration)</note>
+          </category>
+        </step-categories>
+        <benefits>
+          <benefit>Code Review: Reference steps by number instead of line ranges</benefit>
+          <benefit>Debugging: "Error in step N" is precise and clear</benefit>
+          <benefit>Refactoring: Each step is natural extraction boundary</benefit>
+          <benefit>Documentation: Steps serve as inline documentation</benefit>
+          <benefit>Onboarding: New developers see flow immediately</benefit>
+        </benefits>
+        <real-world-example>
+          <name>batch() command refactoring</name>
+          <file>cli/core/batch.py</file>
+          <steps>7 numbered steps</steps>
+          <flow>validate → configure → execute</flow>
+          <complexity>Reduced from 12 to 6</complexity>
+          <feedback>Steps made code review significantly easier</feedback>
+        </real-world-example>
+      </orchestration-technique>
+
+      <format-detection-helpers name="testing-pure-detection-functions">
+        <name>Testing Format Detection Helpers</name>
+        <when>CLI needs to auto-detect input format (JSON vs YAML vs JSON Lines)</when>
+        <why>Detection logic is pure functions - perfect for unit testing without CLI framework</why>
+        <complete-example>
+          <project>yaml-for-humans</project>
+          <file>src/yaml_for_humans/cli.py</file>
+          <helpers>
+            <helper>
+              <name>_looks_like_json</name>
+              <purpose>Detect if string appears to be JSON</purpose>
+              <signature>def _looks_like_json(text: str) -> bool</signature>
+            </helper>
+            <helper>
+              <name>_is_multi_document_yaml</name>
+              <purpose>Detect YAML document separators</purpose>
+              <signature>def _is_multi_document_yaml(text: str) -> bool</signature>
+            </helper>
+            <helper>
+              <name>_is_json_lines</name>
+              <purpose>Detect JSON Lines format (one JSON per line)</purpose>
+              <signature>def _is_json_lines(text: str) -> bool</signature>
+            </helper>
+            <helper>
+              <name>_has_items_array</name>
+              <purpose>Detect Kubernetes-style items arrays</purpose>
+              <signature>def _has_items_array(data: Any) -> bool</signature>
+            </helper>
+            <helper>
+              <name>_generate_k8s_filename</name>
+              <purpose>Generate filename from K8s manifest metadata</purpose>
+              <signature>def _generate_k8s_filename(document, ...) -> str</signature>
+            </helper>
+          </helpers>
+          <testing-pattern>
+            <code><![CDATA[
+# tests/test_cli.py - Direct helper testing, NO CliRunner
+
+from yaml_for_humans.cli import (
+    _looks_like_json,
+    _is_multi_document_yaml,
+    _is_json_lines,
+    _has_items_array,
+    _generate_k8s_filename,
+)
+
+class TestStdinTimeout:  # Name is legacy, actually tests format detection
+    """Test format detection helper functions."""
+
+    def test_looks_like_json(self):
+        """Test JSON detection heuristic."""
+        # Positive cases
+        assert _looks_like_json('{"key": "value"}')
+        assert _looks_like_json('["item1", "item2"]')
+        assert _looks_like_json('  {"key": "value"}  ')  # With whitespace
+
+        # Negative cases
+        assert not _looks_like_json("key: value")  # YAML
+        assert not _looks_like_json("- item1")     # YAML list
+        assert not _looks_like_json("")            # Empty
+
+    def test_is_multi_document_yaml(self):
+        """Test multi-document YAML detection."""
+        # Single document
+        assert not _is_multi_document_yaml("key: value\nitem: test")
+
+        # With separator
+        assert _is_multi_document_yaml("doc: 1\n---\ndoc: 2")
+        assert _is_multi_document_yaml("---\nkey: value")  # Leading separator
+
+    def test_is_json_lines(self):
+        """Test JSON Lines format detection."""
+        # Not JSON Lines (single object)
+        assert not _is_json_lines('{"key": "value"}')
+
+        # IS JSON Lines (multiple per line)
+        assert _is_json_lines('{"id": 1}\n{"id": 2}')
+
+        # Empty lines ignored
+        assert _is_json_lines('{"id": 1}\n\n{"id": 2}\n')
+
+    def test_has_items_array(self):
+        """Test JSON items array detection (Kubernetes pattern)."""
+        # Has items with objects
+        assert _has_items_array({
+            "kind": "List",
+            "items": [{"name": "svc1"}, {"name": "svc2"}]
+        })
+
+        # Items but only primitives (not K8s pattern)
+        assert not _has_items_array({
+            "items": ["string1", "string2", 123]
+        })
+
+        # No items key
+        assert not _has_items_array({"services": [{"name": "test"}]})
+
+    def test_generate_k8s_filename(self):
+        """Test Kubernetes manifest filename generation."""
+        # Full manifest
+        assert _generate_k8s_filename({
+            "apiVersion": "apps/v1",
+            "kind": "Deployment",
+            "metadata": {"name": "web-server"}
+        }) == "deployment-web-server.yaml"
+
+        # Minimal
+        assert _generate_k8s_filename({
+            "kind": "Service",
+            "metadata": {"name": "api"}
+        }) == "service-api.yaml"
+
+        # No metadata
+        assert _generate_k8s_filename({
+            "kind": "Pod"
+        }) == "pod.yaml"
+
+        # Non-dict fallback
+        assert _generate_k8s_filename("not a dict") == "document.yaml"
+]]></code>
+          </testing-pattern>
+          <benefits>
+            <benefit>100% business logic coverage without CliRunner</benefit>
+            <benefit>Fast tests (no framework overhead)</benefit>
+            <benefit>Clear test cases with obvious inputs/outputs</benefit>
+            <benefit>Easy to add edge cases</benefit>
+            <benefit>Each helper tested in isolation</benefit>
+          </benefits>
+          <pattern-application>
+            <step>1. Identify format detection needs in CLI</step>
+            <step>2. Extract detection logic to pure _helper functions</step>
+            <step>3. Import helpers directly in test file</step>
+            <step>4. Test with simple assert statements</step>
+            <step>5. CLI uses helpers, tests bypass CLI entirely</step>
+          </pattern-application>
+          <metrics>
+            <project>yaml-for-humans</project>
+            <helper-functions>6 format detection helpers</helper-functions>
+            <test-coverage>100% without CliRunner</test-coverage>
+            <test-speed>Milliseconds (vs seconds with CliRunner)</test-speed>
+          </metrics>
+        </complete-example>
+        <key-insight>
+          Format detection is inherently pure (string/dict in, bool/string out). This makes it
+          perfect for extraction and direct testing. The CLI becomes a thin orchestration layer
+          that calls these well-tested helpers.
+        </key-insight>
+      </format-detection-helpers>
+    </pattern>
+</pattern-file>

@@ -1,0 +1,77 @@
+<pattern-file>
+  <meta>
+    <pattern-id>async-generator-pattern</pattern-id>
+    <source>doc/claude-test-brain.xml</source>
+    <version>1.3</version>
+  </meta>
+  <pattern>
+      <name>Testing Async Generators</name>
+      <when>Testing streaming operations, pagination, progress reporting, Docker streaming logs</when>
+      <complete-example>
+        <file>tests/test_async_transfer_service.py</file>
+        <code>
+import pytest
+from unittest.mock import AsyncMock
+from src.ecreshore.services.async_transfer_service import AsyncTransferService
+from src.ecreshore.async_docker_client import AsyncDockerClientError
+
+@pytest.mark.asyncio
+async def test_push_with_streaming_success():
+    """Test streaming push functionality with async generator."""
+    service = AsyncTransferService()
+    mock_docker_client = AsyncMock()
+
+    # Define async generator to simulate streaming logs
+    async def mock_push_stream(*args, **kwargs):
+        # Yield multiple status updates
+        yield {"status": "Preparing"}
+        yield {"status": "Pushing", "progress": "50%"}
+        yield {"status": "Pushed"}
+        yield {"status": "Latest: digest: sha256:abc123"}
+
+    # Assign async generator function to mock
+    mock_docker_client.push_image_stream = mock_push_stream
+
+    # Mock auth config
+    auth_config = {"username": "test", "password": "test"}
+
+    # Test the streaming operation
+    await service._push_with_streaming(mock_docker_client, "repo", "tag", auth_config)
+
+    # Verify no exceptions raised
+
+@pytest.mark.asyncio
+async def test_push_with_streaming_error():
+    """Test streaming push with error in stream."""
+    service = AsyncTransferService()
+    mock_docker_client = AsyncMock()
+
+    # Define async generator that yields error
+    async def mock_push_stream(*args, **kwargs):
+        yield {"status": "Preparing"}
+        yield {"error": "Authentication required"}
+
+    mock_docker_client.push_image_stream = mock_push_stream
+    auth_config = {"username": "test", "password": "test"}
+
+    # Verify error is raised
+    with pytest.raises(AsyncDockerClientError) as exc_info:
+        await service._push_with_streaming(mock_docker_client, "repo", "tag", auth_config)
+
+    assert "Push failed: Authentication required" in str(exc_info.value)
+</code>
+      </complete-example>
+      <critical-rules>
+        <rule>Define async generator with: async def name(...): yield value</rule>
+        <rule>Assign generator FUNCTION to mock, not generator object</rule>
+        <rule>Use yield for each item in stream</rule>
+        <rule>Code under test uses: async for item in stream</rule>
+      </critical-rules>
+      <common-uses>
+        <use>Docker streaming logs during push/pull</use>
+        <use>ECR paginated API results</use>
+        <use>Progress reporting during long operations</use>
+        <use>AWS API list operations with NextToken</use>
+      </common-uses>
+    </pattern>
+</pattern-file>

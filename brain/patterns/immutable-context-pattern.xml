@@ -1,0 +1,299 @@
+<pattern-file>
+  <meta>
+    <pattern-id>immutable-context-pattern</pattern-id>
+    <source>yaml-for-humans cli.py analysis (2025-10-07)</source>
+    <version>1.0</version>
+  </meta>
+  <pattern>
+    <name>Immutable Context Pattern with Frozen Dataclasses</name>
+    <when>Passing configuration context through multiple processing layers</when>
+    <why>Prevent accidental mutation, ensure type safety, enable configuration composition</why>
+    <philosophy>Use frozen dataclasses for immutable, type-safe configuration that flows through the application</philosophy>
+
+    <complete-example>
+      <file>src/yaml_for_humans/cli.py</file>
+      <code><![CDATA[
+from dataclasses import dataclass
+from typing import Callable
+
+@dataclass(frozen=True)
+class ProcessingContext:
+    """Immutable context for processing operations."""
+
+    unsafe_inputs: bool = False
+    preserve_empty_lines: bool = True
+    preserve_comments: bool = True
+
+    def create_source_factory(self, base_info: dict) -> Callable[[], dict]:
+        """Create source factory with counter for multi-document sources.
+
+        Note: Methods on frozen dataclasses are allowed - instance is
+        immutable but can have behavior.
+        """
+        counter = [0]  # Mutable closure state, not instance state
+
+        def factory():
+            result = {**base_info}
+            if "stdin_position" in base_info:
+                result["stdin_position"] = counter[0]
+                counter[0] += 1
+            return result
+
+        return factory
+
+
+# Usage in application flow
+def process_documents(context: ProcessingContext):
+    """Process documents with immutable context."""
+    # Context cannot be accidentally modified
+    processor = InputProcessor(context)
+
+    # Can be safely passed down call stack
+    documents = processor.process_files(context)
+
+    # Configuration is guaranteed consistent throughout processing
+    return documents
+
+
+# CLI entry point creates context
+def cli_main(unsafe: bool, preserve_comments: bool, preserve_empty_lines: bool):
+    """CLI creates immutable context from flags."""
+    context = ProcessingContext(
+        unsafe_inputs=unsafe,
+        preserve_empty_lines=preserve_empty_lines,
+        preserve_comments=preserve_comments,
+    )
+
+    # Context flows through entire operation
+    result = process_documents(context)
+    return result
+]]></code>
+    </complete-example>
+
+    <critical-rules>
+      <rule>Always use frozen=True on configuration dataclasses</rule>
+      <rule>Provide sensible defaults for all fields</rule>
+      <rule>Use type hints for all fields</rule>
+      <rule>Methods are allowed - frozen only prevents field modification</rule>
+      <rule>Pass context as single parameter, not individual flags</rule>
+    </critical-rules>
+
+    <comparison-with-alternatives>
+      <alternative name="Dict-based configuration">
+        <code><![CDATA[
+# BEFORE: Dict-based (error-prone)
+def process(config: dict):
+    if config.get('preserve_comments'):  # Typo-prone
+        ...
+    config['processed'] = True  # Accidental mutation!
+]]></code>
+        <problems>
+          <problem>No type safety</problem>
+          <problem>Typos in keys not caught</problem>
+          <problem>Easy to accidentally mutate</problem>
+          <problem>No IDE autocomplete</problem>
+        </problems>
+      </alternative>
+
+      <alternative name="Multiple parameters">
+        <code><![CDATA[
+# BEFORE: Parameter explosion
+def process(
+    unsafe_inputs: bool,
+    preserve_comments: bool,
+    preserve_empty_lines: bool,
+    indent: int,
+    timeout: int,
+    # ... 10+ more parameters
+):
+    # Parameter passing nightmare
+    helper(unsafe_inputs, preserve_comments, preserve_empty_lines, ...)
+]]></code>
+        <problems>
+          <problem>Function signatures become unwieldy</problem>
+          <problem>Hard to pass configuration down</problem>
+          <problem>Adding configuration requires updating many signatures</problem>
+          <problem>Easy to mix up parameter order</problem>
+        </problems>
+      </alternative>
+
+      <alternative name="Mutable dataclass">
+        <code><![CDATA[
+# PROBLEMATIC: Mutable dataclass
+@dataclass
+class ProcessingContext:  # Missing frozen=True
+    preserve_comments: bool = True
+
+def process(context: ProcessingContext):
+    # Accidental mutation possible!
+    context.preserve_comments = False  # Oops, modified for all callers
+]]></code>
+        <problems>
+          <problem>Can be accidentally modified</problem>
+          <problem>Harder to reason about state</problem>
+          <problem>Potential bugs from unexpected mutations</problem>
+        </problems>
+      </alternative>
+    </comparison-with-alternatives>
+
+    <benefits>
+      <benefit>Type safety - IDE catches typos and type errors</benefit>
+      <benefit>Immutability - frozen=True prevents accidental modification</benefit>
+      <benefit>Self-documenting - fields and defaults visible at definition</benefit>
+      <benefit>Composable - can pass single context instead of many parameters</benefit>
+      <benefit>Testable - easy to create test contexts with specific configurations</benefit>
+      <benefit>Methods allowed - can add behavior while maintaining immutability</benefit>
+    </benefits>
+
+    <advanced-usage>
+      <technique name="Context composition">
+        <code><![CDATA[
+@dataclass(frozen=True)
+class ProcessingContext:
+    unsafe_inputs: bool = False
+    preserve_empty_lines: bool = True
+    preserve_comments: bool = True
+
+    def with_unsafe(self) -> 'ProcessingContext':
+        """Create new context with unsafe inputs enabled.
+
+        Since dataclass is frozen, we use dataclasses.replace()
+        to create modified copy.
+        """
+        from dataclasses import replace
+        return replace(self, unsafe_inputs=True)
+
+    def without_preservation(self) -> 'ProcessingContext':
+        """Create new context without preservation features."""
+        from dataclasses import replace
+        return replace(
+            self,
+            preserve_empty_lines=False,
+            preserve_comments=False,
+        )
+
+
+# Usage
+base_context = ProcessingContext()
+unsafe_context = base_context.with_unsafe()
+# base_context unchanged, unsafe_context is new instance
+]]></code>
+      </technique>
+
+      <technique name="Nested contexts">
+        <code><![CDATA[
+@dataclass(frozen=True)
+class FormatOptions:
+    indent: int = 2
+    preserve_empty_lines: bool = True
+    preserve_comments: bool = True
+
+@dataclass(frozen=True)
+class ProcessingContext:
+    unsafe_inputs: bool = False
+    format_options: FormatOptions = field(default_factory=FormatOptions)
+
+    @property
+    def preserve_comments(self) -> bool:
+        """Delegate to nested context."""
+        return self.format_options.preserve_comments
+]]></code>
+      </technique>
+    </advanced-usage>
+
+    <testing-pattern>
+      <code><![CDATA[
+import pytest
+from dataclasses import replace
+
+@pytest.fixture
+def default_context():
+    """Default processing context for tests."""
+    return ProcessingContext()
+
+@pytest.fixture
+def unsafe_context():
+    """Context with unsafe inputs enabled."""
+    return ProcessingContext(unsafe_inputs=True)
+
+@pytest.fixture
+def minimal_context():
+    """Context with no preservation features."""
+    return ProcessingContext(
+        preserve_empty_lines=False,
+        preserve_comments=False,
+    )
+
+# Usage in tests
+def test_processing_with_context(default_context):
+    result = process_documents(default_context)
+    assert result.preserved_comments
+
+def test_unsafe_processing(unsafe_context):
+    # Context clearly shows configuration
+    assert unsafe_context.unsafe_inputs is True
+    result = process_documents(unsafe_context)
+    # ...
+
+def test_custom_context():
+    # Easy to create one-off contexts
+    context = ProcessingContext(
+        unsafe_inputs=True,
+        preserve_comments=False,
+    )
+    result = process_documents(context)
+    # ...
+]]></code>
+    </testing-pattern>
+
+    <migration-guide>
+      <from>Dict-based configuration</from>
+      <to>Frozen dataclass context</to>
+      <steps>
+        <step>1. Identify all configuration parameters</step>
+        <step>2. Create frozen dataclass with these as fields</step>
+        <step>3. Add sensible defaults</step>
+        <step>4. Replace dict.get() calls with context.field access</step>
+        <step>5. Update function signatures to accept context</step>
+        <step>6. Run tests to catch any missed migrations</step>
+      </steps>
+      <example>
+        <before><![CDATA[
+def process(config: dict):
+    if config.get('preserve_comments', True):
+        preserve_comments(data)
+    if config.get('unsafe', False):
+        use_unsafe_loader()
+]]></before>
+        <after><![CDATA[
+def process(context: ProcessingContext):
+    if context.preserve_comments:
+        preserve_comments(data)
+    if context.unsafe_inputs:
+        use_unsafe_loader()
+]]></after>
+      </example>
+    </migration-guide>
+
+    <when-not-to-use>
+      <scenario>Configuration changes frequently during execution</scenario>
+      <reason>Frozen dataclasses require creating new instances for changes</reason>
+      <alternative>Use mutable dataclass or class with controlled setters</alternative>
+    </when-not-to-use>
+
+    <related-patterns>
+      <pattern>validation-dataclass-pattern - Returns validated dataclass from validation function</pattern>
+      <pattern>dataclass-property-pattern - Computed properties on dataclasses</pattern>
+      <pattern>factory-fixture-pattern - Factory functions to create test contexts</pattern>
+    </related-patterns>
+
+    <real-world-examples>
+      <example>
+        <project>yaml-for-humans</project>
+        <usage>ProcessingContext flows through InputProcessor, ContentProcessor, OutputWriter</usage>
+        <fields>3 boolean configuration flags</fields>
+        <benefit>Consistent behavior across all processing stages</benefit>
+      </example>
+    </real-world-examples>
+  </pattern>
+</pattern-file>

@@ -1,0 +1,80 @@
+<support-file>
+  <name>Decision Trees</name>
+  <decision-trees>
+
+    <decision-tree id="mock-vs-fake-decision">
+      <question>What am I testing?</question>
+      <decision>
+        <condition>External API (AWS SDK, Docker daemon, Kubernetes API, HTTP)</condition>
+        <action>Use Mock or AsyncMock</action>
+        <rationale>You don't control external APIs - mocking is necessary</rationale>
+        <example>Mock boto3.client, Mock DockerClient, Mock requests.get</example>
+      </decision>
+      <decision>
+        <condition>Simple pure function (no I/O, no state)</condition>
+        <action>Call directly - NO mock or fake</action>
+        <rationale>Pure functions are fast and deterministic</rationale>
+        <example>normalize_digest(), parse_image_name(), calculate_expiry()</example>
+      </decision>
+      <decision>
+        <condition>Dataclass or simple value object</condition>
+        <action>Create real instance - NO mock</action>
+        <rationale>Dataclasses are cheap to instantiate</rationale>
+        <example>TransferRequest(), ECRImage(), BatchSettings()</example>
+      </decision>
+      <decision>
+        <condition>Your own service class (you own the code)</condition>
+        <action>Create Fake class implementation</action>
+        <rationale>Fakes are reusable, maintainable, refactoring-safe</rationale>
+        <example>FakeAsyncTransferService, FakeBatchProcessor</example>
+      </decision>
+      <decision>
+        <condition>Integration/E2E test</condition>
+        <action>Use real instances - NO mocks</action>
+        <rationale>Integration tests verify real interactions</rationale>
+        <example>Real HybridTransferService, real AWS calls</example>
+      </decision>
+    </decision-tree>
+
+    <decision-tree id="test-category-decision">
+      <question>What level of test do I need?</question>
+      <decision>
+        <condition>Testing single function with no I/O</condition>
+        <result>Unit test</result>
+        <properties>
+          <speed>&lt;0.1s</speed>
+          <mocking>None</mocking>
+          <example>test_normalize_digest()</example>
+        </properties>
+      </decision>
+      <decision>
+        <condition>Testing function that calls external API</condition>
+        <result>Unit test with mocks</result>
+        <properties>
+          <speed>&lt;0.1s</speed>
+          <mocking>External API only</mocking>
+          <example>test_ecr_auth_with_mock_boto3()</example>
+        </properties>
+      </decision>
+      <decision>
+        <condition>Testing multiple services working together</condition>
+        <result>Integration test</result>
+        <properties>
+          <speed>0.1-1s</speed>
+          <mocking>External boundaries only</mocking>
+          <example>test_batch_processor_with_real_services()</example>
+        </properties>
+      </decision>
+      <decision>
+        <condition>Testing complete user workflow with real AWS/Docker</condition>
+        <result>E2E test</result>
+        <properties>
+          <speed>1-10s</speed>
+          <mocking>None</mocking>
+          <example>test_skip_if_present_integration()</example>
+        </properties>
+      </decision>
+    </decision-tree>
+
+  </decision-trees>
+</support-file>

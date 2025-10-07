@@ -1,0 +1,123 @@
+<pattern-file>
+  <meta>
+    <pattern-id>log-level-management-pattern</pattern-id>
+    <source>doc/claude-test-brain.xml</source>
+    <version>1.3</version>
+  </meta>
+  <pattern>
+      <name>Log Level Management for Clean User Experience</name>
+      <when>Building CLI tools, batch operations, user-facing error reporting</when>
+      <philosophy>User-facing systems need clean output - debug info belongs in debug logs</philosophy>
+      <complete-example>
+        <file>services/image_presence_checker.py, services/buildx_transfer_service.py</file>
+        <code>
+# WRONG: logger.error() for internal/diagnostic information
+# Problem: Creates verbose stack traces in batch output, pollutes user experience
+except Exception as e:
+    logger.error(
+        f"check_image_exists_in_ecr: Error checking ECR: {e}",
+        exc_info=True  # Full stack trace
+    )
+    # User sees:
+    # [14:45:55] ERROR    check_image_exists_in_ecr: Error...
+    #            &amp;#9581;&amp;#9472; Traceback (50 lines of stack trace) &amp;#9472;&amp;#9582;
+    #            &amp;#9474; /home/.../ecr_repository.py:290       &amp;#9474;
+    #            &amp;#9474; ... 40 more lines ...                 &amp;#9474;
+    #            &amp;#9584;&amp;#9472;&amp;#9472;&amp;#9472;&amp;#9472;&amp;#9472;&amp;#9472;&amp;#9472;&amp;#9472;&amp;#9472;&amp;#9472;&amp;#9472;&amp;#9472;&amp;#9472;&amp;#9472;&amp;#9472;&amp;#9472;&amp;#9472;&amp;#9472;&amp;#9472;&amp;#9472;&amp;#9472;&amp;#9472;&amp;#9472;&amp;#9472;&amp;#9472;&amp;#9472;&amp;#9472;&amp;#9472;&amp;#9472;&amp;#9472;&amp;#9472;&amp;#9472;&amp;#9472;&amp;#9472;&amp;#9472;&amp;#9472;&amp;#9472;&amp;#9472;&amp;#9472;&amp;#9472;&amp;#9583;
+
+# RIGHT: logger.debug() for internal diagnostics
+# Benefit: Clean batch output, full debugging available with -vv flag
+except Exception as e:
+    # Log at debug level - error is captured in TransferResult for user-facing summary
+    logger.debug(
+        f"check_image_exists_in_ecr: Error checking ECR: {e}",
+        exc_info=True  # Still available in debug logs
+    )
+    # User sees clean error summary at end:
+    # Error Summary:
+    #   &amp;#8226; Not Found: 2 error(s)
+    #     &amp;#8594; Verify the source image name and tag are correct
+
+# PRINCIPLE: Separate user-facing error reporting from debugging logs
+#
+# User-facing errors (logger.error):
+#   - Final operation failures
+#   - Configuration errors user must fix
+#   - Unrecoverable system errors
+#
+# Debug information (logger.debug):
+#   - Internal operation diagnostics
+#   - Retry attempts and intermediate failures
+#   - Detailed API response information
+#   - Stack traces for troubleshooting
+#
+# When to use logger.warning:
+#   - Unexpected but handled conditions
+#   - Deprecated functionality usage
+#   - Performance degradation warnings
+
+# Example: Buildx transfer service
+try:
+    result = await self._execute_buildx(request)
+except BuildxError as e:
+    # Debug level - error is in TransferResult for batch error summary
+    logger.debug(f"Buildx transfer error: {e}")
+    return TransferResult(
+        request=request,
+        success=False,
+        error_message=str(e),  # Clean message for user
+        transfer_method="buildx"
+    )
+
+# Pattern: Separate error capture from error display
+# 1. Capture: logger.debug() with full context
+# 2. Structure: Store clean message in result object
+# 3. Display: Error aggregator shows user-friendly summary
+</code>
+      </complete-example>
+      <critical-rules>
+        <rule>logger.error() only for final user-facing failures</rule>
+        <rule>logger.debug() for internal diagnostics and stack traces</rule>
+        <rule>logger.warning() for unexpected but handled conditions</rule>
+        <rule>Store clean error messages in result objects for aggregation</rule>
+        <rule>Let error aggregators handle user-facing display</rule>
+        <rule>Preserve full debug info (exc_info=True) at debug level</rule>
+      </critical-rules>
+      <architecture-pattern>
+        <component name="Service Layer">
+          <logging-strategy>logger.debug() for operations</logging-strategy>
+          <error-handling>Capture in result objects with clean messages</error-handling>
+        </component>
+        <component name="Error Aggregator">
+          <responsibility>Collect errors from result objects</responsibility>
+          <responsibility>Categorize by error type</responsibility>
+          <responsibility>Generate user guidance</responsibility>
+        </component>
+        <component name="Progress Reporter">
+          <responsibility>Display aggregated error summary</responsibility>
+          <responsibility>Show actionable recommendations</responsibility>
+          <responsibility>Format for simple vs rich mode</responsibility>
+        </component>
+      </architecture-pattern>
+      <before-after-comparison>
+        <before>
+          <output>Verbose, technical stack traces during operation</output>
+          <output>ERROR logs interleaved with progress bars</output>
+          <output>Users must parse technical details to understand problem</output>
+          <user-experience>Chaotic, overwhelming, hard to diagnose</user-experience>
+        </before>
+        <after>
+          <output>Clean progress during operation</output>
+          <output>Categorized error summary at completion</output>
+          <output>Actionable guidance specific to error types</output>
+          <user-experience>Professional, clear, helpful</user-experience>
+        </after>
+      </before-after-comparison>
+      <debugging-preservation>
+        <info>Full debugging information still available</info>
+        <access-method>Run with verbose flag: ecreshore batch config.yaml -vv</access-method>
+        <debug-logs>logger.debug() calls visible with verbose mode</debug-logs>
+        <structured-logs>Full context preserved in structured logging</structured-logs>
+      </debugging-preservation>
+    </pattern>
+</pattern-file>

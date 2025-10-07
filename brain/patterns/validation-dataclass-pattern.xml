@@ -1,0 +1,298 @@
+<pattern-file>
+  <meta>
+    <pattern-id>validation-dataclass-pattern</pattern-id>
+    <source>Refactoring sessions 2025-10-03</source>
+    <version>1.0</version>
+  </meta>
+  <pattern>
+      <name>Validation Functions Return Dataclasses</name>
+      <when>Functions that validate and transform input parameters</when>
+      <why>Self-documenting, type-safe, prevents tuple unpacking errors and magic indices</why>
+      <philosophy>Validated data should be as structured and type-safe as possible</philosophy>
+      <complete-example>
+        <file>Multiple refactorings: PurgeOptions, BatchSummary, FieldSpec</file>
+        <code>
+# ANTI-PATTERN: Validation returns tuple or dict
+
+def validate_options(repo_name, all_repos, region, keep_latest, dry_run):
+    """Validate purge options."""
+    if not repo_name and not all_repos:
+        raise ValueError("Must specify repository or --all")
+
+    if repo_name and all_repos:
+        raise ValueError("Cannot specify both")
+
+    # What order? What types? Unclear!
+    return (repo_name, all_repos, region, keep_latest, dry_run)
+
+# Usage - error-prone, unclear
+r, a, reg, keep, dry = validate_options(...)
+# Which is which? Easy to get wrong!
+service.purge(r, a, reg, keep, dry)  # Magic positional args
+
+
+# ANTI-PATTERN: Returns dict (typo-prone, no IDE autocomplete)
+
+def validate_options(...):
+    return {
+        'repo': repo_name,
+        'all': all_repos,
+        'region': region,
+        'keep': keep_latest,
+        'dry': dry_run,
+    }
+
+# Usage - typo errors at runtime
+opts = validate_options(...)
+service.purge(opts['repoo'])  # Typo! KeyError at runtime
+
+
+# BEST PRACTICE: Returns dataclass
+
+from dataclasses import dataclass
+from typing import Optional
+
+@dataclass
+class PurgeOptions:
+    """Validated purge operation parameters.
+
+    All fields are validated and type-safe.
+    """
+    repository_name: Optional[str]
+    all_repositories: bool
+    region: Optional[str]
+    registry_id: Optional[str]
+    name_filter: Optional[str]
+    exclude_repositories: set[str]
+    keep_latest: bool
+    dry_run: bool
+
+def validate_purge_options(
+    repository_name: Optional[str],
+    all_repositories: bool,
+    name_filter: Optional[str],
+    exclude: tuple[str, ...],
+    region: Optional[str],
+    registry_id: Optional[str],
+    keep_latest: bool,
+    dry_run: bool,
+) -> PurgeOptions:
+    """Validate purge options and return structured config.
+
+    Returns:
+        PurgeOptions with validated parameters
+
+    Raises:
+        ValueError: If validation fails
+    """
+    # Validation logic
+    if not repository_name and not all_repositories:
+        raise ValueError("Must specify either a repository name or -A/--all")
+
+    if repository_name and all_repositories:
+        raise ValueError("Cannot specify both repository name and -A/--all")
+
+    if repository_name and (name_filter or exclude):
+        raise ValueError("--filter and --exclude can only be used with -A/--all")
+
+    # Return structured, type-safe data
+    return PurgeOptions(
+        repository_name=repository_name,
+        all_repositories=all_repositories,
+        region=region,
+        registry_id=registry_id,
+        name_filter=name_filter,
+        exclude_repositories=set(exclude) if exclude else set(),
+        keep_latest=keep_latest,
+        dry_run=dry_run,
+    )
+
+# Usage - crystal clear, type-safe, IDE autocomplete
+options = validate_purge_options(...)
+
+# Access fields with autocomplete
+service.purge(
+    repository_name=options.repository_name,
+    all_repositories=options.all_repositories,
+    region=options.region,
+    # IDE shows all available fields!
+)
+
+# Type checker catches errors
+if options.keep_lattest:  # Typo caught by type checker!
+    pass
+
+
+# ANOTHER EXAMPLE: Calculation results
+
+# ANTI-PATTERN: Calculate and return tuple
+def calculate_summary(transfers):
+    completed = sum(1 for t in transfers if t.status == 'completed')
+    failed = sum(1 for t in transfers if t.status == 'failed')
+    total = len(transfers)
+    duration = end_time - start_time
+
+    return (completed, failed, total, duration)  # Which is which?
+
+# Usage - magic indices
+c, f, t, d = calculate_summary(...)
+print(f"Completed: {c}/{t}")  # Is c completed or total?
+
+
+# BEST PRACTICE: Return dataclass
+@dataclass
+class BatchSummary:
+    """Summary statistics for completed batch operation."""
+    completed: int
+    failed: int
+    skipped: int
+    total: int
+    duration: float
+    total_retries: int
+    batch_end_time: float
+
+def calculate_batch_summary(transfers, start_time, end_time) -> BatchSummary:
+    """Calculate batch summary statistics.
+
+    Returns:
+        BatchSummary with all statistics
+    """
+    completed = sum(1 for t in transfers if t.status == 'completed')
+    failed = sum(1 for t in transfers if t.status == 'failed')
+    skipped = sum(1 for t in transfers if t.status == 'skipped')
+    total = len(transfers)
+    duration = end_time - start_time
+    total_retries = sum(t.retry_count for t in transfers)
+
+    return BatchSummary(
+        completed=completed,
+        failed=failed,
+        skipped=skipped,
+        total=total,
+        duration=duration,
+        total_retries=total_retries,
+        batch_end_time=end_time,
+    )
+
+# Usage - self-documenting
+summary = calculate_batch_summary(...)
+print(f"Completed: {summary.completed}/{summary.total}")
+print(f"Duration: {summary.duration:.1f}s")
+print(f"Retries: {summary.total_retries}")
+
+# Can pass to other functions cleanly
+display_summary(summary)
+log_summary(summary)
+        </code>
+      </complete-example>
+      <when-to-use>
+        <use-case>Validation functions that check multiple parameters</use-case>
+        <use-case>Functions that calculate multiple related values</use-case>
+        <use-case>Configuration parsing that returns structured data</use-case>
+        <use-case>API response parsing with multiple fields</use-case>
+        <use-case>When you find yourself returning tuples with &gt;3 elements</use-case>
+      </when-to-use>
+      <benefits>
+        <benefit>IDE autocomplete for all fields</benefit>
+        <benefit>Type checker catches typos and wrong types</benefit>
+        <benefit>Self-documenting code (field names visible)</benefit>
+        <benefit>Easy to add new fields without breaking existing code</benefit>
+        <benefit>Can add methods to dataclass for related operations</benefit>
+        <benefit>Better error messages (AttributeError shows field name)</benefit>
+      </benefits>
+      <anti-patterns>
+        <anti-pattern>
+          <name>Tuple Unpacking Hell</name>
+          <code>
+# Hard to remember order, easy to swap values
+return (name, age, email, city, state, zip, country, phone)
+n, a, e, c, s, z, co, p = validate_user(...)  # Which is which?
+          </code>
+        </anti-pattern>
+        <anti-pattern>
+          <name>Dictionary Typos</name>
+          <code>
+# Typos caught at runtime, not compile time
+opts = {'repo': 'my-repo', 'region': 'us-west-2'}
+service.purge(opts['repoo'])  # KeyError at runtime!
+          </code>
+        </anti-pattern>
+        <anti-pattern>
+          <name>Magic Indices</name>
+          <code>
+result = calculate_stats(...)
+print(result[2])  # What is index 2? No idea!
+          </code>
+        </anti-pattern>
+      </anti-patterns>
+      <testing-benefits>
+        <benefit>Factory fixtures easier to create for dataclasses</benefit>
+        <benefit>Clear what's being tested (field names visible)</benefit>
+        <benefit>Easy to create test variations (change one field)</benefit>
+        <benefit>Type-safe test assertions</benefit>
+      </testing-benefits>
+      <example-test>
+        <code>
+@pytest.fixture
+def make_purge_options():
+    """Factory for PurgeOptions with defaults."""
+    def _factory(**kwargs):
+        defaults = {
+            'repository_name': None,
+            'all_repositories': True,
+            'region': 'us-west-2',
+            'registry_id': '123456789012',
+            'name_filter': None,
+            'exclude_repositories': set(),
+            'keep_latest': False,
+            'dry_run': True,
+        }
+        defaults.update(kwargs)
+        return PurgeOptions(**defaults)
+    return _factory
+
+# Usage in tests - crystal clear
+def test_validation_with_filter():
+    options = make_purge_options(
+        name_filter='my-app-*',
+        exclude_repositories={'prod-repo'},
+    )
+
+    assert options.name_filter == 'my-app-*'
+    assert 'prod-repo' in options.exclude_repositories
+        </code>
+      </example-test>
+      <critical-rules>
+        <rule>Use @dataclass decorator for validated return types</rule>
+        <rule>Type all fields (use Optional[T] for nullable)</rule>
+        <rule>Add docstring describing what data represents</rule>
+        <rule>Prefer dataclass over tuple for &gt;3 return values</rule>
+        <rule>Prefer dataclass over dict for type safety</rule>
+        <rule>Validation function raises ValueError, returns dataclass</rule>
+      </critical-rules>
+      <comparison>
+        <tuple-vs-dataclass>
+          <tuple>
+            <pros>Simple, built-in, immutable</pros>
+            <cons>No field names, no type checking, unclear usage, hard to extend</cons>
+          </tuple>
+          <dataclass>
+            <pros>Self-documenting, type-safe, IDE support, extensible</pros>
+            <cons>Requires import, slightly more verbose</cons>
+          </dataclass>
+          <recommendation>Use dataclass for &gt;3 fields or when types matter</recommendation>
+        </tuple-vs-dataclass>
+        <dict-vs-dataclass>
+          <dict>
+            <pros>Flexible, built-in, easy to serialize</pros>
+            <cons>No type checking, typo-prone, no IDE autocomplete</cons>
+          </dict>
+          <dataclass>
+            <pros>Type-safe, autocomplete, catches errors early</pros>
+            <cons>Less flexible, requires explicit fields</cons>
+          </dataclass>
+          <recommendation>Use dataclass for validated data, dict for dynamic data</recommendation>
+        </dict-vs-dataclass>
+      </comparison>
+    </pattern>
+</pattern-file>

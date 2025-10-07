@@ -1,0 +1,491 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<todo-list>
+  <meta>
+    <title>yaml-for-humans Testability Improvements</title>
+    <generated>2025-10-07</generated>
+    <analysis-type>Testability and Maintainability</analysis-type>
+    <brain-patterns-applied>true</brain-patterns-applied>
+  </meta>
+
+  <summary>
+    <overview>
+      Comprehensive analysis of yaml-for-humans codebase for testability improvements.
+      Focus areas: pure function extraction, complexity reduction, better test organization.
+      All suggestions align with established brain/ patterns.
+    </overview>
+    <current-state>
+      <strengths>
+        - CLI format detection helpers already well-extracted and tested (cli-testing-pattern ✓)
+        - Good use of dataclasses (ProcessingContext, OutputContext)
+        - Class-based architecture with clear separation (InputProcessor, OutputWriter, FormatDetector)
+        - Existing test coverage for CLI helpers demonstrates pattern awareness
+      </strengths>
+      <opportunities>
+        - High complexity functions need extraction (dump: 12, _process_content_line_markers: 16)
+        - Thread-local state makes testing harder (buffer pool, content markers in dumper.py)
+        - Some validation logic could return dataclasses for better type safety
+        - Complex nested logic can be broken into testable helpers
+      </opportunities>
+    </current-state>
+    <metrics>
+      <high-complexity-functions>4</high-complexity-functions>
+      <medium-complexity-functions>8</medium-complexity-functions>
+      <pattern-opportunities>7</pattern-opportunities>
+    </metrics>
+  </summary>
+
+  <testability-improvements priority="high">
+
+    <improvement id="1" priority="high" pattern="pure-function-extraction-pattern">
+      <title>Extract Pure Logic from _process_content_line_markers</title>
+      <location>src/yaml_for_humans/dumper.py:59</location>
+      <current-complexity>16</current-complexity>
+      <target-complexity>6-8</target-complexity>
+      <pattern>pure-function-extraction-pattern</pattern>
+
+      <issue>
+        Complex marker processing logic (16 complexity) handles three different marker types
+        with nested conditionals. Pure transformation logic mixed with regex matching.
+      </issue>
+
+      <proposed-refactoring>
+        <step>1. Extract _process_single_line(line: str, markers: dict) -> list[str]</step>
+        <step>2. Extract _expand_content_marker(hash: str, markers: dict) -> list[str]</step>
+        <step>3. Extract _expand_empty_marker(count: int) -> list[str]</step>
+        <step>4. Extract _expand_inline_comment(hash: str, line: str, markers: dict) -> str</step>
+        <step>5. Main function orchestrates: split → process each line → join</step>
+      </proposed-refactoring>
+
+      <benefits>
+        - Reduce main function complexity from 16 to ~6 (62% reduction)
+        - Each helper pure and trivially testable (no regex fixtures needed)
+        - Edge case testing becomes simple (empty markers, missing hashes, etc.)
+        - Fast tests (no thread-local state needed)
+      </benefits>
+
+      <tests-to-add>
+        - test_expand_content_marker_with_empty_lines()
+        - test_expand_content_marker_with_comments()
+        - test_expand_content_marker_missing_hash()
+        - test_expand_empty_marker_multiple()
+        - test_expand_inline_comment_found()
+        - test_expand_inline_comment_not_found()
+        - test_process_single_line_no_markers()
+        - test_process_single_line_mixed_markers()
+      </tests-to-add>
+
+      <example>
+        <before>
+          # Complex nested logic checking three marker types
+          if "__CONTENT_LINES_" in line:
+              match = pattern.search(line)
+              if match:
+                  hash = match.group(1)
+                  if hash in markers:
+                      for content_line in markers[hash]:
+                          if content_line == "":
+                              result.append("")
+                          else:
+                              result.append(content_line)
+          elif "__EMPTY_LINES_" in line:
+              # ... more nested logic
+        </before>
+
+        <after>
+          def _expand_content_marker(hash: str, markers: dict) -> list[str]:
+              """Expand content marker to list of lines (pure function)."""
+              if hash not in markers:
+                  return []
+              return markers[hash]
+
+          def _process_single_line(line: str, markers: dict) -> list[str]:
+              """Process single line for markers (pure function)."""
+              if "__CONTENT_LINES_" in line:
+                  match = _CONTENT_LINE_PATTERN.search(line)
+                  if match:
+                      return _expand_content_marker(match.group(1), markers)
+                  return []  # Skip marker line
+              # ... simpler logic
+              return [line]  # No markers, return as-is
+
+          # Main function simplified
+          lines = yaml_text.split("\n")
+          result = []
+          for line in lines:
+              result.extend(_process_single_line(line, content_markers))
+          return "\n".join(result)
+        </after>
+      </example>
+
+      <estimated-effort>2-3 hours</estimated-effort>
+      <test-count-estimate>12-15 tests</test-count-estimate>
+    </improvement>
+
+    <improvement id="2" priority="high" pattern="pure-function-extraction-pattern">
+      <title>Simplify dump() Function Complexity</title>
+      <location>src/yaml_for_humans/dumper.py:120</location>
+      <current-complexity>12</current-complexity>
+      <target-complexity>5-6</target-complexity>
+      <pattern>pure-function-extraction-pattern + validation-dataclass-pattern</pattern>
+
+      <issue>
+        dump() function handles dumper selection, defaults configuration, special FormattingAwareDumper
+        setup, buffer management, and post-processing. Multiple concerns mixed together.
+      </issue>
+
+      <proposed-refactoring>
+        <step>1. Extract @dataclass DumpConfig(dumper_class, preserve_empty, preserve_comments)</step>
+        <step>2. Extract _select_dumper(preserve_empty: bool, preserve_comments: bool) -> Type[Dumper]</step>
+        <step>3. Extract _build_dump_kwargs(dumper_class, **kwargs) -> dict</step>
+        <step>4. Extract _create_preset_dumper(dumper_class, preserve_*) -> Type[Dumper]</step>
+        <step>5. dump() orchestrates: select → configure → dump → post-process (if needed)</step>
+      </proposed-refactoring>
+
+      <benefits>
+        - Reduce complexity from 12 to ~5 (58% reduction)
+        - Dumper selection logic testable independently
+        - Kwargs merging testable without YAML machinery
+        - Clear separation: config → execution
+      </benefits>
+
+      <tests-to-add>
+        - test_select_dumper_no_preservation()
+        - test_select_dumper_with_empty_lines()
+        - test_select_dumper_with_comments()
+        - test_build_dump_kwargs_defaults()
+        - test_build_dump_kwargs_overrides()
+        - test_create_preset_dumper_preserves_flags()
+      </tests-to-add>
+
+      <estimated-effort>2-3 hours</estimated-effort>
+      <test-count-estimate>10-12 tests</test-count-estimate>
+    </improvement>
+
+    <improvement id="3" priority="medium" pattern="pure-function-extraction-pattern">
+      <title>Extract Pure Logic from _is_valid_file_type</title>
+      <location>src/yaml_for_humans/cli.py:800</location>
+      <current-complexity>11</current-complexity>
+      <target-complexity>4-5</target-complexity>
+      <pattern>pure-function-extraction-pattern</pattern>
+
+      <issue>
+        File validation mixes extension checking, content sampling, and format detection.
+        I/O mixed with pure format detection logic.
+      </issue>
+
+      <proposed-refactoring>
+        <step>1. Extract _has_valid_extension(path: str) -> bool (pure)</step>
+        <step>2. Extract _sample_file_content(path: str) -> str | None (I/O)</step>
+        <step>3. Extract _content_looks_valid(content: str) -> bool (pure, uses existing helpers)</step>
+        <step>4. Main function: check extension → sample content → validate content</step>
+      </proposed-refactoring>
+
+      <benefits>
+        - Pure extension checking testable without files
+        - Content validation testable without files
+        - I/O isolated to one small function
+        - Existing _looks_like_json/_looks_like_yaml reused
+      </benefits>
+
+      <tests-to-add>
+        - test_has_valid_extension_yaml()
+        - test_has_valid_extension_json()
+        - test_has_valid_extension_jsonl()
+        - test_has_valid_extension_invalid()
+        - test_content_looks_valid_json()
+        - test_content_looks_valid_yaml()
+        - test_content_looks_valid_empty()
+      </tests-to-add>
+
+      <estimated-effort>1-2 hours</estimated-effort>
+      <test-count-estimate>8-10 tests</test-count-estimate>
+    </improvement>
+
+    <improvement id="4" priority="medium" pattern="pure-function-extraction-pattern">
+      <title>Simplify _generate_k8s_filename Complexity</title>
+      <location>src/yaml_for_humans/cli.py:739</location>
+      <current-complexity>9</current-complexity>
+      <target-complexity>4-5</target-complexity>
+      <pattern>pure-function-extraction-pattern</pattern>
+
+      <issue>
+        Filename generation handles multiple fallback cases, metadata extraction,
+        prefix generation, and part joining. All pure logic but complex flow.
+      </issue>
+
+      <proposed-refactoring>
+        <step>1. Extract _extract_k8s_parts(document: dict) -> list[str] (pure)</step>
+        <step>2. Extract _generate_fallback_filename(source_file, stdin_pos) -> str (pure)</step>
+        <step>3. Extract _build_filename_from_parts(parts: list[str]) -> str (pure)</step>
+        <step>4. Main function: extract parts → fallback if empty → build → add prefix if needed</step>
+      </proposed-refactoring>
+
+      <benefits>
+        - Each helper has single responsibility
+        - Fallback logic testable separately
+        - Part extraction testable with various documents
+        - Filename building testable without K8s knowledge
+      </benefits>
+
+      <tests-to-add>
+        - test_extract_k8s_parts_full_manifest()
+        - test_extract_k8s_parts_minimal()
+        - test_extract_k8s_parts_no_metadata()
+        - test_generate_fallback_from_file()
+        - test_generate_fallback_from_stdin()
+        - test_build_filename_single_part()
+        - test_build_filename_multiple_parts()
+      </tests-to-add>
+
+      <estimated-effort>1.5-2 hours</estimated-effort>
+      <test-count-estimate>10-12 tests</test-count-estimate>
+    </improvement>
+
+  </testability-improvements>
+
+  <architectural-improvements priority="medium">
+
+    <improvement id="5" priority="medium" pattern="immutable-context-pattern + dataclass-property-pattern">
+      <title>Enhance ProcessingContext with Computed Properties</title>
+      <location>src/yaml_for_humans/cli.py:38-58</location>
+      <pattern>immutable-context-pattern + dataclass-property-pattern</pattern>
+
+      <issue>
+        ProcessingContext is well-designed (frozen dataclass) but could benefit from
+        computed properties for common checks like "is_preservation_enabled".
+      </issue>
+
+      <proposed-enhancement>
+        <code>
+          @dataclass(frozen=True)
+          class ProcessingContext:
+              unsafe_inputs: bool = False
+              preserve_empty_lines: bool = DEFAULT_PRESERVE_EMPTY_LINES
+              preserve_comments: bool = DEFAULT_PRESERVE_COMMENTS
+
+              @property
+              def is_preservation_enabled(self) -> bool:
+                  """Check if any preservation feature is enabled."""
+                  return self.preserve_empty_lines or self.preserve_comments
+
+              @property
+              def is_safe_mode(self) -> bool:
+                  """Check if using safe YAML parsing."""
+                  return not self.unsafe_inputs
+        </code>
+      </proposed-enhancement>
+
+      <benefits>
+        - Makes intent explicit in calling code
+        - Centralizes boolean logic
+        - Self-documenting via property names
+        - Trivially testable
+      </benefits>
+
+      <tests-to-add>
+        - test_is_preservation_enabled_both_true()
+        - test_is_preservation_enabled_empty_only()
+        - test_is_preservation_enabled_comments_only()
+        - test_is_preservation_enabled_both_false()
+        - test_is_safe_mode()
+      </tests-to-add>
+
+      <estimated-effort>30 minutes</estimated-effort>
+      <test-count-estimate>5 tests</test-count-estimate>
+    </improvement>
+
+    <improvement id="6" priority="low" pattern="test-refactoring-pattern">
+      <title>Eliminate Thread-Local State in dumper.py for Testability</title>
+      <location>src/yaml_for_humans/dumper.py:23-57</location>
+      <pattern>test-refactoring-pattern + pure-function-extraction-pattern</pattern>
+
+      <issue>
+        Thread-local storage (_local) for buffer pooling and content markers makes
+        testing harder. Stateful module-level globals reduce testability.
+      </issue>
+
+      <proposed-refactoring>
+        <approach>
+          Consider context manager or explicit passing:
+          1. Option A: with DumperContext() as ctx: ctx.dump(data)
+          2. Option B: Pass markers dict explicitly to _process_content_line_markers
+          3. Option C: Create DumperState dataclass to hold markers/buffers
+        </approach>
+
+        <recommendation>
+          Option B (explicit passing) is simplest and most testable.
+          Content markers already passed to _process_content_line_markers,
+          but stored in thread-local. Make it explicit parameter only.
+        </recommendation>
+      </proposed-refactoring>
+
+      <benefits>
+        - No hidden state in tests
+        - Parallel test execution safe
+        - Functions become pure (no side effects)
+        - Easier to reason about and debug
+      </benefits>
+
+      <caution>
+        This is lower priority because current code works. Only pursue if
+        test parallelization issues arise or state management becomes problematic.
+      </caution>
+
+      <estimated-effort>3-4 hours</estimated-effort>
+      <risk>Medium (changes internal state management)</risk>
+    </improvement>
+
+    <improvement id="7" priority="low" pattern="feature-based-test-organization">
+      <title>Consider Feature-Based Test Organization</title>
+      <location>tests/</location>
+      <pattern>feature-based-test-organization</pattern>
+
+      <current-state>
+        Tests organized by technical layer:
+        - test_cli.py (CLI tests)
+        - test_emitter.py (emitter tests)
+        - test_multi_document.py (multi-doc tests)
+        - test_comment_preservation.py (comment tests)
+        - test_empty_line_preservation.py (empty line tests)
+      </current-state>
+
+      <observation>
+        Current organization is reasonable for library. Feature-based might be better
+        if testing user workflows (e.g., "kubernetes manifest processing", "comment preservation workflow").
+        Not critical for current codebase size.
+      </observation>
+
+      <recommendation>
+        Keep current organization. Consider feature-based if codebase grows significantly
+        or if integration testing becomes more prominent.
+      </recommendation>
+
+      <estimated-effort>N/A (no action)</estimated-effort>
+    </improvement>
+
+  </architectural-improvements>
+
+  <pattern-application-opportunities>
+
+    <opportunity id="8" pattern="cli-testing-pattern">
+      <title>CLI Helper Extraction Already Well-Executed ✓</title>
+      <location>src/yaml_for_humans/cli.py + tests/test_cli.py</location>
+      <status>ALREADY APPLIED</status>
+
+      <observation>
+        Code demonstrates excellent application of cli-testing-pattern:
+        - Format detection helpers (_looks_like_json, _is_json_lines, etc.) extracted as pure functions
+        - Direct testing in tests/test_cli.py without CliRunner
+        - TestStdinTimeout class tests helpers directly
+        - Clean separation between Click framework and business logic
+      </observation>
+
+      <evidence>
+        <file>tests/test_cli.py:29-146</file>
+        <imports>
+          from yaml_for_humans.cli import (
+              _generate_k8s_filename,
+              _has_items_array,
+              _is_json_lines,
+              _is_multi_document_yaml,
+              _looks_like_json,
+              _looks_like_yaml,
+          )
+        </imports>
+        <test-approach>Direct function calls, no Click framework involved</test-approach>
+      </evidence>
+
+      <lesson>
+        Project already understands and applies brain/ patterns effectively.
+        This validates the testability improvement approach.
+      </lesson>
+    </opportunity>
+
+    <opportunity id="9" pattern="immutable-context-pattern">
+      <title>ProcessingContext and OutputContext Well-Designed ✓</title>
+      <location>src/yaml_for_humans/cli.py:38-44, 252-259</location>
+      <status>ALREADY APPLIED</status>
+
+      <observation>
+        Excellent use of frozen dataclasses for configuration:
+        - ProcessingContext (frozen=True) for input processing config
+        - OutputContext (frozen=True) for output operations config
+        - Immutable, type-safe, prevents accidental mutation
+        - Passed through application layers cleanly
+      </observation>
+
+      <lesson>
+        Project demonstrates mature understanding of configuration patterns.
+        Could be extended with computed properties (see improvement #5).
+      </lesson>
+    </opportunity>
+
+  </pattern-application-opportunities>
+
+  <complexity-reduction-workflow>
+    <note>
+      For high-priority improvements (#1-4), follow brain/support/complexity-reduction-workflow.xml:
+      1. Analysis: Calculate current complexity (done above)
+      2. Planning: Select pattern and identify helpers (done above)
+      3. Extraction: Create pure helper functions one at a time
+      4. Refactoring: Update main function to use helpers with numbered steps
+      5. Testing: Write comprehensive tests (estimates provided)
+      6. Verification: Measure complexity reduction
+      7. Documentation: Update TODO-complete.md with results
+    </note>
+
+    <expected-outcomes>
+      <metric>Total complexity reduction: ~40-60% for targeted functions</metric>
+      <metric>New tests added: 50-60 comprehensive unit tests</metric>
+      <metric>Test execution time: &lt;1s per test file</metric>
+      <metric>Grade improvements: C→A (16→6), C→B (12→5), B→A (9→4)</metric>
+    </expected-outcomes>
+  </complexity-reduction-workflow>
+
+  <priority-sequence>
+    <phase name="Quick Wins" duration="2-3 hours">
+      <task ref="improvement-5">Add computed properties to ProcessingContext</task>
+      <task ref="improvement-3">Extract _is_valid_file_type helpers</task>
+    </phase>
+
+    <phase name="Core Improvements" duration="6-8 hours">
+      <task ref="improvement-1">Refactor _process_content_line_markers (highest impact)</task>
+      <task ref="improvement-2">Simplify dump() function</task>
+      <task ref="improvement-4">Extract _generate_k8s_filename helpers</task>
+    </phase>
+
+    <phase name="Optional Enhancements" duration="4-6 hours">
+      <task ref="improvement-6">Consider thread-local state elimination (if needed)</task>
+    </phase>
+  </priority-sequence>
+
+  <success-criteria>
+    <criterion>All high-priority functions reduced to complexity ≤8</criterion>
+    <criterion>50+ new unit tests added with 100% helper coverage</criterion>
+    <criterion>All tests execute in &lt;1s per file</criterion>
+    <criterion>No mocks needed for pure helper functions</criterion>
+    <criterion>Code demonstrates consistent application of brain/ patterns</criterion>
+  </success-criteria>
+
+  <notes>
+    <note type="positive">
+      Project already demonstrates strong testability practices:
+      - CLI helper extraction and testing
+      - Frozen dataclasses for immutable contexts
+      - Clear separation of concerns with classes
+      - Good test coverage structure
+    </note>
+
+    <note type="observation">
+      This is a well-architected codebase. Suggestions focus on incremental
+      improvements to high-complexity functions rather than major restructuring.
+      The patterns are already being applied; this analysis formalizes and extends them.
+    </note>
+
+    <note type="recommendation">
+      Start with improvement #5 (ProcessingContext properties) as a warm-up,
+      then tackle improvement #1 (_process_content_line_markers) as the highest-impact change.
+    </note>
+  </notes>
+
+</todo-list>

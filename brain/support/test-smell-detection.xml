@@ -1,0 +1,235 @@
+<support-file>
+  <name>Test Smell Detection</name>
+  <test-smell-detection>
+    <philosophy>Identify problematic test patterns before they cause maintenance issues</philosophy>
+
+    <smell id="brittle-implementation-coupling">
+      <name>Tests Coupled to Implementation Details</name>
+      <indicators>
+        <indicator>Tests break on refactoring when behavior unchanged</indicator>
+        <indicator>MonkeyPatch or pytest.monkeypatch usage for internal methods</indicator>
+        <indicator>Mocking private/internal helper methods (_method_name)</indicator>
+        <indicator>Mock setup exceeds 15 lines per test</indicator>
+        <indicator>Tests reference specific internal call sequences</indicator>
+      </indicators>
+      <symptoms>
+        <symptom>Test failures say "method was called X times" but behavior is correct</symptom>
+        <symptom>Renaming internal method breaks tests</symptom>
+        <symptom>Changing implementation approach breaks tests</symptom>
+      </symptoms>
+      <remedy>
+        <action>Replace mocks with integration tests using real methods</action>
+        <action>Test through public API only</action>
+        <action>Use Fake services instead of mocking internal services</action>
+        <pattern-ref>test-refactoring-pattern</pattern-ref>
+      </remedy>
+      <severity>HIGH - Makes refactoring painful and error-prone</severity>
+    </smell>
+
+    <smell id="missing-edge-cases">
+      <name>Incomplete Edge Case Coverage</name>
+      <indicators>
+        <indicator>Only happy path tested</indicator>
+        <indicator>No None value tests</indicator>
+        <indicator>No empty string/list/dict tests</indicator>
+        <indicator>No error condition tests</indicator>
+        <indicator>No boundary value tests</indicator>
+      </indicators>
+      <symptoms>
+        <symptom>Production bugs with None values</symptom>
+        <symptom>Crashes with empty inputs</symptom>
+        <symptom>Unexpected behavior at boundaries</symptom>
+      </symptoms>
+      <remedy>
+        <action>Add parameterized tests for edge cases</action>
+        <action>Test None, empty, negative, zero, boundary values</action>
+        <action>Test error conditions explicitly</action>
+        <pattern-ref>parameterized-test-pattern</pattern-ref>
+      </remedy>
+      <severity>MEDIUM - Can lead to production bugs</severity>
+    </smell>
+
+    <smell id="implicit-test-dependencies">
+      <name>Tests with Implicit Dependencies</name>
+      <indicators>
+        <indicator>Test fails when run in isolation</indicator>
+        <indicator>Test order matters (tests pass in sequence, fail when reordered)</indicator>
+        <indicator>Shared mutable state between tests</indicator>
+        <indicator>Global variables modified by tests</indicator>
+        <indicator>Tests rely on side effects from previous tests</indicator>
+      </indicators>
+      <symptoms>
+        <symptom>Tests pass when run together, fail individually</symptom>
+        <symptom>Flaky tests that sometimes pass, sometimes fail</symptom>
+        <symptom>Tests fail after pytest-xdist parallel execution</symptom>
+      </symptoms>
+      <remedy>
+        <action>Make each test fully independent with fixtures</action>
+        <action>Reset state in setUp/tearDown or fixture cleanup</action>
+        <action>Avoid global mutable state</action>
+        <action>Each test creates its own test data</action>
+      </remedy>
+      <severity>HIGH - Creates flaky, unreliable tests</severity>
+    </smell>
+
+    <smell id="unclear-test-intent">
+      <name>Unclear Test Purpose</name>
+      <indicators>
+        <indicator>Test name doesn't describe what's being tested</indicator>
+        <indicator>No docstring explaining purpose</indicator>
+        <indicator>Generic assert statements (assert result, assert data)</indicator>
+        <indicator>Test name like "test_function1" or "test_case"</indicator>
+        <indicator>Multiple unrelated assertions in single test</indicator>
+      </indicators>
+      <symptoms>
+        <symptom>Can't determine what failed without reading test code</symptom>
+        <symptom>Unclear what behavior test is verifying</symptom>
+        <symptom>Difficult to understand test failures</symptom>
+      </symptoms>
+      <remedy>
+        <action>Rename test to describe what and condition: test_what_when_then</action>
+        <action>Add docstring explaining test purpose</action>
+        <action>Use specific assertions: assert result.success is True</action>
+        <action>Split tests with multiple concerns</action>
+      </remedy>
+      <severity>LOW - Reduces maintainability but doesn't break functionality</severity>
+    </smell>
+
+    <smell id="excessive-mocking">
+      <name>Over-Mocking Your Own Code</name>
+      <indicators>
+        <indicator>Mocking services you own instead of calling them</indicator>
+        <indicator>Mocking more than 3 things in one test</indicator>
+        <indicator>Mock setup is longer than actual test code</indicator>
+        <indicator>Repeatedly setting up same mocks across many tests</indicator>
+      </indicators>
+      <symptoms>
+        <symptom>Tests don't catch integration bugs</symptom>
+        <symptom>Massive mock setup boilerplate</symptom>
+        <symptom>Tests break on internal changes</symptom>
+      </symptoms>
+      <remedy>
+        <action>Create Fake service implementations for reuse</action>
+        <action>Use integration tests for owned services</action>
+        <action>Only mock external boundaries (AWS, Docker, HTTP)</action>
+        <pattern-ref>fake-service-pattern</pattern-ref>
+        <pattern-ref>integration-test-pattern</pattern-ref>
+      </remedy>
+      <severity>MEDIUM - Creates brittle tests and hides bugs</severity>
+    </smell>
+
+    <smell id="duplicated-test-setup">
+      <name>Repeated Test Setup Code</name>
+      <indicators>
+        <indicator>Same 5-10 lines of setup in every test</indicator>
+        <indicator>Copy-pasted object creation across tests</indicator>
+        <indicator>Tests in same file share no fixtures</indicator>
+        <indicator>Hard to maintain consistent test data</indicator>
+      </indicators>
+      <symptoms>
+        <symptom>Changing object structure requires updating many tests</symptom>
+        <symptom>Inconsistent test data across similar tests</symptom>
+        <symptom>High maintenance burden</symptom>
+      </symptoms>
+      <remedy>
+        <action>Extract common setup into fixtures</action>
+        <action>Use factory fixtures for variations</action>
+        <action>Create shared test data builders</action>
+        <pattern-ref>factory-fixture-pattern</pattern-ref>
+      </remedy>
+      <severity>LOW - Maintenance burden but doesn't affect correctness</severity>
+    </smell>
+
+    <smell id="slow-unit-tests">
+      <name>Unit Tests That Are Actually Integration Tests</name>
+      <indicators>
+        <indicator>Unit tests taking &gt;0.5s each</indicator>
+        <indicator>Tests making real network calls</indicator>
+        <indicator>Tests reading/writing real files</indicator>
+        <indicator>Tests connecting to databases</indicator>
+        <indicator>Full suite takes minutes instead of seconds</indicator>
+      </indicators>
+      <symptoms>
+        <symptom>Developers skip running tests (too slow)</symptom>
+        <symptom>CI pipeline takes too long</symptom>
+        <symptom>Flaky tests due to network issues</symptom>
+      </symptoms>
+      <remedy>
+        <action>Separate unit tests from integration tests</action>
+        <action>Mock external I/O for unit tests</action>
+        <action>Use markers: @pytest.mark.integration</action>
+        <action>Run fast unit tests by default, integration tests separately</action>
+      </remedy>
+      <severity>MEDIUM - Slows development feedback loop</severity>
+    </smell>
+
+    <smell id="async-test-antipatterns">
+      <name>Async Test Issues</name>
+      <indicators>
+        <indicator>Missing @pytest.mark.asyncio decorator</indicator>
+        <indicator>Using Mock instead of AsyncMock</indicator>
+        <indicator>Missing await on async calls</indicator>
+        <indicator>Concurrency tests without asyncio.sleep</indicator>
+      </indicators>
+      <symptoms>
+        <symptom>RuntimeError: no running event loop</symptom>
+        <symptom>TypeError: can't await Mock</symptom>
+        <symptom>Tests pass but coroutine never executed</symptom>
+        <symptom>Concurrency not actually tested</symptom>
+      </symptoms>
+      <remedy>
+        <action>Add @pytest.mark.asyncio to async tests</action>
+        <action>Use AsyncMock for async methods</action>
+        <action>Add await to all async calls</action>
+        <action>Add asyncio.sleep(0.01) in concurrency mocks</action>
+        <pattern-ref>async-test-basic</pattern-ref>
+        <pattern-ref>async-mock-pattern</pattern-ref>
+        <pattern-ref>concurrency-test-pattern</pattern-ref>
+      </remedy>
+      <severity>HIGH - Tests don't work at all</severity>
+    </smell>
+
+    <detection-checklist>
+      <phase name="code-review">
+        <check>Are tests mocking internal methods?</check>
+        <check>Is mock setup longer than test logic?</check>
+        <check>Are test names descriptive?</check>
+        <check>Are edge cases covered (None, empty, errors)?</check>
+        <check>Can tests run in any order?</check>
+      </phase>
+      <phase name="maintenance">
+        <check>Do tests break on refactoring?</check>
+        <check>Is same setup repeated in multiple tests?</check>
+        <check>Are integration bugs slipping through?</check>
+        <check>Is test suite getting slower?</check>
+      </phase>
+      <phase name="execution">
+        <check>Are tests flaky (inconsistent results)?</check>
+        <check>Do tests take too long?</check>
+        <check>Do async tests hang or timeout?</check>
+        <check>Can tests run in parallel?</check>
+      </phase>
+    </detection-checklist>
+
+    <smell-priority-matrix>
+      <high-priority>
+        <smell-ref>brittle-implementation-coupling</smell-ref>
+        <smell-ref>implicit-test-dependencies</smell-ref>
+        <smell-ref>async-test-antipatterns</smell-ref>
+        <rationale>These break tests or make refactoring impossible</rationale>
+      </high-priority>
+      <medium-priority>
+        <smell-ref>missing-edge-cases</smell-ref>
+        <smell-ref>excessive-mocking</smell-ref>
+        <smell-ref>slow-unit-tests</smell-ref>
+        <rationale>These hide bugs or slow development</rationale>
+      </medium-priority>
+      <low-priority>
+        <smell-ref>unclear-test-intent</smell-ref>
+        <smell-ref>duplicated-test-setup</smell-ref>
+        <rationale>These affect maintainability but not correctness</rationale>
+      </low-priority>
+    </smell-priority-matrix>
+
+  </test-smell-detection>
+</support-file>

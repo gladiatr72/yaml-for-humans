@@ -1,0 +1,57 @@
+<pattern-file>
+  <meta>
+    <pattern-id>async-fixture-pattern</pattern-id>
+    <source>doc/claude-test-brain.xml</source>
+    <version>1.3</version>
+  </meta>
+  <pattern>
+      <name>Async Fixtures with pytest-asyncio</name>
+      <when>Creating fixtures that need to await async operations</when>
+      <complete-example>
+        <file>tests/test_skip_if_present_e2e.py</file>
+        <code>
+import pytest
+import pytest_asyncio
+from src.ecreshore.services.digest_verification import get_enhanced_digest
+
+@pytest_asyncio.fixture
+async def real_helm_controller_digest():
+    """Async fixture that retrieves real digest from network.
+
+    Note: Uses @pytest_asyncio.fixture (not @pytest.fixture) for async support.
+    The fixture will be awaited before being injected into test functions.
+    """
+    digest = await get_enhanced_digest(
+        None,  # buildx-only mode
+        "ghcr.io/fluxcd/helm-controller",
+        "v1.3.0"
+    )
+
+    assert digest is not None, "Failed to retrieve digest"
+    assert digest.startswith("sha256:")
+
+    return digest
+
+# Usage in tests
+@pytest.mark.asyncio
+async def test_with_async_fixture(real_helm_controller_digest):
+    """Test receives the awaited result, not a coroutine."""
+    # real_helm_controller_digest is a string, not a coroutine
+    assert real_helm_controller_digest.startswith("sha256:")
+    assert len(real_helm_controller_digest) == 71  # sha256: + 64 hex chars
+</code>
+      </complete-example>
+      <critical-rules>
+        <rule>MUST use @pytest_asyncio.fixture (NOT @pytest.fixture)</rule>
+        <rule>Import pytest_asyncio at top of file</rule>
+        <rule>Async fixtures are automatically awaited before injection</rule>
+        <rule>Test functions receive the result, not the coroutine</rule>
+        <rule>Using @pytest.fixture on async fixture causes "coroutine was never awaited"</rule>
+      </critical-rules>
+      <when-to-use>
+        <use>Need to call async API in fixture setup</use>
+        <use>Need to retrieve real data via async network call</use>
+        <use>Need to setup async resources (connections, clients)</use>
+      </when-to-use>
+    </pattern>
+</pattern-file>

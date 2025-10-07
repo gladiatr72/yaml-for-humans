@@ -1,0 +1,106 @@
+<pattern-file>
+  <meta>
+    <pattern-id>fixture-pattern</pattern-id>
+    <source>doc/claude-test-brain.xml</source>
+    <version>1.3</version>
+  </meta>
+  <pattern>
+      <name>Reusable Test Fixtures</name>
+      <when>Sharing test setup across multiple tests</when>
+      <complete-example>
+        <file>tests/test_image_presence_checker.py</file>
+        <code>
+import pytest
+from unittest.mock import Mock
+from datetime import datetime
+from src.ecreshore.services.image_presence_checker import ImagePresenceChecker
+from src.ecreshore.services.ecr_repository import ECRImage, ECRRepositoryService
+
+@pytest.fixture
+def mock_ecr_service():
+    """Create mock ECR repository service."""
+    service = Mock(spec=ECRRepositoryService)
+    return service
+
+@pytest.fixture
+def sample_ecr_image():
+    """Create sample ECR image for testing."""
+    return ECRImage(
+        repository_name="helm-controller",
+        image_tags=["v1.3.0"],
+        image_digest="sha256:3b723f60dccf097d7993b76db84d8ad16cd554b94ee5d24178ccb743a4508c5a",
+        size_bytes=41000000,
+        pushed_at=datetime.now(),
+        registry_id="123456789012",
+        region="us-east-2"
+    )
+
+@pytest.fixture
+def image_presence_checker(mock_ecr_service):
+    """Create ImagePresenceChecker instance for testing.
+
+    This fixture depends on mock_ecr_service fixture.
+    """
+    return ImagePresenceChecker(mock_ecr_service)
+
+# Tests using fixtures
+@pytest.mark.asyncio
+async def test_check_image_exists_in_ecr_found(
+    image_presence_checker,
+    mock_ecr_service,
+    sample_ecr_image
+):
+    """Test checking for existing image in ECR."""
+    # Setup mock behavior
+    mock_ecr_service.list_images = Mock(return_value=[sample_ecr_image])
+
+    # Test
+    result = await image_presence_checker.check_image_exists_in_ecr(
+        "helm-controller",
+        "v1.3.0"
+    )
+
+    # Verify
+    assert result is not None
+    assert result.repository_name == "helm-controller"
+    assert "v1.3.0" in result.image_tags
+    mock_ecr_service.list_images.assert_called_once_with(
+        "helm-controller",
+        tag_filter="v1.3.0",
+        max_results=10
+    )
+
+@pytest.mark.asyncio
+async def test_check_image_exists_in_ecr_not_found(
+    image_presence_checker,
+    mock_ecr_service
+):
+    """Test checking for non-existent image."""
+    # Setup mock - no images returned
+    mock_ecr_service.list_images = Mock(return_value=[])
+
+    # Test
+    result = await image_presence_checker.check_image_exists_in_ecr(
+        "missing-image",
+        "v1.0.0"
+    )
+
+    # Verify
+    assert result is None
+</code>
+      </complete-example>
+      <critical-rules>
+        <rule>Fixtures are functions decorated with @pytest.fixture</rule>
+        <rule>Fixture setup is synchronous, test function can be async</rule>
+        <rule>Fixtures can depend on other fixtures (parameter injection)</rule>
+        <rule>Fixtures are called automatically when used as test parameters</rule>
+        <rule>Return value of fixture is passed to test</rule>
+      </critical-rules>
+      <fixture-scope>
+        <default-scope>function - New instance per test (default)</default-scope>
+        <class-scope>class - Shared across test class</class-scope>
+        <module-scope>module - Shared across test file</module-scope>
+        <session-scope>session - Shared across entire test run</session-scope>
+      </fixture-scope>
+    </pattern>
+</pattern-file>

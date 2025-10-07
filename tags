@@ -4,6 +4,7 @@
 !_TAG_PROGRAM_NAME	Exuberant Ctags	//
 !_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
 !_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+BrainValidator	brain/validate_brain.py	/^class BrainValidator:$/;"	c
 CommentMetadata	src/yaml_for_humans/formatting_aware.py	/^class CommentMetadata:$/;"	c
 CustomMapping	tests/test_emitter.py	/^        class CustomMapping:$/;"	c	function:TestErrorHandling.test_non_dict_mappings
 DirectoryOutputWriter	src/yaml_for_humans/cli.py	/^class DirectoryOutputWriter:$/;"	c
@@ -60,9 +61,11 @@ TestStdinAutoDetection	tests/test_cli.py	/^class TestStdinAutoDetection:$/;"	c
 TestStdinTimeout	tests/test_cli.py	/^class TestStdinTimeout:$/;"	c
 TestYAMLValidity	tests/test_emitter.py	/^class TestYAMLValidity:$/;"	c
 UNKNOWN_PRIORITY	src/yaml_for_humans/multi_document.py	/^    UNKNOWN_PRIORITY = len(RESOURCE_ORDER)$/;"	v	class:KubernetesManifestDumper
+ValidationError	brain/validate_brain.py	/^class ValidationError(Exception):$/;"	c
 __delitem__	src/yaml_for_humans/formatting_aware.py	/^    def __delitem__(self, key):$/;"	m	class:FormattingAwareDict	file:
 __init__	ast_analysis.py	/^    def __init__(self, filename: str):$/;"	m	class:PerformanceAnalyzer
 __init__	ast_performance_analysis.py	/^    def __init__(self, filename: str):$/;"	m	class:PerformanceAnalyzer
+__init__	brain/validate_brain.py	/^    def __init__(self, brain_dir: Path = Path("brain")):$/;"	m	class:BrainValidator
 __init__	src/yaml_for_humans/cli.py	/^    def __init__(self, context: ProcessingContext):$/;"	m	class:FormatDetector
 __init__	src/yaml_for_humans/cli.py	/^    def __init__(self, context: ProcessingContext):$/;"	m	class:InputProcessor
 __init__	src/yaml_for_humans/cli.py	/^    def __init__(self, dir_path: Path):$/;"	m	class:DirectoryOutputWriter
@@ -172,6 +175,8 @@ create_writer	src/yaml_for_humans/cli.py	/^    def create_writer(output_path: st
 create_yaml_with_comments	benchmark.py	/^def create_yaml_with_comments():$/;"	f
 demo_data	examples/comment_preservation_example.py	/^    demo_data = load_with_formatting(comment_demo_yaml)$/;"	v
 demo_output	examples/comment_preservation_example.py	/^    demo_output = dumps(demo_data, preserve_comments=True, preserve_empty_lines=True)$/;"	v
+discover_pattern_files	brain/update_index.py	/^def discover_pattern_files():$/;"	f
+discover_support_files	brain/update_index.py	/^def discover_support_files():$/;"	f
 documents	src/yaml_for_humans/cli.py	/^        documents=documents,$/;"	v
 dump	src/yaml_for_humans/dumper.py	/^def dump($/;"	f
 dump_all	src/yaml_for_humans/multi_document.py	/^    def dump_all(self, documents: Iterable[Any]) -> None:$/;"	m	class:KubernetesManifestDumper
@@ -185,6 +190,7 @@ dumps_kubernetes_manifests	src/yaml_for_humans/multi_document.py	/^def dumps_kub
 empty_lines_before	src/yaml_for_humans/formatting_aware.py	/^    def empty_lines_before(self):$/;"	m	class:FormattingMetadata
 empty_lines_before	src/yaml_for_humans/formatting_aware.py	/^    def empty_lines_before(self, value):$/;"	m	class:FormattingMetadata
 empty_lines_before_count	src/yaml_for_humans/formatting_aware.py	/^    def empty_lines_before_count(self):$/;"	m	class:FormattingMetadata
+error	brain/validate_brain.py	/^    def error(self, msg: str):$/;"	m	class:BrainValidator
 expand_paths	src/yaml_for_humans/cli.py	/^    def expand_paths(self, inputs_str: str) -> list[str]:$/;"	m	class:FilePathExpander
 expect_block_mapping	src/yaml_for_humans/emitter.py	/^    def expect_block_mapping(self) -> None:$/;"	m	class:HumanFriendlyEmitter
 expect_block_mapping_simple_value	src/yaml_for_humans/emitter.py	/^    def expect_block_mapping_simple_value(self) -> None:$/;"	m	class:HumanFriendlyEmitter
@@ -192,6 +198,7 @@ expect_block_sequence	src/yaml_for_humans/emitter.py	/^    def expect_block_sequ
 expect_block_sequence_item	src/yaml_for_humans/emitter.py	/^    def expect_block_sequence_item(self, first: bool = False) -> None:$/;"	m	class:HumanFriendlyEmitter
 expect_scalar	src/yaml_for_humans/emitter.py	/^    def expect_scalar(self) -> None:$/;"	m	class:HumanFriendlyEmitter
 factory	src/yaml_for_humans/cli.py	/^        def factory():$/;"	f	function:ProcessingContext.create_source_factory
+generate_index	brain/update_index.py	/^def generate_index(patterns, support_files, meta, intent_map):$/;"	f
 generate_performance_report	ast_analysis.py	/^def generate_performance_report(analyzers: Dict[str, PerformanceAnalyzer]) -> str:$/;"	f
 generate_report	ast_performance_analysis.py	/^def generate_report(file_results: Dict, all_metrics: Dict, total_complexity: int, analysis_time: float):$/;"	f
 get_function_key	ast_analysis.py	/^    def get_function_key(self) -> str:$/;"	m	class:PerformanceAnalyzer
@@ -204,11 +211,15 @@ has_comments	src/yaml_for_humans/formatting_aware.py	/^    def has_comments(self
 huml	src/yaml_for_humans/cli.py	/^def huml():$/;"	f
 huml_func	benchmark.py	/^            def huml_func():$/;"	f	function:benchmark_serialization.pyyaml_multi
 indent	src/yaml_for_humans/cli.py	/^        indent=indent,$/;"	v
+info	brain/validate_brain.py	/^    def info(self, msg: str):$/;"	m	class:BrainValidator
 items	tests/test_emitter.py	/^            def items(self):$/;"	m	class:TestErrorHandling.test_non_dict_mappings.CustomMapping
 kubernetes_resource_ordering_example	examples/kubernetes_manifests_example.py	/^def kubernetes_resource_ordering_example():$/;"	f
 lines_before_raw	src/yaml_for_humans/formatting_aware.py	/^    def lines_before_raw(self):$/;"	m	class:FormattingMetadata
+load_metadata_from_monolith	brain/update_index.py	/^def load_metadata_from_monolith():$/;"	f
 load_with_formatting	src/yaml_for_humans/dumper.py	/^def load_with_formatting(stream: str | TextIO) -> Any:$/;"	f
 main	ast_analysis.py	/^def main():$/;"	f
+main	brain/update_index.py	/^def main():$/;"	f
+main	brain/validate_brain.py	/^def main():$/;"	f
 main	examples/comment_preservation_example.py	/^def main():$/;"	f
 main	examples/docker_compose_example.py	/^def main():$/;"	f
 main	examples/kubernetes_example.py	/^def main():$/;"	f
@@ -218,6 +229,8 @@ open	src/yaml_for_humans/formatting_emitter.py	/^    def open(self):$/;"	m	class
 output_path	src/yaml_for_humans/cli.py	/^        output_path=output_path,$/;"	v
 preserve_comments	src/yaml_for_humans/cli.py	/^        preserve_comments=preserve_comments,$/;"	v
 preserve_empty_lines	src/yaml_for_humans/cli.py	/^        preserve_empty_lines=preserve_empty_lines,$/;"	v
+print_results	brain/validate_brain.py	/^    def print_results(self) -> bool:$/;"	m	class:BrainValidator
+print_summary	brain/update_index.py	/^def print_summary(patterns, support_files):$/;"	f
 process_content	src/yaml_for_humans/cli.py	/^    def process_content($/;"	m	class:FormatDetector
 process_files	src/yaml_for_humans/cli.py	/^    def process_files(self, inputs_str: str) -> tuple[list[Any], list[dict]]:$/;"	m	class:InputProcessor
 process_items_array	src/yaml_for_humans/document_processors.py	/^def process_items_array($/;"	f
@@ -236,12 +249,14 @@ represent_mapping	src/yaml_for_humans/emitter.py	/^    def represent_mapping(sel
 represent_mapping	src/yaml_for_humans/formatting_emitter.py	/^    def represent_mapping(self, tag, mapping, flow_style=None):$/;"	m	class:FormattingAwareDumper
 represent_str	src/yaml_for_humans/emitter.py	/^    def represent_str(self, dumper, data):$/;"	m	class:HumanFriendlyDumper
 represent_str	src/yaml_for_humans/formatting_emitter.py	/^    def represent_str(self, dumper, data):$/;"	m	class:FormattingAwareDumper
+run	brain/validate_brain.py	/^    def run(self) -> bool:$/;"	m	class:BrainValidator
 setup_method	tests/test_cli.py	/^    def setup_method(self):$/;"	m	class:TestFileTypeDetection
 setup_method	tests/test_cli.py	/^    def setup_method(self):$/;"	m	class:TestGlobbingAndDirectorySupport
 setup_method	tests/test_cli.py	/^    def setup_method(self):$/;"	m	class:TestInputsFlag
 setup_method	tests/test_cli.py	/^    def setup_method(self):$/;"	m	class:TestOutputFlag
 setup_method	tests/test_integration.py	/^    def setup_method(self):$/;"	m	class:TestCLIInputsFlag
 sources	src/yaml_for_humans/cli.py	/^        sources=document_sources or [],$/;"	v
+success	brain/validate_brain.py	/^    def success(self, msg: str):$/;"	m	class:BrainValidator
 teardown_method	tests/test_cli.py	/^    def teardown_method(self):$/;"	m	class:TestFileTypeDetection
 teardown_method	tests/test_cli.py	/^    def teardown_method(self):$/;"	m	class:TestGlobbingAndDirectorySupport
 teardown_method	tests/test_cli.py	/^    def teardown_method(self):$/;"	m	class:TestInputsFlag
@@ -381,6 +396,16 @@ test_valid_file_type_detection	tests/test_cli.py	/^    def test_valid_file_type_
 test_very_large_document_list	tests/test_multi_document.py	/^    def test_very_large_document_list(self):$/;"	m	class:TestEdgeCases
 test_yaml_input_processing	tests/test_cli.py	/^    def test_yaml_input_processing(self, capsys):$/;"	m	class:TestCLIFunctionality
 time_operation	benchmark.py	/^def time_operation(func, iterations=1000, warmup=50):$/;"	f
+validate_all_xml_files	brain/validate_brain.py	/^    def validate_all_xml_files(self):$/;"	m	class:BrainValidator
+validate_index_exists	brain/validate_brain.py	/^    def validate_index_exists(self) -> etree._ElementTree | None:$/;"	m	class:BrainValidator
+validate_intent_pattern_map	brain/validate_brain.py	/^    def validate_intent_pattern_map(self, index_tree: etree._ElementTree):$/;"	m	class:BrainValidator
+validate_monolith_is_metadata_only	brain/validate_brain.py	/^    def validate_monolith_is_metadata_only(self):$/;"	m	class:BrainValidator
+validate_output	brain/update_index.py	/^def validate_output():$/;"	f
+validate_pattern_file_structure	brain/validate_brain.py	/^    def validate_pattern_file_structure(self):$/;"	m	class:BrainValidator
+validate_pattern_files	brain/validate_brain.py	/^    def validate_pattern_files(self, index_tree: etree._ElementTree):$/;"	m	class:BrainValidator
+validate_statistics	brain/validate_brain.py	/^    def validate_statistics(self, index_tree: etree._ElementTree):$/;"	m	class:BrainValidator
+validate_support_files	brain/validate_brain.py	/^    def validate_support_files(self, index_tree: etree._ElementTree):$/;"	m	class:BrainValidator
+validate_xml_wellformed	brain/validate_brain.py	/^    def validate_xml_wellformed(self, filepath: Path) -> bool:$/;"	m	class:BrainValidator
 visit_BinOp	ast_performance_analysis.py	/^    def visit_BinOp(self, node):$/;"	m	class:PerformanceAnalyzer
 visit_Call	ast_analysis.py	/^    def visit_Call(self, node):$/;"	m	class:PerformanceAnalyzer
 visit_Call	ast_performance_analysis.py	/^    def visit_Call(self, node):$/;"	m	class:PerformanceAnalyzer
@@ -403,6 +428,7 @@ visit_SetComp	ast_analysis.py	/^    def visit_SetComp(self, node):$/;"	m	class:P
 visit_SetComp	ast_performance_analysis.py	/^    def visit_SetComp(self, node):$/;"	m	class:PerformanceAnalyzer
 visit_While	ast_analysis.py	/^    def visit_While(self, node):$/;"	m	class:PerformanceAnalyzer
 visit_While	ast_performance_analysis.py	/^    def visit_While(self, node):$/;"	m	class:PerformanceAnalyzer
+warning	brain/validate_brain.py	/^    def warning(self, msg: str):$/;"	m	class:BrainValidator
 write	src/yaml_for_humans/cli.py	/^    def write($/;"	m	class:OutputWriter
 write_documents	src/yaml_for_humans/cli.py	/^    def write_documents($/;"	m	class:DirectoryOutputWriter
 write_documents	src/yaml_for_humans/cli.py	/^    def write_documents($/;"	m	class:FileOutputWriter

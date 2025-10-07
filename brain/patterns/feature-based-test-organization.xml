@@ -1,0 +1,167 @@
+<pattern-file>
+  <meta>
+    <pattern-id>feature-based-test-organization</pattern-id>
+    <source>yaml-for-humans test suite analysis (2025-10-07)</source>
+    <version>1.0</version>
+  </meta>
+  <pattern>
+    <name>Feature-Based Test Organization</name>
+    <when>Organizing tests for a library with multiple distinct features</when>
+    <why>Clear boundaries, easy navigation, allows different testing philosophies per feature</why>
+    <philosophy>Group tests by feature domain, not by technical layer. Separate integration from unit tests at the file level.</philosophy>
+
+    <complete-example>
+      <project>yaml-for-humans</project>
+      <structure>
+tests/
+├── test_cli.py (1,595 lines, 68 tests)
+│   ├── TestStdinTimeout          # Feature: Stdin handling
+│   ├── TestCLIFunctionality      # Feature: Core CLI operations
+│   ├── TestInputsFlag            # Feature: File input processing
+│   ├── TestOutputFlag            # Feature: Output generation
+│   ├── TestStdinAutoDetection    # Feature: Format detection
+│   ├── TestGlobbingAndDirectorySupport  # Feature: Path expansion
+│   └── TestFileTypeDetection     # Feature: File validation
+├── test_comment_preservation.py  # Feature: Comment handling (isolated)
+├── test_empty_line_preservation.py  # Feature: Empty line handling (isolated)
+├── test_integration.py           # Real-world scenarios, no mocks
+├── test_emitter.py              # Core YAML emission (unit tests)
+├── test_multi_document.py       # Multi-document YAML support
+└── test_multiline_scalars.py    # Multiline string handling
+      </structure>
+
+      <reasoning>
+        <reason>Each file tests one feature domain</reason>
+        <reason>CLI features grouped with sub-classes for sub-features</reason>
+        <reason>Integration tests separated (test_integration.py)</reason>
+        <reason>Core features isolated (comment/empty-line preservation)</reason>
+      </reasoning>
+    </complete-example>
+
+    <organization-patterns>
+      <pattern type="single-feature-file">
+        <when>Feature is cohesive and can be tested in isolation</when>
+        <example>test_comment_preservation.py - 285 lines, single TestCommentPreservation class</example>
+        <benefits>
+          <benefit>Easy to locate tests for feature</benefit>
+          <benefit>Can run just this feature's tests</benefit>
+          <benefit>Clear scope for contributors</benefit>
+        </benefits>
+      </pattern>
+
+      <pattern type="multi-class-feature-file">
+        <when>Feature has multiple sub-features or testing concerns</when>
+        <example>
+test_cli.py with 7 test classes:
+- TestStdinTimeout (stdin handling edge cases)
+- TestCLIFunctionality (basic operations)
+- TestInputsFlag (file input variations)
+- TestOutputFlag (output generation modes)
+- TestStdinAutoDetection (format detection)
+- TestGlobbingAndDirectorySupport (path expansion)
+- TestFileTypeDetection (file validation)
+        </example>
+        <benefits>
+          <benefit>Related sub-features stay together</benefit>
+          <benefit>Clear separation within feature domain</benefit>
+          <benefit>Easy to understand feature scope</benefit>
+        </benefits>
+      </pattern>
+
+      <pattern type="integration-file">
+        <when>Testing real-world scenarios with minimal mocks</when>
+        <example>test_integration.py - Full Kubernetes manifest processing, round-trip validation</example>
+        <philosophy>Zero mocks for services you own, test complete workflows</philosophy>
+        <benefits>
+          <benefit>Catches integration issues</benefit>
+          <benefit>Validates real use cases</benefit>
+          <benefit>Documents intended usage</benefit>
+        </benefits>
+      </pattern>
+
+      <pattern type="unit-test-file">
+        <when>Testing core algorithms or pure functions in isolation</when>
+        <example>test_emitter.py - YAML emission logic, key ordering, sequence formatting</example>
+        <characteristics>
+          <characteristic>No external dependencies</characteristic>
+          <characteristic>Fast execution</characteristic>
+          <characteristic>Focused on single responsibility</characteristic>
+        </characteristics>
+      </pattern>
+    </organization-patterns>
+
+    <anti-patterns>
+      <anti-pattern>
+        <name>Layer-based organization</name>
+        <example>tests/unit/, tests/integration/, tests/functional/</example>
+        <problem>Features scattered across multiple directories, hard to find all tests for a feature</problem>
+      </anti-pattern>
+
+      <anti-pattern>
+        <name>Module-mirroring organization</name>
+        <example>tests/test_dumper.py, tests/test_emitter.py, tests/test_cli.py (exactly mirrors src/)</example>
+        <problem>Technical organization, not user-facing feature organization</problem>
+        <when-acceptable>For libraries with very few features where modules = features</when-acceptable>
+      </anti-pattern>
+
+      <anti-pattern>
+        <name>Single giant test file</name>
+        <example>test_everything.py with 5000+ lines</example>
+        <problem>Slow to load, hard to navigate, merge conflicts, unclear scope</problem>
+      </anti-pattern>
+    </anti-patterns>
+
+    <naming-conventions>
+      <file-naming>
+        <pattern>test_{feature_name}.py</pattern>
+        <examples>
+          <example>test_comment_preservation.py - Clear feature</example>
+          <example>test_empty_line_preservation.py - Clear feature</example>
+          <example>test_cli.py - Broad feature with sub-classes</example>
+          <example>test_integration.py - Testing philosophy (integration)</example>
+        </examples>
+      </file-naming>
+
+      <class-naming>
+        <pattern>Test{FeatureOrConcern}</pattern>
+        <examples>
+          <example>TestCommentPreservation - Feature</example>
+          <example>TestStdinTimeout - Specific concern</example>
+          <example>TestCLIFunctionality - Broad functionality</example>
+          <example>TestKubernetesIntegration - Integration scope</example>
+        </examples>
+      </class-naming>
+    </naming-conventions>
+
+    <benefits>
+      <benefit>Easy to locate tests for feature - single file or clear location</benefit>
+      <benefit>Clear feature boundaries - file boundaries = feature boundaries</benefit>
+      <benefit>Different testing philosophies per feature - integration vs unit as needed</benefit>
+      <benefit>Scalable - add new feature, add new file</benefit>
+      <benefit>Contributor-friendly - obvious where to add tests</benefit>
+      <benefit>Selective test execution - run tests for feature being worked on</benefit>
+    </benefits>
+
+    <implementation-guidelines>
+      <guideline>Start with one test file per user-facing feature</guideline>
+      <guideline>Use sub-classes when feature has multiple concerns (like CLI with many flags)</guideline>
+      <guideline>Separate integration tests into dedicated file(s)</guideline>
+      <guideline>Keep core algorithm tests isolated (emitter, parser, etc.)</guideline>
+      <guideline>Don't mirror source structure - organize by feature, not by module</guideline>
+      <guideline>File size guideline: 100-500 lines per feature, split if larger</guideline>
+    </implementation-guidelines>
+
+    <metrics>
+      <project>yaml-for-humans</project>
+      <test-files>9</test-files>
+      <total-tests>133</total-tests>
+      <organization-score>9/10</organization-score>
+      <strengths>
+        <strength>Clear feature boundaries</strength>
+        <strength>Easy navigation</strength>
+        <strength>Scalable structure</strength>
+        <strength>Separated integration from unit tests</strength>
+      </strengths>
+    </metrics>
+  </pattern>
+</pattern-file>

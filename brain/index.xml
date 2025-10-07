@@ -1,0 +1,233 @@
+<brain-index>
+  <meta>
+    <version>1.4</version>
+    <source>brain/patterns/*.xml + brain/support/*.xml</source>
+    <generated-by>brain/update_index.py</generated-by>
+    <structure>Metadata-only monolith + extracted patterns</structure>
+    <codebase>ecreshore</codebase>
+    <test-framework>pytest + pytest-asyncio</test-framework>
+    <last-updated>2025-10-04</last-updated>
+    <architecture>Metadata-only monolith + extracted patterns</architecture>
+  </meta>
+  <statistics>
+    <pattern-files>23</pattern-files>
+    <support-files>8</support-files>
+    <total-files>32</total-files>
+  </statistics>
+  <routing>
+    <intent-pattern-map>
+    <intent query="test async function|test async method|async test|awaitable">
+      <pattern-id>async-test-basic</pattern-id>
+      <required-imports>pytest, pytest.mark.asyncio</required-imports>
+      <must-have>@pytest.mark.asyncio decorator</must-have>
+      <must-have>async def test_ function signature</must-have>
+      <must-have>await on all async calls</must-have>
+    </intent>
+
+    <intent query="mock async|mock awaitable|AsyncMock|async method mock">
+      <pattern-id>async-mock-pattern</pattern-id>
+      <required-imports>unittest.mock.AsyncMock</required-imports>
+      <must-have>AsyncMock (NOT Mock)</must-have>
+      <what-breaks>Mock() is not awaitable - causes TypeError</what-breaks>
+    </intent>
+
+    <intent query="test concurrency|test parallel|test semaphore|test rate limit|concurrent execution">
+      <pattern-id>concurrency-test-pattern</pattern-id>
+      <required-imports>asyncio, pytest.mark.asyncio</required-imports>
+      <must-have>await asyncio.sleep(0.01) in mock</must-have>
+      <must-have>tracking variables (nonlocal)</must-have>
+      <what-breaks>Without sleep, no context switch - test passes incorrectly</what-breaks>
+    </intent>
+
+    <intent query="test streaming|test async generator|test pagination|async for">
+      <pattern-id>async-generator-pattern</pattern-id>
+      <required-imports>pytest.mark.asyncio, AsyncMock</required-imports>
+      <must-have>async def generator with yield</must-have>
+    </intent>
+
+    <intent query="integration test|end to end|e2e|real service|no mocks">
+      <pattern-id>integration-test-pattern</pattern-id>
+      <must-not-have>Mock objects for owned services</must-not-have>
+      <must-have>Real service instances</must-have>
+      <philosophy>Zero mocks for services you own</philosophy>
+    </intent>
+
+    <intent query="slow integration test|fast test with real logic|mock I/O boundary|infrastructure mock|test too slow">
+      <pattern-id>infrastructure-boundary-mock-pattern</pattern-id>
+      <must-have>Mock only I/O boundaries (Docker, AWS, subprocess)</must-have>
+      <must-not-have>Mock business logic or pure functions</must-not-have>
+      <philosophy>Mock data structures at I/O boundaries, keep decision logic real</philosophy>
+      <benefit>99% speedup (15s → 0.1s) while testing real 250+ line algorithms</benefit>
+    </intent>
+
+    <intent query="should I mock|when to mock|fake vs mock|mock or fake">
+      <decision-tree-id>mock-vs-fake-decision</decision-tree-id>
+    </intent>
+
+    <intent query="fake service|fake implementation|reusable fake|test double">
+      <pattern-id>fake-service-pattern</pattern-id>
+      <required-imports>None - implement fake classes</required-imports>
+      <must-have>Fake class with same interface as real service</must-have>
+      <must-have>Track calls for verification</must-have>
+      <philosophy>Fakes are better than mocks for your own services</philosophy>
+    </intent>
+
+    <intent query="test fixture|shared setup|reusable test data">
+      <pattern-id>fixture-pattern</pattern-id>
+      <required-imports>pytest.fixture</required-imports>
+    </intent>
+
+    <intent query="test context manager|async with|test resource cleanup">
+      <pattern-id>async-context-manager-pattern</pattern-id>
+      <must-have>async with statement</must-have>
+    </intent>
+
+    <intent query="test hangs|test stuck|infinite wait|no event loop">
+      <debugging-id>common-async-failures</debugging-id>
+    </intent>
+
+    <intent query="async fixture|fixture async|pytest-asyncio fixture">
+      <pattern-id>async-fixture-pattern</pattern-id>
+      <required-imports>pytest_asyncio.fixture</required-imports>
+      <must-have>@pytest_asyncio.fixture decorator</must-have>
+      <what-breaks>Using @pytest.fixture on async fixture - coroutine not awaited</what-breaks>
+    </intent>
+
+    <intent query="factory fixture|parameterized fixture|fixture builder">
+      <pattern-id>factory-fixture-pattern</pattern-id>
+      <required-imports>pytest.fixture</required-imports>
+      <must-have>Return a callable function</must-have>
+    </intent>
+
+    <intent query="validate implementation|check what exists|before implementing">
+      <pattern-id>validate-before-implement-pattern</pattern-id>
+      <philosophy>Always validate existing implementation before estimating effort</philosophy>
+    </intent>
+
+    <intent query="test error reporting|error aggregation|test with failures">
+      <pattern-id>intentional-failure-test-pattern</pattern-id>
+      <must-have>Test config with intentional failures</must-have>
+    </intent>
+
+    <intent query="log level|logger pollution|verbose logging|clean output">
+      <pattern-id>log-level-management-pattern</pattern-id>
+      <must-have>logger.debug for internal, logger.error for user-facing</must-have>
+    </intent>
+
+    <intent query="refactor tests|brittle tests|tests break on refactoring|mock-heavy tests">
+      <pattern-id>test-refactoring-pattern</pattern-id>
+      <philosophy>Replace brittle mocks with integration tests and pure function extraction</philosophy>
+    </intent>
+
+    <intent query="extract pure function|testable logic|business logic in async|make testable">
+      <pattern-id>pure-function-extraction-pattern</pattern-id>
+      <philosophy>Separate pure logic from I/O for trivial testing</philosophy>
+    </intent>
+
+    <intent query="parameterize test|test multiple cases|pytest.mark.parametrize|test variations">
+      <pattern-id>parameterized-test-pattern</pattern-id>
+      <must-have>@pytest.mark.parametrize decorator</must-have>
+    </intent>
+
+    <intent query="test smells|code smell in tests|test quality|brittle test indicators">
+      <section-id>test-smell-detection</section-id>
+      <philosophy>Proactive identification of test anti-patterns</philosophy>
+    </intent>
+
+    <intent query="test CLI|test click command|test typer|CLI testing|command line test|format detection|test helpers">
+      <pattern-id>cli-testing-pattern</pattern-id>
+      <must-have>Extract business logic from CLI framework</must-have>
+      <must-have>Pure validation functions returning dataclasses</must-have>
+      <must-have>Format detection as pure helper functions</must-have>
+      <philosophy>Test business logic, not framework integration</philosophy>
+      <example>yaml-for-humans format detection helpers</example>
+    </intent>
+
+    <intent query="validation dataclass|validation function|validate and return|validated config">
+      <pattern-id>validation-dataclass-pattern</pattern-id>
+      <must-have>Validation function returns @dataclass</must-have>
+      <what-breaks>Returning tuples or dicts - error-prone unpacking</what-breaks>
+      <philosophy>Validated data should be structured and type-safe</philosophy>
+    </intent>
+
+    <intent query="dataclass property|computed property|derived state|dataclass with logic">
+      <pattern-id>dataclass-property-pattern</pattern-id>
+      <must-have>@property decorator on dataclass</must-have>
+      <must-have>Property returns derived/computed value</must-have>
+      <philosophy>Dataclasses are more than data bags - add computed properties for derived state</philosophy>
+      <benefit>Reduces complexity by centralizing repeated boolean/calculation logic</benefit>
+    </intent>
+
+    <intent query="refactor display function|Rich table complexity|console output refactoring|UI function too complex">
+      <pattern-id>display-helper-extraction-pattern</pattern-id>
+      <must-have>Extract data transformation to pure helpers</must-have>
+      <must-have>Main function pure UI orchestration</must-have>
+      <philosophy>Display functions should orchestrate UI primitives, not transform data</philosophy>
+      <specialization-of>pure-function-extraction-pattern</specialization-of>
+      <frameworks>Rich, console, Click output</frameworks>
+    </intent>
+
+    <intent query="how to reduce complexity|refactor complex function|complexity too high|systematic refactoring">
+      <workflow-id>complexity-reduction-workflow</workflow-id>
+      <philosophy>Repeatable 7-phase process for complexity refactoring</philosophy>
+      <proven-success>10 functions completed with 40-60% reduction</proven-success>
+    </intent>
+
+    <intent query="test organization|organize tests|test structure|feature based tests|how to structure tests">
+      <pattern-id>feature-based-test-organization</pattern-id>
+      <philosophy>Group tests by feature domain, not technical layer</philosophy>
+      <must-have>One file per user-facing feature</must-have>
+      <must-have>Separate integration tests from unit tests</must-have>
+      <example>yaml-for-humans test suite organization</example>
+    </intent>
+
+    <intent query="frozen dataclass|immutable context|configuration context|pass configuration|context pattern">
+      <pattern-id>immutable-context-pattern</pattern-id>
+      <philosophy>Use frozen dataclasses for immutable, type-safe configuration</philosophy>
+      <must-have>@dataclass(frozen=True)</must-have>
+      <must-have>Configuration flows through application layers</must-have>
+      <benefit>Prevents accidental mutation, ensures type safety</benefit>
+      <example>yaml-for-humans ProcessingContext</example>
+    </intent>
+  </intent-pattern-map>
+  </routing>
+  <file-manifest>
+    <patterns>
+      <directory>brain/patterns/</directory>
+      <file id="async-context-manager-pattern">async-context-manager-pattern.xml</file>
+      <file id="async-fixture-pattern">async-fixture-pattern.xml</file>
+      <file id="async-generator-pattern">async-generator-pattern.xml</file>
+      <file id="async-mock-pattern">async-mock-pattern.xml</file>
+      <file id="async-test-basic">async-test-basic.xml</file>
+      <file id="cli-testing-pattern">cli-testing-pattern.xml</file>
+      <file id="concurrency-test-pattern">concurrency-test-pattern.xml</file>
+      <file id="dataclass-property-pattern">dataclass-property-pattern.xml</file>
+      <file id="display-helper-extraction-pattern">display-helper-extraction-pattern.xml</file>
+      <file id="factory-fixture-pattern">factory-fixture-pattern.xml</file>
+      <file id="fake-service-pattern">fake-service-pattern.xml</file>
+      <file id="feature-based-test-organization">feature-based-test-organization.xml</file>
+      <file id="fixture-pattern">fixture-pattern.xml</file>
+      <file id="immutable-context-pattern">immutable-context-pattern.xml</file>
+      <file id="infrastructure-boundary-mock-pattern">infrastructure-boundary-mock-pattern.xml</file>
+      <file id="integration-test-pattern">integration-test-pattern.xml</file>
+      <file id="intentional-failure-test-pattern">intentional-failure-test-pattern.xml</file>
+      <file id="log-level-management-pattern">log-level-management-pattern.xml</file>
+      <file id="parameterized-test-pattern">parameterized-test-pattern.xml</file>
+      <file id="pure-function-extraction-pattern">pure-function-extraction-pattern.xml</file>
+      <file id="test-refactoring-pattern">test-refactoring-pattern.xml</file>
+      <file id="validate-before-implement-pattern">validate-before-implement-pattern.xml</file>
+      <file id="validation-dataclass-pattern">validation-dataclass-pattern.xml</file>
+    </patterns>
+    <support>
+      <directory>brain/support/</directory>
+      <file>anti-patterns.xml</file>
+      <file>complexity-reduction-workflow.xml</file>
+      <file>coverage-interpretation-guide.xml</file>
+      <file>debugging-guide.xml</file>
+      <file>decision-trees.xml</file>
+      <file>metadata.xml</file>
+      <file>quick-reference.xml</file>
+      <file>test-smell-detection.xml</file>
+    </support>
+  </file-manifest>
+</brain-index>
