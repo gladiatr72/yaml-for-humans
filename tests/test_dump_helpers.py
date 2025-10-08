@@ -7,9 +7,11 @@ Tests pure helper functions extracted from dump() complexity reduction.
 import pytest
 
 from yaml_for_humans.dumper import (
+    DumpConfig,
     _select_dumper,
     _build_dump_kwargs,
     _create_preset_dumper,
+    _setup_formatting_dumper,
 )
 from yaml_for_humans.emitter import HumanFriendlyDumper
 from yaml_for_humans.formatting_emitter import FormattingAwareDumper
@@ -138,6 +140,119 @@ class TestCreatePresetDumper:
         )
         # Should be different classes even with same params
         assert Dumper1 is not Dumper2
+
+
+class TestDumpConfig:
+    """Test DumpConfig dataclass and properties."""
+
+    def test_needs_formatting_both_false(self):
+        """Test needs_formatting returns False when no preservation enabled."""
+        config = DumpConfig(
+            preserve_empty_lines=False,
+            preserve_comments=False
+        )
+        assert config.needs_formatting is False
+
+    def test_needs_formatting_empty_lines_only(self):
+        """Test needs_formatting returns True when preserve_empty_lines enabled."""
+        config = DumpConfig(
+            preserve_empty_lines=True,
+            preserve_comments=False
+        )
+        assert config.needs_formatting is True
+
+    def test_needs_formatting_comments_only(self):
+        """Test needs_formatting returns True when preserve_comments enabled."""
+        config = DumpConfig(
+            preserve_empty_lines=False,
+            preserve_comments=True
+        )
+        assert config.needs_formatting is True
+
+    def test_needs_formatting_both_true(self):
+        """Test needs_formatting returns True when both flags enabled."""
+        config = DumpConfig(
+            preserve_empty_lines=True,
+            preserve_comments=True
+        )
+        assert config.needs_formatting is True
+
+    def test_config_is_frozen(self):
+        """Test that DumpConfig is immutable (frozen dataclass)."""
+        config = DumpConfig(preserve_empty_lines=True)
+        with pytest.raises(Exception):  # FrozenInstanceError in Python 3.10+
+            config.preserve_empty_lines = False
+
+
+class TestSetupFormattingDumper:
+    """Test _setup_formatting_dumper pure function."""
+
+    def test_setup_removes_preservation_params(self):
+        """Test that preservation parameters are removed from kwargs."""
+        config = DumpConfig(preserve_empty_lines=True, preserve_comments=True)
+        kwargs = {
+            "Dumper": FormattingAwareDumper,
+            "indent": 2,
+            "preserve_empty_lines": True,  # Should be removed
+            "preserve_comments": True,  # Should be removed
+        }
+        result = _setup_formatting_dumper(config, kwargs)
+
+        assert "preserve_empty_lines" not in result
+        assert "preserve_comments" not in result
+        assert result["indent"] == 2
+
+    def test_setup_creates_preset_dumper(self):
+        """Test that preset dumper is created when Dumper is FormattingAwareDumper."""
+        config = DumpConfig(preserve_empty_lines=True, preserve_comments=False)
+        kwargs = {"Dumper": FormattingAwareDumper, "indent": 2}
+        result = _setup_formatting_dumper(config, kwargs)
+
+        # Dumper should be replaced with preset
+        assert result["Dumper"] != FormattingAwareDumper
+        assert issubclass(result["Dumper"], FormattingAwareDumper)
+
+    def test_setup_preserves_other_kwargs(self):
+        """Test that other kwargs are preserved unchanged."""
+        config = DumpConfig(preserve_empty_lines=True)
+        kwargs = {
+            "Dumper": FormattingAwareDumper,
+            "indent": 4,
+            "width": 80,
+            "sort_keys": True,
+        }
+        result = _setup_formatting_dumper(config, kwargs)
+
+        assert result["indent"] == 4
+        assert result["width"] == 80
+        assert result["sort_keys"] is True
+
+    def test_setup_does_not_mutate_input(self):
+        """Test that input kwargs dict is not mutated."""
+        config = DumpConfig(preserve_empty_lines=True)
+        kwargs = {
+            "Dumper": FormattingAwareDumper,
+            "indent": 2,
+            "preserve_empty_lines": True,
+        }
+        original_dumper = kwargs["Dumper"]
+        original_keys = set(kwargs.keys())
+
+        _setup_formatting_dumper(config, kwargs)
+
+        # Original should be unchanged
+        assert kwargs["Dumper"] == original_dumper
+        assert set(kwargs.keys()) == original_keys
+        assert kwargs["preserve_empty_lines"] is True
+
+    def test_setup_with_non_formatting_dumper(self):
+        """Test setup when Dumper is not FormattingAwareDumper."""
+        config = DumpConfig(preserve_empty_lines=True)
+        kwargs = {"Dumper": HumanFriendlyDumper, "indent": 2}
+        result = _setup_formatting_dumper(config, kwargs)
+
+        # Should not create preset for non-formatting dumper
+        assert result["Dumper"] == HumanFriendlyDumper
 
 
 if __name__ == "__main__":

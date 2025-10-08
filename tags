@@ -8,6 +8,7 @@ BrainValidator	brain/validate_brain.py	/^class BrainValidator:$/;"	c
 CommentMetadata	src/yaml_for_humans/formatting_aware.py	/^class CommentMetadata:$/;"	c
 CustomMapping	tests/test_emitter.py	/^        class CustomMapping:$/;"	c	function:TestErrorHandling.test_non_dict_mappings
 DirectoryOutputWriter	src/yaml_for_humans/cli.py	/^class DirectoryOutputWriter:$/;"	c
+DumpConfig	src/yaml_for_humans/dumper.py	/^class DumpConfig:$/;"	c
 FileOutputWriter	src/yaml_for_humans/cli.py	/^class FileOutputWriter:$/;"	c
 FilePathExpander	src/yaml_for_humans/cli.py	/^class FilePathExpander:$/;"	c
 FormatDetector	src/yaml_for_humans/cli.py	/^class FormatDetector:$/;"	c
@@ -47,6 +48,7 @@ TestContentLooksValid	tests/test_file_validation_helpers.py	/^class TestContentL
 TestConvenienceFunctions	tests/test_multi_document.py	/^class TestConvenienceFunctions:$/;"	c
 TestCreatePresetDumper	tests/test_dump_helpers.py	/^class TestCreatePresetDumper:$/;"	c
 TestDocumentSeparation	tests/test_multi_document.py	/^class TestDocumentSeparation:$/;"	c
+TestDumpConfig	tests/test_dump_helpers.py	/^class TestDumpConfig:$/;"	c
 TestEdgeCases	tests/test_multi_document.py	/^class TestEdgeCases:$/;"	c
 TestEmptyLinePreservation	tests/test_empty_line_preservation.py	/^class TestEmptyLinePreservation:$/;"	c
 TestErrorHandling	tests/test_emitter.py	/^class TestErrorHandling:$/;"	c
@@ -74,6 +76,7 @@ TestProcessingContextProperties	tests/test_cli.py	/^class TestProcessingContextP
 TestRealWorldExamples	tests/test_integration.py	/^class TestRealWorldExamples:$/;"	c
 TestSampleFileContent	tests/test_file_validation_helpers.py	/^class TestSampleFileContent:$/;"	c
 TestSelectDumper	tests/test_dump_helpers.py	/^class TestSelectDumper:$/;"	c
+TestSetupFormattingDumper	tests/test_dump_helpers.py	/^class TestSetupFormattingDumper:$/;"	c
 TestStdinAutoDetection	tests/test_cli.py	/^class TestStdinAutoDetection:$/;"	c
 TestStdinTimeout	tests/test_cli.py	/^class TestStdinTimeout:$/;"	c
 TestYAMLValidity	tests/test_emitter.py	/^class TestYAMLValidity:$/;"	c
@@ -172,6 +175,7 @@ _set_item_formatting	src/yaml_for_humans/formatting_aware.py	/^    def _set_item
 _set_key_comments	src/yaml_for_humans/formatting_aware.py	/^    def _set_key_comments(self, key, comment_metadata):$/;"	m	class:FormattingAwareDict
 _set_key_formatting	src/yaml_for_humans/formatting_aware.py	/^    def _set_key_formatting(self, key, formatting):$/;"	m	class:FormattingAwareDict
 _set_metadata	src/yaml_for_humans/formatting_aware.py	/^    def _set_metadata(self, node, **kwargs):$/;"	m	class:FormattingAwareComposer
+_setup_formatting_dumper	src/yaml_for_humans/dumper.py	/^def _setup_formatting_dumper(config: DumpConfig, dump_kwargs: dict) -> dict:$/;"	f
 _sort_resources	src/yaml_for_humans/multi_document.py	/^    def _sort_resources(self, documents):$/;"	m	class:KubernetesManifestDumper
 _store_content_markers	src/yaml_for_humans/dumper.py	/^def _store_content_markers(markers: dict) -> None:$/;"	f
 _write_multi_document_yaml	src/yaml_for_humans/cli.py	/^    def _write_multi_document_yaml($/;"	m	class:FileOutputWriter
@@ -257,6 +261,7 @@ main	examples/docker_compose_example.py	/^def main():$/;"	f
 main	examples/kubernetes_example.py	/^def main():$/;"	f
 main	examples/kubernetes_manifests_example.py	/^def main():$/;"	f
 main	examples/multi_document_example.py	/^def main():$/;"	f
+needs_formatting	src/yaml_for_humans/dumper.py	/^    def needs_formatting(self) -> bool:$/;"	m	class:DumpConfig
 open	src/yaml_for_humans/formatting_emitter.py	/^    def open(self):$/;"	m	class:FormattingAwareDumper
 output_path	src/yaml_for_humans/cli.py	/^        output_path=output_path,$/;"	v
 preserve_comments	src/yaml_for_humans/cli.py	/^        preserve_comments=preserve_comments,$/;"	v
@@ -327,6 +332,7 @@ test_complex_nested_structures	tests/test_integration.py	/^    def test_complex_
 test_complex_object_sequence	tests/test_emitter.py	/^    def test_complex_object_sequence(self):$/;"	m	class:TestHumanFriendlyEmitter
 test_complex_yaml_comment_preservation	tests/test_comment_preservation.py	/^    def test_complex_yaml_comment_preservation(self):$/;"	f
 test_complex_yaml_empty_line_preservation	tests/test_empty_line_preservation.py	/^    def test_complex_yaml_empty_line_preservation(self):$/;"	f
+test_config_is_frozen	tests/test_dump_helpers.py	/^    def test_config_is_frozen(self):$/;"	m	class:TestDumpConfig
 test_content_based_detection	tests/test_cli.py	/^    def test_content_based_detection(self):$/;"	m	class:TestFileTypeDetection
 test_continue_on_invalid_files	tests/test_cli.py	/^    def test_continue_on_invalid_files(self, capsys):$/;"	m	class:TestGlobbingAndDirectorySupport
 test_create_with_both_flags	tests/test_dump_helpers.py	/^    def test_create_with_both_flags(self):$/;"	m	class:TestCreatePresetDumper
@@ -455,6 +461,10 @@ test_multiline_string_uses_literal_block	tests/test_multiline_scalars.py	/^def t
 test_multiple_comments_before_content	tests/test_comment_preservation.py	/^    def test_multiple_comments_before_content(self):$/;"	f
 test_multiple_documents	tests/test_multi_document.py	/^    def test_multiple_documents(self):$/;"	m	class:TestMultiDocumentDumper
 test_multiple_files	tests/test_cli.py	/^    def test_multiple_files(self, capsys):$/;"	m	class:TestInputsFlag
+test_needs_formatting_both_false	tests/test_dump_helpers.py	/^    def test_needs_formatting_both_false(self):$/;"	m	class:TestDumpConfig
+test_needs_formatting_both_true	tests/test_dump_helpers.py	/^    def test_needs_formatting_both_true(self):$/;"	m	class:TestDumpConfig
+test_needs_formatting_comments_only	tests/test_dump_helpers.py	/^    def test_needs_formatting_comments_only(self):$/;"	m	class:TestDumpConfig
+test_needs_formatting_empty_lines_only	tests/test_dump_helpers.py	/^    def test_needs_formatting_empty_lines_only(self):$/;"	m	class:TestDumpConfig
 test_nested_sequences	tests/test_emitter.py	/^    def test_nested_sequences(self):$/;"	m	class:TestHumanFriendlyEmitter
 test_no_comments_yaml	tests/test_comment_preservation.py	/^    def test_no_comments_yaml(self):$/;"	f
 test_no_empty_lines_yaml	tests/test_empty_line_preservation.py	/^    def test_no_empty_lines_yaml(self):$/;"	f
@@ -495,6 +505,11 @@ test_select_no_preservation	tests/test_dump_helpers.py	/^    def test_select_no_
 test_select_with_both	tests/test_dump_helpers.py	/^    def test_select_with_both(self):$/;"	m	class:TestSelectDumper
 test_select_with_comments	tests/test_dump_helpers.py	/^    def test_select_with_comments(self):$/;"	m	class:TestSelectDumper
 test_select_with_empty_lines	tests/test_dump_helpers.py	/^    def test_select_with_empty_lines(self):$/;"	m	class:TestSelectDumper
+test_setup_creates_preset_dumper	tests/test_dump_helpers.py	/^    def test_setup_creates_preset_dumper(self):$/;"	m	class:TestSetupFormattingDumper
+test_setup_does_not_mutate_input	tests/test_dump_helpers.py	/^    def test_setup_does_not_mutate_input(self):$/;"	m	class:TestSetupFormattingDumper
+test_setup_preserves_other_kwargs	tests/test_dump_helpers.py	/^    def test_setup_preserves_other_kwargs(self):$/;"	m	class:TestSetupFormattingDumper
+test_setup_removes_preservation_params	tests/test_dump_helpers.py	/^    def test_setup_removes_preservation_params(self):$/;"	m	class:TestSetupFormattingDumper
+test_setup_with_non_formatting_dumper	tests/test_dump_helpers.py	/^    def test_setup_with_non_formatting_dumper(self):$/;"	m	class:TestSetupFormattingDumper
 test_simple_comment_preservation	tests/test_comment_preservation.py	/^    def test_simple_comment_preservation(self):$/;"	m	class:TestCommentPreservation
 test_simple_empty_line_preservation	tests/test_empty_line_preservation.py	/^    def test_simple_empty_line_preservation(self):$/;"	m	class:TestEmptyLinePreservation
 test_simple_string_sequence	tests/test_emitter.py	/^    def test_simple_string_sequence(self):$/;"	m	class:TestHumanFriendlyEmitter
