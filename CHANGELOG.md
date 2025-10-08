@@ -2,6 +2,25 @@
 
 All notable changes to yaml-for-humans will be documented in this file.
 
+## [Unreleased]
+
+### Changed
+- **Internal refactoring**: Reduced CLI function parameter counts by 40-87% via `CliConfig` dataclass
+  - `_huml_main()`: 8 parameters → 1 parameter (87.5% reduction)
+  - `_handle_output_generation()`: 8 parameters → 3 parameters (62.5% reduction)
+  - `OutputWriter.write()`: 7 parameters → 4 parameters (43% reduction)
+  - Improved type safety and maintainability with frozen dataclass configuration
+  - Backwards compatibility maintained for existing code
+
+### Deprecated
+- `_write_to_output()`: Use `OutputWriter.write()` directly with `OutputContext` instead
+
+### Internal
+- Added `CliConfig` dataclass for consolidated CLI configuration management
+- Added `output_context` property to derive `OutputContext` from `CliConfig`
+- Updated type stubs in `cli.pyi` for new configuration pattern
+- 18 new tests added for `CliConfig` (100% coverage)
+
 ## [1.4.0]
 
 ### Added

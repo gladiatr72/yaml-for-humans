@@ -3,15 +3,41 @@ Type stubs for CLI module.
 """
 
 from typing import Optional, Any, Dict, List, Tuple
+from dataclasses import dataclass
 
+@dataclass(frozen=True)
 class ProcessingContext:
     """Immutable context for processing operations."""
-    def __init__(
-        self,
-        unsafe_inputs: bool = ...,
-        preserve_empty_lines: bool = ...,
-        preserve_comments: bool = ...,
-    ) -> None: ...
+    unsafe_inputs: bool
+    preserve_empty_lines: bool
+    preserve_comments: bool
+
+    @property
+    def is_preservation_enabled(self) -> bool: ...
+
+    @property
+    def is_safe_mode(self) -> bool: ...
+
+@dataclass(frozen=True)
+class OutputContext:
+    """Configuration for output operations."""
+    indent: int
+    preserve_empty_lines: bool
+    preserve_comments: bool
+    auto_create_dirs: bool
+
+@dataclass(frozen=True)
+class CliConfig:
+    """Complete CLI configuration context."""
+    indent: int
+    timeout: int
+    inputs: Optional[str]
+    output: Optional[str]
+    auto: bool
+    processing: ProcessingContext
+
+    @property
+    def output_context(self) -> OutputContext: ...
 
 class InputProcessor:
     """Handles document processing from various input sources."""
@@ -37,35 +63,27 @@ def _process_input_source(
 def _handle_output_generation(
     documents: List[Any],
     document_sources: List[Dict[str, Any]],
-    output: Optional[str],
-    auto: bool,
-    indent: int,
-    preserve_empty_lines: bool,
-    preserve_comments: bool = ...,
+    config: CliConfig,
 ) -> None: ...
 
 def _huml_main(
-    indent: int = ...,
-    timeout: int = ...,
+    config: Optional[CliConfig] = ...,
+    # Legacy parameters for backwards compatibility
+    indent: Optional[int] = ...,
+    timeout: Optional[int] = ...,
     inputs: Optional[str] = ...,
     output: Optional[str] = ...,
-    auto: bool = ...,
-    unsafe_inputs: bool = ...,
-    preserve_empty_lines: bool = ...,
-    preserve_comments: bool = ...,
+    auto: Optional[bool] = ...,
+    unsafe_inputs: Optional[bool] = ...,
+    preserve_empty_lines: Optional[bool] = ...,
+    preserve_comments: Optional[bool] = ...,
 ) -> None:
     """
     Main CLI functionality for processing YAML/JSON input with automatic format detection.
 
     Args:
-        indent: Indentation level
-        timeout: Stdin timeout in milliseconds
-        inputs: Comma-delimited file paths
-        output: Output file or directory path
-        auto: Auto-create output directories
-        unsafe_inputs: Use unsafe YAML loader
-        preserve_empty_lines: Preserve empty lines from original YAML (default: True)
-        preserve_comments: Preserve comments from original YAML (default: True)
+        config: CliConfig object (preferred). If provided, other args ignored.
+        **kwargs: Legacy individual parameters for backwards compatibility.
     """
     ...
 
@@ -131,6 +149,9 @@ def _write_to_output(
 ) -> None:
     """
     Write documents to output file or directory.
+
+    DEPRECATED: This function is maintained for backwards compatibility.
+    New code should use OutputWriter.write() directly with an OutputContext.
 
     Args:
         documents: List of parsed documents

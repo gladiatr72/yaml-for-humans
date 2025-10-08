@@ -10,7 +10,7 @@ import io
 import json
 import os
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Iterator, Protocol, TextIO
 
@@ -269,6 +269,28 @@ class OutputContext:
     auto_create_dirs: bool = False
 
 
+@dataclass(frozen=True)
+class CliConfig:
+    """Complete CLI configuration context."""
+
+    indent: int = DEFAULT_INDENT
+    timeout: int = DEFAULT_TIMEOUT_MS
+    inputs: str | None = None
+    output: str | None = None
+    auto: bool = False
+    processing: ProcessingContext = field(default_factory=ProcessingContext)
+
+    @property
+    def output_context(self) -> OutputContext:
+        """Derive OutputContext from CliConfig."""
+        return OutputContext(
+            indent=self.indent,
+            preserve_empty_lines=self.processing.preserve_empty_lines,
+            preserve_comments=self.processing.preserve_comments,
+            auto_create_dirs=self.auto,
+        )
+
+
 class OutputStrategy(Protocol):
     """Strategy interface for different output modes."""
 
@@ -445,19 +467,9 @@ class OutputWriter:
         documents: list[Any],
         sources: list[dict],
         output_path: str,
-        indent: int = DEFAULT_INDENT,
-        preserve_empty_lines: bool = DEFAULT_PRESERVE_EMPTY_LINES,
-        preserve_comments: bool = DEFAULT_PRESERVE_COMMENTS,
-        auto: bool = False,
+        context: OutputContext,
     ) -> None:
         """Main entry point replacing _write_to_output."""
-        context = OutputContext(
-            indent=indent,
-            preserve_empty_lines=preserve_empty_lines,
-            preserve_comments=preserve_comments,
-            auto_create_dirs=auto,
-        )
-
         writer = OutputWriter.create_writer(output_path)
         writer.write_documents(documents, sources, context)
 
@@ -592,79 +604,98 @@ def _process_input_source(
 def _handle_output_generation(
     documents: list[Any],
     document_sources: list[dict],
-    output: str | None,
-    auto: bool,
-    indent: int,
-    preserve_empty_lines: bool,
-    preserve_comments: bool = DEFAULT_PRESERVE_COMMENTS,
+    config: CliConfig,
 ) -> None:
     """
     Handle output generation - either to file/directory or stdout.
     """
-    if output:
+    if config.output:
         # Write to file/directory
         OutputWriter.write(
             documents=documents,
             sources=document_sources,
-            output_path=output,
-            indent=indent,
-            preserve_empty_lines=preserve_empty_lines,
-            preserve_comments=preserve_comments,
-            auto=auto,
+            output_path=config.output,
+            context=config.output_context,
         )
     else:
         # Write to stdout (existing behavior)
         if len(documents) > 1:
             from .multi_document import dumps_all
 
-            output_str = dumps_all(documents, indent=indent)
+            output_str = dumps_all(documents, indent=config.indent)
         else:
             output_str = dumps(
                 documents[0],
-                indent=indent,
-                preserve_empty_lines=preserve_empty_lines,
-                preserve_comments=preserve_comments,
+                indent=config.indent,
+                preserve_empty_lines=config.processing.preserve_empty_lines,
+                preserve_comments=config.processing.preserve_comments,
             )
         print(output_str, end="")
 
 
 def _huml_main(
-    indent: int = DEFAULT_INDENT,
-    timeout: int = DEFAULT_TIMEOUT_MS,
+    config: CliConfig | None = None,
+    # Legacy parameters for backwards compatibility
+    indent: int | None = None,
+    timeout: int | None = None,
     inputs: str | None = None,
     output: str | None = None,
-    auto: bool = False,
-    unsafe_inputs: bool = False,
-    preserve_empty_lines: bool = DEFAULT_PRESERVE_EMPTY_LINES,
-    preserve_comments: bool = DEFAULT_PRESERVE_COMMENTS,
+    auto: bool | None = None,
+    unsafe_inputs: bool | None = None,
+    preserve_empty_lines: bool | None = None,
+    preserve_comments: bool | None = None,
 ) -> None:
     """
     Convert YAML or JSON input to human-friendly YAML.
 
     Reads from stdin and writes to stdout.
 
+    Args:
+        config: CliConfig object (preferred). If provided, other args ignored.
+        **kwargs: Legacy individual parameters for backwards compatibility.
+
     Security:
         By default, uses yaml.SafeLoader for parsing YAML input.
         Use --unsafe-inputs to enable yaml.Loader which allows
         arbitrary Python object instantiation (use with caution).
     """
+    # Backwards compatibility: if config not provided, build from kwargs
+    if config is None:
+        processing_context = ProcessingContext(
+            unsafe_inputs=unsafe_inputs if unsafe_inputs is not None else False,
+            preserve_empty_lines=(
+                preserve_empty_lines
+                if preserve_empty_lines is not None
+                else DEFAULT_PRESERVE_EMPTY_LINES
+            ),
+            preserve_comments=(
+                preserve_comments
+                if preserve_comments is not None
+                else DEFAULT_PRESERVE_COMMENTS
+            ),
+        )
+        config = CliConfig(
+            indent=indent if indent is not None else DEFAULT_INDENT,
+            timeout=timeout if timeout is not None else DEFAULT_TIMEOUT_MS,
+            inputs=inputs,
+            output=output,
+            auto=auto if auto is not None else False,
+            processing=processing_context,
+        )
     _check_cli_dependencies()
 
     try:
-        # Create processing context and processor
-        context = ProcessingContext(
-            unsafe_inputs=unsafe_inputs,
-            preserve_empty_lines=preserve_empty_lines,
-            preserve_comments=preserve_comments,
-        )
-        processor = InputProcessor(context)
+        # Create processor from config
+        processor = InputProcessor(config.processing)
 
         # Process input from files or stdin
-        documents, document_sources = _process_input_source(inputs, processor, timeout)
+        documents, document_sources = _process_input_source(
+            config.inputs, processor, config.timeout
+        )
 
         # Handle case where no documents were processed
         if len(documents) == 0:
-            if inputs:
+            if config.inputs:
                 # When using --inputs flag, we might have no valid files
                 # This is not necessarily an error, just no output
                 return
@@ -673,15 +704,7 @@ def _huml_main(
                 sys.exit(1)
 
         # Handle output generation
-        _handle_output_generation(
-            documents,
-            document_sources,
-            output,
-            auto,
-            indent,
-            preserve_empty_lines,
-            preserve_comments,
-        )
+        _handle_output_generation(documents, document_sources, config)
 
     except json.JSONDecodeError as e:
         print(f"Error: Invalid JSON input - {e}", file=sys.stderr)
@@ -913,15 +936,22 @@ def _write_to_output(
     preserve_empty_lines=DEFAULT_PRESERVE_EMPTY_LINES,
     preserve_comments=DEFAULT_PRESERVE_COMMENTS,
 ):
-    """Write documents to the specified output path using OutputWriter architecture."""
+    """Write documents to the specified output path using OutputWriter architecture.
+
+    DEPRECATED: This function is maintained for backwards compatibility.
+    New code should use OutputWriter.write() directly with an OutputContext.
+    """
+    context = OutputContext(
+        indent=indent,
+        preserve_empty_lines=preserve_empty_lines,
+        preserve_comments=preserve_comments,
+        auto_create_dirs=auto,
+    )
     OutputWriter.write(
         documents=documents,
         sources=document_sources or [],
         output_path=output_path,
-        indent=indent,
-        preserve_empty_lines=preserve_empty_lines,
-        preserve_comments=preserve_comments,
-        auto=auto,
+        context=context,
     )
 
 
@@ -988,16 +1018,21 @@ def huml():
           Use --unsafe-inputs to enable yaml.Loader which allows
           arbitrary Python object instantiation (use with caution).
         """
-        _huml_main(
-            indent,
-            timeout,
-            inputs,
-            output,
-            auto,
-            unsafe_inputs,
-            not no_preserve,
-            not no_preserve,
+        # Build configuration from CLI arguments
+        processing_context = ProcessingContext(
+            unsafe_inputs=unsafe_inputs,
+            preserve_empty_lines=not no_preserve,
+            preserve_comments=not no_preserve,
         )
+        config = CliConfig(
+            indent=indent,
+            timeout=timeout,
+            inputs=inputs,
+            output=output,
+            auto=auto,
+            processing=processing_context,
+        )
+        _huml_main(config)
 
     cli_main()
 

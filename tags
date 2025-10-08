@@ -5,6 +5,7 @@
 !_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
 !_TAG_PROGRAM_VERSION	5.9~svn20110310	//
 BrainValidator	brain/validate_brain.py	/^class BrainValidator:$/;"	c
+CliConfig	src/yaml_for_humans/cli.py	/^class CliConfig:$/;"	c
 CommentMetadata	src/yaml_for_humans/formatting_aware.py	/^class CommentMetadata:$/;"	c
 CustomMapping	tests/test_emitter.py	/^        class CustomMapping:$/;"	c	function:TestErrorHandling.test_non_dict_mappings
 DirectoryOutputWriter	src/yaml_for_humans/cli.py	/^class DirectoryOutputWriter:$/;"	c
@@ -43,6 +44,12 @@ TestBuildFilenameFromParts	tests/test_k8s_filename_helpers.py	/^class TestBuildF
 TestCLIEmptyLines	tests/test_cli_empty_lines.py	/^class TestCLIEmptyLines:$/;"	c
 TestCLIFunctionality	tests/test_cli.py	/^class TestCLIFunctionality:$/;"	c
 TestCLIInputsFlag	tests/test_integration.py	/^class TestCLIInputsFlag:$/;"	c
+TestCliConfigComposition	tests/test_cli_config.py	/^class TestCliConfigComposition:$/;"	c
+TestCliConfigCustomization	tests/test_cli_config.py	/^class TestCliConfigCustomization:$/;"	c
+TestCliConfigDefaults	tests/test_cli_config.py	/^class TestCliConfigDefaults:$/;"	c
+TestCliConfigFactoryPatterns	tests/test_cli_config.py	/^class TestCliConfigFactoryPatterns:$/;"	c
+TestCliConfigImmutability	tests/test_cli_config.py	/^class TestCliConfigImmutability:$/;"	c
+TestCliConfigOutputContext	tests/test_cli_config.py	/^class TestCliConfigOutputContext:$/;"	c
 TestCommentPreservation	tests/test_comment_preservation.py	/^class TestCommentPreservation:$/;"	c
 TestContentLooksValid	tests/test_file_validation_helpers.py	/^class TestContentLooksValid:$/;"	c
 TestConvenienceFunctions	tests/test_multi_document.py	/^class TestConvenienceFunctions:$/;"	c
@@ -190,7 +197,7 @@ analyze_file	ast_analysis.py	/^def analyze_file(filepath: Path) -> PerformanceAn
 analyze_file	ast_performance_analysis.py	/^def analyze_file(filepath: Path) -> PerformanceAnalyzer:$/;"	f
 analyze_repository	ast_performance_analysis.py	/^def analyze_repository():$/;"	f
 append	src/yaml_for_humans/formatting_aware.py	/^    def append(self, value):$/;"	m	class:FormattingAwareList
-auto	src/yaml_for_humans/cli.py	/^        auto=auto,$/;"	v
+auto_create_dirs	src/yaml_for_humans/cli.py	/^        auto_create_dirs=auto,$/;"	v
 basic_multi_document_example	examples/multi_document_example.py	/^def basic_multi_document_example():$/;"	f
 benchmark_formatting_preservation	benchmark.py	/^def benchmark_formatting_preservation():$/;"	f
 benchmark_serialization	benchmark.py	/^def benchmark_serialization():$/;"	f
@@ -202,6 +209,8 @@ compose_sequence_node	src/yaml_for_humans/formatting_aware.py	/^    def compose_
 configuration_files_example	examples/multi_document_example.py	/^def configuration_files_example():$/;"	f
 construct_mapping	src/yaml_for_humans/formatting_aware.py	/^    def construct_mapping(self, node, deep=False):$/;"	m	class:FormattingAwareConstructor
 construct_sequence	src/yaml_for_humans/formatting_aware.py	/^    def construct_sequence(self, node, deep=False):$/;"	m	class:FormattingAwareConstructor
+context	src/yaml_for_humans/cli.py	/^        context=context,$/;"	v
+context	src/yaml_for_humans/cli.py	/^    context = OutputContext($/;"	v
 create_sample_manifests	examples/kubernetes_manifests_example.py	/^def create_sample_manifests():$/;"	f
 create_source_factory	src/yaml_for_humans/cli.py	/^    def create_source_factory(self, base_info: dict) -> Callable[[], dict]:$/;"	m	class:ProcessingContext
 create_test_data	benchmark.py	/^def create_test_data():$/;"	f
@@ -211,6 +220,7 @@ demo_data	examples/comment_preservation_example.py	/^    demo_data = load_with_f
 demo_output	examples/comment_preservation_example.py	/^    demo_output = dumps(demo_data, preserve_comments=True, preserve_empty_lines=True)$/;"	v
 discover_pattern_files	brain/update_index.py	/^def discover_pattern_files():$/;"	f
 discover_support_files	brain/update_index.py	/^def discover_support_files():$/;"	f
+display_todo	docs/view-todo.py	/^def display_todo(xml_path: Path) -> None:$/;"	f
 documents	src/yaml_for_humans/cli.py	/^        documents=documents,$/;"	v
 dump	src/yaml_for_humans/dumper.py	/^def dump($/;"	f
 dump_all	src/yaml_for_humans/multi_document.py	/^    def dump_all(self, documents: Iterable[Any]) -> None:$/;"	m	class:KubernetesManifestDumper
@@ -232,6 +242,10 @@ expect_block_sequence	src/yaml_for_humans/emitter.py	/^    def expect_block_sequ
 expect_block_sequence_item	src/yaml_for_humans/emitter.py	/^    def expect_block_sequence_item(self, first: bool = False) -> None:$/;"	m	class:HumanFriendlyEmitter
 expect_scalar	src/yaml_for_humans/emitter.py	/^    def expect_scalar(self) -> None:$/;"	m	class:HumanFriendlyEmitter
 factory	src/yaml_for_humans/cli.py	/^        def factory():$/;"	f	function:ProcessingContext.create_source_factory
+format_improvement	docs/view-todo.py	/^def format_improvement(elem: ET.Element, index: int) -> str:$/;"	f
+format_opportunity	docs/view-todo.py	/^def format_opportunity(elem: ET.Element, index: int) -> str:$/;"	f
+format_phase	docs/view-todo.py	/^def format_phase(elem: ET.Element) -> str:$/;"	f
+format_section	docs/view-todo.py	/^def format_section(title: str, level: int = 1) -> str:$/;"	f
 generate_index	brain/update_index.py	/^def generate_index(patterns, support_files, meta, intent_map):$/;"	f
 generate_performance_report	ast_analysis.py	/^def generate_performance_report(analyzers: Dict[str, PerformanceAnalyzer]) -> str:$/;"	f
 generate_report	ast_performance_analysis.py	/^def generate_report(file_results: Dict, all_metrics: Dict, total_complexity: int, analysis_time: float):$/;"	f
@@ -256,6 +270,7 @@ load_with_formatting	src/yaml_for_humans/dumper.py	/^def load_with_formatting(st
 main	ast_analysis.py	/^def main():$/;"	f
 main	brain/update_index.py	/^def main():$/;"	f
 main	brain/validate_brain.py	/^def main():$/;"	f
+main	docs/view-todo.py	/^def main():$/;"	f
 main	examples/comment_preservation_example.py	/^def main():$/;"	f
 main	examples/docker_compose_example.py	/^def main():$/;"	f
 main	examples/kubernetes_example.py	/^def main():$/;"	f
@@ -263,6 +278,7 @@ main	examples/kubernetes_manifests_example.py	/^def main():$/;"	f
 main	examples/multi_document_example.py	/^def main():$/;"	f
 needs_formatting	src/yaml_for_humans/dumper.py	/^    def needs_formatting(self) -> bool:$/;"	m	class:DumpConfig
 open	src/yaml_for_humans/formatting_emitter.py	/^    def open(self):$/;"	m	class:FormattingAwareDumper
+output_context	src/yaml_for_humans/cli.py	/^    def output_context(self) -> OutputContext:$/;"	m	class:CliConfig
 output_path	src/yaml_for_humans/cli.py	/^        output_path=output_path,$/;"	v
 preserve_comments	src/yaml_for_humans/cli.py	/^        preserve_comments=preserve_comments,$/;"	v
 preserve_empty_lines	src/yaml_for_humans/cli.py	/^        preserve_empty_lines=preserve_empty_lines,$/;"	v
@@ -315,6 +331,15 @@ test_build_with_user_overrides	tests/test_dump_helpers.py	/^    def test_build_w
 test_case_insensitive	tests/test_file_validation_helpers.py	/^    def test_case_insensitive(self):$/;"	m	class:TestHasValidExtension
 test_ci_cd_pipeline	tests/test_integration.py	/^    def test_ci_cd_pipeline(self):$/;"	m	class:TestRealWorldExamples
 test_cli_can_disable_empty_lines_with_no_preserve_flag	tests/test_cli_empty_lines.py	/^    def test_cli_can_disable_empty_lines_with_no_preserve_flag(self):$/;"	m	class:TestCLIEmptyLines
+test_cli_config_accesses_processing_properties	tests/test_cli_config.py	/^    def test_cli_config_accesses_processing_properties(self):$/;"	m	class:TestCliConfigComposition
+test_cli_config_default_processing_context	tests/test_cli_config.py	/^    def test_cli_config_default_processing_context(self):$/;"	m	class:TestCliConfigDefaults
+test_cli_config_default_values	tests/test_cli_config.py	/^    def test_cli_config_default_values(self):$/;"	m	class:TestCliConfigDefaults
+test_cli_config_is_frozen	tests/test_cli_config.py	/^    def test_cli_config_is_frozen(self):$/;"	m	class:TestCliConfigImmutability
+test_cli_config_preserves_processing_context_methods	tests/test_cli_config.py	/^    def test_cli_config_preserves_processing_context_methods(self):$/;"	m	class:TestCliConfigComposition
+test_cli_config_processing_context_is_frozen	tests/test_cli_config.py	/^    def test_cli_config_processing_context_is_frozen(self):$/;"	m	class:TestCliConfigImmutability
+test_cli_config_with_custom_processing_context	tests/test_cli_config.py	/^    def test_cli_config_with_custom_processing_context(self):$/;"	m	class:TestCliConfigCustomization
+test_cli_config_with_custom_values	tests/test_cli_config.py	/^    def test_cli_config_with_custom_values(self):$/;"	m	class:TestCliConfigCustomization
+test_cli_config_with_no_preservation	tests/test_cli_config.py	/^    def test_cli_config_with_no_preservation(self):$/;"	m	class:TestCliConfigComposition
 test_cli_disables_empty_lines_with_file_input_and_no_preserve_flag	tests/test_cli_empty_lines.py	/^    def test_cli_disables_empty_lines_with_file_input_and_no_preserve_flag(self, tmp_path):$/;"	m	class:TestCLIEmptyLines
 test_cli_help_includes_no_preserve_option	tests/test_cli_empty_lines.py	/^    def test_cli_help_includes_no_preserve_option(self):$/;"	m	class:TestCLIEmptyLines
 test_cli_inputs_kubernetes_deployment	tests/test_integration.py	/^    def test_cli_inputs_kubernetes_deployment(self):$/;"	m	class:TestCLIInputsFlag
@@ -335,6 +360,10 @@ test_complex_yaml_empty_line_preservation	tests/test_empty_line_preservation.py	
 test_config_is_frozen	tests/test_dump_helpers.py	/^    def test_config_is_frozen(self):$/;"	m	class:TestDumpConfig
 test_content_based_detection	tests/test_cli.py	/^    def test_content_based_detection(self):$/;"	m	class:TestFileTypeDetection
 test_continue_on_invalid_files	tests/test_cli.py	/^    def test_continue_on_invalid_files(self, capsys):$/;"	m	class:TestGlobbingAndDirectorySupport
+test_create_directory_output_config	tests/test_cli_config.py	/^    def test_create_directory_output_config(self):$/;"	m	class:TestCliConfigFactoryPatterns
+test_create_file_output_config	tests/test_cli_config.py	/^    def test_create_file_output_config(self):$/;"	m	class:TestCliConfigFactoryPatterns
+test_create_minimal_preservation_config	tests/test_cli_config.py	/^    def test_create_minimal_preservation_config(self):$/;"	m	class:TestCliConfigFactoryPatterns
+test_create_unsafe_config	tests/test_cli_config.py	/^    def test_create_unsafe_config(self):$/;"	m	class:TestCliConfigFactoryPatterns
 test_create_with_both_flags	tests/test_dump_helpers.py	/^    def test_create_with_both_flags(self):$/;"	m	class:TestCreatePresetDumper
 test_create_with_comments	tests/test_dump_helpers.py	/^    def test_create_with_comments(self):$/;"	m	class:TestCreatePresetDumper
 test_create_with_empty_lines	tests/test_dump_helpers.py	/^    def test_create_with_empty_lines(self):$/;"	m	class:TestCreatePresetDumper
@@ -473,6 +502,11 @@ test_non_dict_mappings	tests/test_emitter.py	/^    def test_non_dict_mappings(se
 test_non_priority_keys_preserved_order	tests/test_emitter.py	/^    def test_non_priority_keys_preserved_order(self):$/;"	m	class:TestKeyOrdering
 test_nonexistent_file	tests/test_file_validation_helpers.py	/^    def test_nonexistent_file(self):$/;"	m	class:TestIsValidFileTypeIntegration
 test_nonexistent_file_handling	tests/test_cli.py	/^    def test_nonexistent_file_handling(self):$/;"	m	class:TestInputsFlag
+test_output_context_derivation_all_custom	tests/test_cli_config.py	/^    def test_output_context_derivation_all_custom(self):$/;"	m	class:TestCliConfigOutputContext
+test_output_context_derivation_custom_auto	tests/test_cli_config.py	/^    def test_output_context_derivation_custom_auto(self):$/;"	m	class:TestCliConfigOutputContext
+test_output_context_derivation_custom_indent	tests/test_cli_config.py	/^    def test_output_context_derivation_custom_indent(self):$/;"	m	class:TestCliConfigOutputContext
+test_output_context_derivation_custom_preservation	tests/test_cli_config.py	/^    def test_output_context_derivation_custom_preservation(self):$/;"	m	class:TestCliConfigOutputContext
+test_output_context_derivation_defaults	tests/test_cli_config.py	/^    def test_output_context_derivation_defaults(self):$/;"	m	class:TestCliConfigOutputContext
 test_output_directory_multiple_documents	tests/test_cli.py	/^    def test_output_directory_multiple_documents(self, capsys):$/;"	m	class:TestOutputFlag
 test_output_directory_single_document	tests/test_cli.py	/^    def test_output_directory_single_document(self, capsys):$/;"	m	class:TestOutputFlag
 test_output_directory_without_auto_fails	tests/test_cli.py	/^    def test_output_directory_without_auto_fails(self, capsys):$/;"	m	class:TestOutputFlag
