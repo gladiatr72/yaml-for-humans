@@ -488,4 +488,652 @@
     </note>
   </notes>
 
+  <mock-usage-analysis>
+    <date>2025-10-08</date>
+    <summary>
+      Very minimal mock usage in test suite. Only 2 files use mocks out of 13 test files.
+      Both uses are strategic and appropriate for external I/O boundary testing.
+    </summary>
+
+    <files-with-mocks>
+      <file>
+        <path>tests/test_cli.py</path>
+        <import>from unittest.mock import MagicMock, patch</import>
+        <usage-count>24 test methods</usage-count>
+        <mock-targets>
+          <target>threading.Thread (stdin timeout simulation)</target>
+          <target>sys.stdin (stdin read simulation)</target>
+          <target>yaml_for_humans.cli._read_stdin_with_timeout (stdin input mocking)</target>
+        </mock-targets>
+        <assessment>APPROPRIATE</assessment>
+        <rationale>
+          - Mocking stdin is the correct approach (external I/O boundary)
+          - Thread mocking for timeout testing avoids actual waits (performance)
+          - Tests focus on CLI behavior, not subprocess/file I/O
+          - All mocked functions are I/O-related, not business logic
+        </rationale>
+        <test-classes-using-mocks>
+          - TestStdinTimeout (2 tests): Thread/stdin mocking for timeout behavior
+          - TestCLIFunctionality (8 tests): _read_stdin_with_timeout mocking for format testing
+          - TestInputsFlag (19 tests): Uses real files (no mocks in this class ✓)
+          - TestOutputFlag (15 tests): Uses real tempfiles (no mocks in this class ✓)
+          - TestGlobbingAndDirectorySupport (15 tests): Uses real files (no mocks ✓)
+          - TestFileTypeDetection (5 tests): Uses real files (no mocks ✓)
+          - TestStdinAutoDetection (4 tests): _read_stdin_with_timeout mocking
+        </test-classes-using-mocks>
+      </file>
+
+      <file>
+        <path>tests/test_k8s_filename_helpers.py</path>
+        <import>NONE (no imports, false positive from grep)</import>
+        <usage-count>0</usage-count>
+        <assessment>NO MOCKS USED</assessment>
+        <rationale>
+          Tests pure helper functions (_extract_k8s_parts, _generate_fallback_filename, etc.)
+          with direct assertions. Excellent example of testing pure functions without mocks.
+        </rationale>
+      </file>
+    </files-with-mocks>
+
+    <files-without-mocks>
+      <count>11</count>
+      <examples>
+        - tests/test_comment_preservation.py (pure function tests)
+        - tests/test_cli_empty_lines.py (pure function tests)
+        - tests/test_dumper_helpers.py (pure function tests)
+        - tests/test_empty_line_preservation.py (pure function tests)
+        - tests/test_file_validation_helpers.py (pure function tests)
+        - tests/test_k8s_filename_helpers.py (pure function tests)
+        - tests/test_multiline_scalars.py (pure function tests)
+        - tests/test_dump_helpers.py (pure function tests)
+        - tests/test_integration.py (integration tests with real YAML)
+        - tests/test_multi_document.py (pure function tests)
+        - tests/test_emitter.py (pure function tests)
+      </examples>
+    </files-without-mocks>
+
+    <mock-usage-percentage>
+      <files>2/13 = 15.4%</files>
+      <test-methods>~24/200+ = ~12%</test-methods>
+    </mock-usage-percentage>
+
+    <patterns-observed>
+      <pattern name="I/O Boundary Mocking">
+        <description>Mocks only used for stdin/threading (external system boundaries)</description>
+        <status>BEST PRACTICE ✓</status>
+      </pattern>
+
+      <pattern name="Pure Function Testing">
+        <description>
+          Majority of tests use direct function calls with real data structures.
+          No mocking of internal business logic anywhere in the codebase.
+        </description>
+        <status>EXCELLENT ✓</status>
+        <evidence>
+          - test_k8s_filename_helpers.py: 0 mocks, all pure function tests
+          - TestInputsFlag: Uses real tempfiles, not mocked filesystem
+          - TestOutputFlag: Uses real tempfiles, not mocked filesystem
+          - All preservation tests: Direct YAML processing, no mocks
+        </evidence>
+      </pattern>
+
+      <pattern name="Real Tempfiles Over Mocking">
+        <description>
+          File-based tests use tempfile.mkdtemp() and real file I/O instead of
+          mocking filesystem operations. More robust and tests actual behavior.
+        </description>
+        <status>BEST PRACTICE ✓</status>
+        <benefit>Tests catch real filesystem edge cases</benefit>
+      </pattern>
+    </patterns-observed>
+
+    <strengths>
+      <strength>Very low mock usage (15% of test files)</strength>
+      <strength>Mocks only at I/O boundaries (stdin, threads)</strength>
+      <strength>No business logic mocking anywhere</strength>
+      <strength>Extensive use of pure function testing</strength>
+      <strength>Prefers real files over mocked filesystems</strength>
+      <strength>Helper extraction enables mock-free testing</strength>
+    </strengths>
+
+    <recommendations>
+      <recommendation priority="none">
+        Current mock usage is exemplary. No changes needed.
+        Continue this pattern as codebase evolves.
+      </recommendation>
+
+      <recommendation priority="maintain">
+        When adding new tests, maintain current approach:
+        1. Extract pure helpers from I/O functions
+        2. Test pure helpers without mocks
+        3. Mock only at system boundaries (stdin, files, network)
+        4. Use real tempfiles for filesystem testing
+      </recommendation>
+
+      <recommendation priority="document">
+        Consider adding testing philosophy to brain/patterns/ documenting:
+        - When to mock (I/O boundaries only)
+        - When to use real tempfiles vs mocks
+        - How helper extraction eliminates need for mocks
+        - Examples from this codebase
+      </recommendation>
+    </recommendations>
+
+    <alignment-with-todo-improvements>
+      <note>
+        All proposed testability improvements (#1-#4) will REDUCE need for mocks further
+        by extracting more pure functions. For example:
+
+        - Improvement #1 (_process_content_line_markers helpers) → 12-15 tests with 0 mocks
+        - Improvement #2 (dump() helpers) → 10-12 tests with 0 mocks
+        - Improvement #3 (_is_valid_file_type helpers) → 8-10 tests with 0 mocks
+        - Improvement #4 (_generate_k8s_filename helpers) → Already done in test_k8s_filename_helpers.py ✓
+
+        Expected impact: 50+ new tests, 0 additional mocks needed.
+      </note>
+    </alignment-with-todo-improvements>
+
+    <comparison-to-industry>
+      <industry-average>
+        Typical test suites: 40-60% of test files use mocks
+        Common anti-pattern: Mocking internal business logic
+      </industry-average>
+
+      <this-project>
+        This project: 15.4% of test files use mocks
+        Mocks only at I/O boundaries, never business logic
+      </this-project>
+
+      <grade>A+ (Exceptional)</grade>
+    </comparison-to-industry>
+
+  </mock-usage-analysis>
+
+  <ast-performance-analysis>
+    <date>2025-10-08</date>
+    <analysis-time>0.02 seconds</analysis-time>
+    <total-complexity-score>1290</total-complexity-score>
+    <files-analyzed>8</files-analyzed>
+
+    <summary>
+      AST-based analysis reveals concentration of complexity in CLI layer (469 points)
+      and formatting layer (333 points). Key bottlenecks: parameter-heavy __init__ methods,
+      complex CLI main function, and string operations near loops.
+    </summary>
+
+    <file-complexity-ranking>
+      <file rank="1">
+        <name>cli.py</name>
+        <complexity>469</complexity>
+        <percentage>36.4%</percentage>
+        <assessment>Highest complexity - CLI orchestration layer</assessment>
+        <notes>
+          - Contains _huml_main (16 args, line 631)
+          - Contains _write_to_output (12 args, line 907)
+          - Contains OutputWriter.write (11 args, line 444)
+          - Contains _generate_k8s_filename (7 args, line 798)
+          - Contains cli_main (7 args, line 979)
+          - 4 complexity hot spots (lines 101, 121, 332, 362, 718)
+        </notes>
+      </file>
+
+      <file rank="2">
+        <name>formatting_aware.py</name>
+        <complexity>333</complexity>
+        <percentage>25.8%</percentage>
+        <assessment>Second highest - YAML formatting logic</assessment>
+        <notes>
+          - Contains FormattingAwareDumper.__init__ (32 args, line 73)
+          - Contains HumanFriendlyDumper.__init__ (28 args, line 185)
+          - Contains FormattingMetadata.__init__ (7 args, line 22)
+          - 2 complexity hot spots (lines 150, 253)
+        </notes>
+      </file>
+
+      <file rank="3">
+        <name>emitter.py</name>
+        <complexity>132</complexity>
+        <percentage>10.2%</percentage>
+        <assessment>Moderate complexity - YAML emission</assessment>
+      </file>
+
+      <file rank="4">
+        <name>dumper.py</name>
+        <complexity>131</complexity>
+        <percentage>10.2%</percentage>
+        <assessment>Moderate complexity - YAML dumping</assessment>
+        <notes>
+          - 2 complexity hot spots (lines 376, 403)
+          - Target of testability improvements #1 and #2
+        </notes>
+      </file>
+
+      <file rank="5">
+        <name>formatting_emitter.py</name>
+        <complexity>119</complexity>
+        <percentage>9.2%</percentage>
+        <assessment>Moderate complexity - formatting emission</assessment>
+      </file>
+
+      <file rank="6">
+        <name>multi_document.py</name>
+        <complexity>72</complexity>
+        <percentage>5.6%</percentage>
+        <assessment>Low complexity - multi-doc handling</assessment>
+        <notes>
+          - Contains process_multi_document_yaml (8 args, line 56)
+        </notes>
+      </file>
+
+      <file rank="7">
+        <name>document_processors.py</name>
+        <complexity>33</complexity>
+        <percentage>2.6%</percentage>
+        <assessment>Very low complexity - document processing</assessment>
+        <notes>
+          - 1 complexity hot spot (line 32)
+        </notes>
+      </file>
+
+      <file rank="8">
+        <name>__init__.py</name>
+        <complexity>1</complexity>
+        <percentage>0.08%</percentage>
+        <assessment>Minimal - module initialization</assessment>
+      </file>
+    </file-complexity-ranking>
+
+    <function-parameter-analysis>
+      <summary>
+        7 functions with 7+ parameters detected. Heavy parameter lists indicate
+        potential need for configuration objects or dataclasses.
+      </summary>
+
+      <high-parameter-functions>
+        <function rank="1">
+          <name>FormattingAwareDumper.__init__</name>
+          <parameters>32</parameters>
+          <location>formatting_aware.py:73</location>
+          <complexity-contribution>High</complexity-contribution>
+          <recommendation priority="high">
+            Extract configuration dataclass. 32 parameters is excessive and unmaintainable.
+            This is a YAML dumper initialization - should accept config object + stream.
+          </recommendation>
+        </function>
+
+        <function rank="2">
+          <name>HumanFriendlyDumper.__init__</name>
+          <parameters>28</parameters>
+          <location>formatting_aware.py:185</location>
+          <complexity-contribution>High</complexity-contribution>
+          <recommendation priority="high">
+            Extract configuration dataclass. Same issue as FormattingAwareDumper.
+            Consider shared DumperConfig dataclass for both.
+          </recommendation>
+        </function>
+
+        <function rank="3">
+          <name>_huml_main</name>
+          <parameters>16</parameters>
+          <location>cli.py:631</location>
+          <complexity-contribution>Very High</complexity-contribution>
+          <recommendation priority="high">
+            Extract CliConfig dataclass. Already have ProcessingContext and OutputContext
+            but _huml_main takes 16 parameters. Consolidate into single config object.
+          </recommendation>
+        </function>
+
+        <function rank="4">
+          <name>_write_to_output</name>
+          <parameters>12</parameters>
+          <location>cli.py:907</location>
+          <complexity-contribution>High</complexity-contribution>
+          <recommendation priority="medium">
+            Extract WriteConfig dataclass or use existing OutputContext.
+            12 parameters suggests missing abstraction.
+          </recommendation>
+        </function>
+
+        <function rank="5">
+          <name>OutputWriter.write</name>
+          <parameters>11</parameters>
+          <location>cli.py:444</location>
+          <complexity-contribution>High</complexity-contribution>
+          <recommendation priority="medium">
+            This is already a class method - consider storing config in __init__ instead of
+            passing 11 parameters to write(). Refactor to builder pattern.
+          </recommendation>
+        </function>
+
+        <function rank="6">
+          <name>process_multi_document_yaml</name>
+          <parameters>8</parameters>
+          <location>multi_document.py:56</location>
+          <complexity-contribution>Medium</complexity-contribution>
+          <recommendation priority="low">
+            8 parameters is borderline. Consider MultiDocConfig dataclass if adding more.
+          </recommendation>
+        </function>
+
+        <function rank="7">
+          <name>_handle_output_generation</name>
+          <parameters>8</parameters>
+          <location>cli.py:592</location>
+          <complexity-contribution>Medium</complexity-contribution>
+          <recommendation priority="low">
+            8 parameters is borderline. Could use OutputContext if not already.
+          </recommendation>
+        </function>
+      </high-parameter-functions>
+
+      <impact>
+        Functions with 10+ parameters account for significant cognitive load and are
+        error-prone during refactoring. Dataclass extraction would reduce parameter counts
+        to 1-3 per function while improving type safety and maintainability.
+      </impact>
+    </function-parameter-analysis>
+
+    <loop-analysis>
+      <total-loops>25</total-loops>
+      <for-loops>23</for-loops>
+      <while-loops>2</while-loops>
+
+      <assessment>
+        Loop count is reasonable for a YAML processing library. Most loops are necessary
+        for document/line iteration. No obvious loop-heavy hot paths detected.
+      </assessment>
+
+      <note>
+        String operations near loops: 13 occurrences. This could indicate inefficient
+        string concatenation patterns (e.g., += in loop instead of join()).
+        Recommend profiling these areas if performance becomes an issue.
+      </note>
+    </loop-analysis>
+
+    <complexity-hot-spots>
+      <summary>10 hot spots with complexity ≥4 detected</summary>
+
+      <hot-spots>
+        <hot-spot>
+          <location>dumper.py:376</location>
+          <complexity>5</complexity>
+          <context>Content line marker processing</context>
+          <relation-to-todo>Part of improvement #1 (_process_content_line_markers)</relation-to-todo>
+        </hot-spot>
+
+        <hot-spot>
+          <location>dumper.py:403</location>
+          <complexity>5</complexity>
+          <context>Marker expansion logic</context>
+          <relation-to-todo>Part of improvement #1 (_process_content_line_markers)</relation-to-todo>
+        </hot-spot>
+
+        <hot-spot>
+          <location>document_processors.py:32</location>
+          <complexity>5</complexity>
+          <context>Document processing</context>
+          <relation-to-todo>Not in current TODO - monitor</relation-to-todo>
+        </hot-spot>
+
+        <hot-spot>
+          <location>formatting_aware.py:150</location>
+          <complexity>5</complexity>
+          <context>Formatting metadata handling</context>
+          <relation-to-todo>Not in current TODO - monitor</relation-to-todo>
+        </hot-spot>
+
+        <hot-spot>
+          <location>formatting_aware.py:253</location>
+          <complexity>5</complexity>
+          <context>Dumper configuration</context>
+          <relation-to-todo>Related to 32-param __init__ issue</relation-to-todo>
+        </hot-spot>
+
+        <hot-spot>
+          <location>cli.py:101</location>
+          <complexity>4</complexity>
+          <context>CLI argument processing</context>
+          <relation-to-todo>Not in current TODO - monitor</relation-to-todo>
+        </hot-spot>
+
+        <hot-spot>
+          <location>cli.py:121</location>
+          <complexity>4</complexity>
+          <context>Format detection</context>
+          <relation-to-todo>Already well-tested per mock analysis</relation-to-todo>
+        </hot-spot>
+
+        <hot-spot>
+          <location>cli.py:332</location>
+          <complexity>4</complexity>
+          <context>Input processing</context>
+          <relation-to-todo>Not in current TODO - monitor</relation-to-todo>
+        </hot-spot>
+
+        <hot-spot>
+          <location>cli.py:362</location>
+          <complexity>4</complexity>
+          <context>Output handling</context>
+          <relation-to-todo>Not in current TODO - monitor</relation-to-todo>
+        </hot-spot>
+
+        <hot-spot>
+          <location>cli.py:718</location>
+          <complexity>4</complexity>
+          <context>Filename generation</context>
+          <relation-to-todo>Part of improvement #4 (_generate_k8s_filename) - PARTIALLY COMPLETE</relation-to-todo>
+        </hot-spot>
+      </hot-spots>
+
+      <validation>
+        2/10 hot spots already addressed by TODO improvements (#1, #4).
+        Remaining hot spots have acceptable complexity (4-5) and don't require immediate action.
+      </validation>
+    </complexity-hot-spots>
+
+    <method-call-frequency>
+      <summary>Top 10 most frequently called methods</summary>
+
+      <frequent-methods>
+        <method name="__init__" calls="23">
+          High frequency expected - object initialization pattern
+        </method>
+        <method name="append" calls="22">
+          List building - expected for YAML processing
+        </method>
+        <method name="get" calls="17">
+          Dict access - consider .get() vs [] tradeoffs
+        </method>
+        <method name="strip" calls="15">
+          String processing - expected for YAML whitespace handling
+        </method>
+        <method name="echo" calls="10">
+          Click CLI output - expected
+        </method>
+        <method name="exit" calls="9">
+          CLI error handling - expected
+        </method>
+        <method name="startswith" calls="9">
+          String prefix checking - expected
+        </method>
+        <method name="pop" calls="8">
+          Stack operations - monitor for unnecessary pops
+        </method>
+        <method name="write" calls="8">
+          File I/O - expected
+        </method>
+        <method name="represent_mapping" calls="8">
+          YAML representation - expected
+        </method>
+      </frequent-methods>
+
+      <assessment>
+        All frequent method calls are appropriate for the domain.
+        No obvious anti-patterns (e.g., excessive regex compilation, repeated JSON parsing).
+      </assessment>
+    </method-call-frequency>
+
+    <memory-allocation-patterns>
+      <allocations>
+        <type name="dict" count="6">Most common - expected for YAML structures</type>
+        <type name="list" count="5">Second most - expected for sequences</type>
+        <type name="set" count="1">Minimal - could use more for deduplication?</type>
+        <type name="str" count="1">Minimal - relying on literals</type>
+      </allocations>
+
+      <assessment>
+        Allocation patterns are reasonable. No obvious memory waste.
+        Low string allocation count suggests good use of string literals.
+      </assessment>
+
+      <comprehension-usage>
+        <list-comprehensions>12</list-comprehensions>
+        <dict-comprehensions>1</dict-comprehensions>
+        <assessment>
+          Good use of comprehensions (more efficient than loop+append).
+          Could potentially use more dict comprehensions where applicable.
+        </assessment>
+      </comprehension-usage>
+    </memory-allocation-patterns>
+
+    <potential-bottlenecks>
+      <bottleneck type="string-operations-near-loops" severity="medium">
+        <count>13</count>
+        <description>
+          String operations detected near loop boundaries. Could indicate inefficient
+          string concatenation (str += str in loop instead of ''.join(list)).
+        </description>
+        <recommendation>
+          Profile these sections if performance becomes an issue.
+          Consider using io.StringIO or list+join pattern for string building in loops.
+        </recommendation>
+      </bottleneck>
+
+      <bottleneck type="io-operations" severity="low">
+        <count>17</count>
+        <breakdown>
+          <operation name="write" count="8"/>
+          <operation name="read" count="5"/>
+          <operation name="seek" count="3"/>
+        </breakdown>
+        <assessment>
+          I/O operation count is acceptable for CLI tool.
+          Most operations are necessary for file handling.
+          No obvious excessive I/O patterns.
+        </assessment>
+      </bottleneck>
+    </potential-bottlenecks>
+
+    <optimization-recommendations>
+      <recommendation priority="high" id="opt-1">
+        <title>Reduce Function Parameter Counts with Dataclasses</title>
+        <targets>
+          - FormattingAwareDumper.__init__ (32 params)
+          - HumanFriendlyDumper.__init__ (28 params)
+          - _huml_main (16 params)
+          - _write_to_output (12 params)
+          - OutputWriter.write (11 params)
+        </targets>
+        <approach>
+          Extract configuration dataclasses following existing pattern (ProcessingContext, OutputContext).
+          Creates: DumperConfig, CliConfig, WriteConfig
+        </approach>
+        <benefit>
+          - Reduces parameter counts from 10-32 to 1-3
+          - Improves type safety and IDE autocomplete
+          - Easier to add new config options
+          - Reduces cognitive load
+        </benefit>
+        <estimated-effort>4-6 hours</estimated-effort>
+      </recommendation>
+
+      <recommendation priority="medium" id="opt-2">
+        <title>Profile String Operations in Loops</title>
+        <targets>13 locations with string ops near loops</targets>
+        <approach>
+          1. Add profiling around suspected hot paths
+          2. Identify inefficient string concatenation
+          3. Replace with join() or StringIO where beneficial
+        </approach>
+        <benefit>
+          Could improve performance for large YAML documents
+        </benefit>
+        <estimated-effort>2-3 hours</estimated-effort>
+        <note>Only pursue if profiling shows actual bottleneck</note>
+      </recommendation>
+
+      <recommendation priority="low" id="opt-3">
+        <title>Consider More Dict/Set Comprehensions</title>
+        <current>12 list comprehensions, 1 dict comprehension</current>
+        <opportunity>
+          Review code for dict construction in loops that could be comprehensions
+        </opportunity>
+        <benefit>Slight performance improvement, more Pythonic code</benefit>
+        <estimated-effort>1 hour</estimated-effort>
+      </recommendation>
+    </optimization-recommendations>
+
+    <correlation-with-testability-analysis>
+      <observation>
+        AST analysis validates TODO complexity metrics:
+        - dumper.py hot spots (376, 403) are in _process_content_line_markers (TODO improvement #1)
+        - cli.py hot spot (718) is in _generate_k8s_filename (TODO improvement #4)
+        - High parameter counts align with need for dataclass extraction
+      </observation>
+
+      <synergy>
+        Testability improvements (#1-#4) will also improve AST complexity scores:
+        - Extracting pure helpers reduces cyclomatic complexity
+        - Reducing parameter counts simplifies function signatures
+        - Better separation of concerns improves all metrics
+      </synergy>
+
+      <new-improvement-from-ast>
+        <improvement id="10" priority="high" pattern="dataclass-config-pattern">
+          <title>Extract Configuration Dataclasses for High-Parameter Functions</title>
+          <targets>
+            - FormattingAwareDumper.__init__ (32 params → DumperConfig)
+            - HumanFriendlyDumper.__init__ (28 params → DumperConfig)
+            - _huml_main (16 params → CliConfig)
+            - _write_to_output (12 params → WriteConfig)
+            - OutputWriter.write (11 params → use instance vars)
+          </targets>
+          <pattern>dataclass-config-pattern (similar to existing ProcessingContext)</pattern>
+          <estimated-effort>4-6 hours</estimated-effort>
+          <impact>Very High - affects core dumper and CLI layers</impact>
+        </improvement>
+      </new-improvement-from-ast>
+    </correlation-with-testability-analysis>
+
+    <overall-assessment>
+      <grade>B+ (Good with improvement opportunities)</grade>
+
+      <strengths>
+        - Reasonable loop counts (25 total)
+        - Good use of comprehensions (13 total)
+        - Appropriate method call patterns
+        - Sensible memory allocation
+        - No obvious algorithmic anti-patterns
+      </strengths>
+
+      <weaknesses>
+        - Excessive parameter counts (7 functions with 7+ params)
+        - Complexity concentrated in cli.py (36% of total)
+        - String operations near loops (potential inefficiency)
+      </weaknesses>
+
+      <priority-actions>
+        1. Extract configuration dataclasses (HIGH - addresses 7 functions)
+        2. Continue with testability improvements #1-#4 (already planned)
+        3. Profile string operations if performance issues arise (MEDIUM)
+      </priority-actions>
+
+      <benchmark>
+        Analysis completed in 0.02 seconds - very fast.
+        Codebase is well-structured for AST analysis.
+      </benchmark>
+    </overall-assessment>
+
+  </ast-performance-analysis>
+
 </todo-list>

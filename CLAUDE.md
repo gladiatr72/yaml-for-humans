@@ -102,6 +102,121 @@ Use uv exclusively for Python operations
 ## optimizations
   use generator, dictionary and set comprehension whenever practical
 
+# Code Navigation with MCP ctags
+
+**Full Reference**: See `docs/mcp-ctags-reference.md` for complete documentation, examples, and workflows
+
+**Index Status**: 558 entries (70 classes, 116 functions, 357 methods, 15 variables)
+
+## Quick Reference: Essential Tools (5 total)
+
+**`mcp__ctags__ctags_detect`** - Verify ctags index exists
+Example: `mcp__ctags__ctags_detect()`
+
+**`mcp__ctags__ctags_find_symbol`** - Find definitions (MOST USED)
+Example: `mcp__ctags__ctags_find_symbol(query="_huml_main", symbol_type="f", exact_match=true)`
+
+**`mcp__ctags__ctags_get_location`** - Get source context
+Example: `mcp__ctags__ctags_get_location(symbol="_huml_main", context_lines=30)`
+
+**`mcp__ctags__ctags_list_symbols`** - List all functions/classes
+Example: `mcp__ctags__ctags_list_symbols(symbol_type="f", file_pattern="cli.py")`
+
+**`mcp__ctags__ctags_search_in_files`** - Scoped symbol search
+Example: `mcp__ctags__ctags_search_in_files(query=".*marker.*", file_patterns=["dumper.py"])`
+
+## Decision Matrix: When to Use Each Tool
+
+| Need | Use This Tool | Example |
+|------|---------------|---------|
+| Find function/class definition | `ctags_find_symbol` | Find where `dump()` is defined |
+| Get code preview with context | `ctags_get_location` | Preview `_huml_main` implementation |
+| List all functions in file | `ctags_list_symbols` | Get all functions in `cli.py` |
+| Find related symbols | `ctags_search_in_files` | Find all marker-related functions |
+| Find callers/usage sites | **Grep** (not ctags) | Find who calls `dump()` |
+| Read full file | **Read** (not ctags) | Read entire `dumper.py` |
+| Search comments/strings | **Grep** (not ctags) | Search docstrings |
+
+## Symbol Types Reference
+
+| Type | Meaning | Example |
+|------|---------|---------|
+| `f` | Function | `def process_data():` |
+| `c` | Class | `class MyClass:` |
+| `m` | Method | `def __init__(self):` |
+| `v` | Variable | `MAX_SIZE = 100` |
+
+## Common Workflows
+
+### 1. Finding a Function to Understand
+```python
+# 1. Find it
+mcp__ctags__ctags_find_symbol(query="_huml_main", symbol_type="f")
+
+# 2. Get preview
+mcp__ctags__ctags_get_location(symbol="_huml_main", context_lines=20)
+
+# 3. Read full (if needed)
+Read(file_path="src/yaml_for_humans/cli.py", offset=631, limit=100)
+```
+
+### 2. Exploring High-Parameter Functions (TODO #10)
+```python
+# Find and preview high-param functions
+mcp__ctags__ctags_find_symbol(query="FormattingAwareDumper", symbol_type="c", exact_match=true)
+mcp__ctags__ctags_get_location(symbol="FormattingAwareDumper.__init__", context_lines=50)
+
+# Compare all __init__ methods
+mcp__ctags__ctags_find_symbol(query="__init__", symbol_type="m")
+```
+
+### 3. Refactoring Prep (TODO #1-4)
+```python
+# Find target
+mcp__ctags__ctags_get_location(symbol="_process_content_line_markers", context_lines=40)
+
+# Find related symbols
+mcp__ctags__ctags_search_in_files(query=".*marker.*", file_patterns=["dumper.py"])
+```
+
+## Performance Tips
+
+1. Use `exact_match=true` when you know exact name (faster)
+2. Specify `symbol_type="f"` to narrow results (f/c/m/v)
+3. Use `file_pattern="cli.py"` to scope search
+4. Set `limit=20` when listing to avoid overflow
+5. Use `ctags_get_location` instead of full `Read` for previews
+
+## Maintenance
+
+**Generate index** (if `ctags_detect` fails):
+```bash
+ctags -R --languages=python --python-kinds=-i src/
+```
+
+**Regenerate after**: Adding files, renaming symbols, major refactoring, git pull
+
+## Integration with TODO Analysis
+
+Use ctags to explore AST-identified issues:
+
+**High-parameter functions** (TODO improvement #10):
+- `FormattingAwareDumper.__init__` (32 params)
+- `HumanFriendlyDumper.__init__` (28 params)
+- `_huml_main` (16 params)
+- `_write_to_output` (12 params)
+- `OutputWriter.write` (11 params)
+
+**Complex functions** (TODO improvements #1-4):
+- `_process_content_line_markers` (complexity 16)
+- `dump()` (complexity 12)
+- `_is_valid_file_type` (complexity 11)
+- `_generate_k8s_filename` (complexity 9)
+
+**Workflow**: `ctags_find_symbol` → `ctags_get_location` → Extract helpers → Regenerate index
+
+See `docs/mcp-ctags-reference.md` for detailed examples and complete tool documentation.
+
 
 analyze or analysis:
   - start in src/
