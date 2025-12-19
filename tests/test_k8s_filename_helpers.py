@@ -75,6 +75,65 @@ class TestExtractK8sParts:
         parts = _extract_k8s_parts(document)
         assert parts == ["daemonset", "nodeexporter"]
 
+    def test_extract_secret_with_docker_type(self):
+        """Test real Kubernetes Secret with dockerconfigjson type."""
+        document = {
+            "kind": "Secret",
+            "type": "kubernetes.io/dockerconfigjson",
+            "metadata": {"name": "internal-registry"},
+        }
+        parts = _extract_k8s_parts(document)
+        assert parts == ["secret", "kubernetes.io--dockerconfigjson", "internal-registry"]
+
+    def test_extract_type_with_consecutive_slashes(self):
+        """Test consecutive slashes collapse to single --."""
+        document = {
+            "kind": "Secret",
+            "type": "foo///bar",
+            "metadata": {"name": "test"},
+        }
+        parts = _extract_k8s_parts(document)
+        assert parts == ["secret", "foo--bar", "test"]
+
+    def test_extract_type_with_backslashes(self):
+        """Test backslash replacement for Windows paths."""
+        document = {
+            "kind": "Secret",
+            "type": "custom\\type\\value",
+            "metadata": {"name": "test"},
+        }
+        parts = _extract_k8s_parts(document)
+        assert parts == ["secret", "custom--type--value", "test"]
+
+    def test_extract_type_with_mixed_delimiters(self):
+        """Test consecutive mixed slashes collapse to single --."""
+        document = {
+            "kind": "Secret",
+            "type": "foo/\\bar",
+            "metadata": {"name": "test"},
+        }
+        parts = _extract_k8s_parts(document)
+        assert parts == ["secret", "foo--bar", "test"]
+
+    def test_extract_service_type_unaffected(self):
+        """Ensure normal Service types still work (existing behavior)."""
+        document = {
+            "kind": "Service",
+            "type": "LoadBalancer",
+            "metadata": {"name": "api"},
+        }
+        parts = _extract_k8s_parts(document)
+        assert parts == ["service", "loadbalancer", "api"]
+
+    def test_extract_name_with_slashes(self):
+        """Test that name field slashes are also sanitized."""
+        document = {
+            "kind": "ConfigMap",
+            "metadata": {"name": "my/app-config"},
+        }
+        parts = _extract_k8s_parts(document)
+        assert parts == ["configmap", "my--app-config"]
+
 
 class TestGenerateFallbackFilename:
     """Test _generate_fallback_filename pure function."""
@@ -208,6 +267,19 @@ class TestGenerateK8sFilenameIntegration:
             source_file="/path/MyManifest.yaml"
         )
         assert filename == "MyManifest.yaml"
+
+    def test_generate_dockerconfig_secret_filename(self):
+        """Integration: kubernetes.io/dockerconfigjson generates valid filename."""
+        document = {
+            "kind": "Secret",
+            "type": "kubernetes.io/dockerconfigjson",
+            "metadata": {"name": "internal-registry"},
+        }
+        filename = _generate_k8s_filename(document)
+        assert filename == "secret-kubernetes.io--dockerconfigjson-internal-registry.yaml"
+        # Verify no path separators remain
+        assert "/" not in filename
+        assert "\\" not in filename
 
 
 if __name__ == "__main__":

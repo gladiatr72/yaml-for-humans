@@ -303,6 +303,7 @@ represent_mapping	src/yaml_for_humans/formatting_emitter.py	/^    def represent_
 represent_str	src/yaml_for_humans/emitter.py	/^    def represent_str(self, dumper, data):$/;"	m	class:HumanFriendlyDumper
 represent_str	src/yaml_for_humans/formatting_emitter.py	/^    def represent_str(self, dumper, data):$/;"	m	class:FormattingAwareDumper
 run	brain/validate_brain.py	/^    def run(self) -> bool:$/;"	m	class:BrainValidator
+sanitize	src/yaml_for_humans/cli.py	/^    def sanitize(value: str) -> str:$/;"	f	function:_extract_k8s_parts
 setup_method	tests/test_cli.py	/^    def setup_method(self):$/;"	m	class:TestFileTypeDetection
 setup_method	tests/test_cli.py	/^    def setup_method(self):$/;"	m	class:TestGlobbingAndDirectorySupport
 setup_method	tests/test_cli.py	/^    def setup_method(self):$/;"	m	class:TestInputsFlag
@@ -409,7 +410,13 @@ test_extract_empty_document	tests/test_k8s_filename_helpers.py	/^    def test_ex
 test_extract_full_manifest	tests/test_k8s_filename_helpers.py	/^    def test_extract_full_manifest(self):$/;"	m	class:TestExtractK8sParts
 test_extract_metadata_not_dict	tests/test_k8s_filename_helpers.py	/^    def test_extract_metadata_not_dict(self):$/;"	m	class:TestExtractK8sParts
 test_extract_minimal_manifest	tests/test_k8s_filename_helpers.py	/^    def test_extract_minimal_manifest(self):$/;"	m	class:TestExtractK8sParts
+test_extract_name_with_slashes	tests/test_k8s_filename_helpers.py	/^    def test_extract_name_with_slashes(self):$/;"	m	class:TestExtractK8sParts
 test_extract_no_metadata	tests/test_k8s_filename_helpers.py	/^    def test_extract_no_metadata(self):$/;"	m	class:TestExtractK8sParts
+test_extract_secret_with_docker_type	tests/test_k8s_filename_helpers.py	/^    def test_extract_secret_with_docker_type(self):$/;"	m	class:TestExtractK8sParts
+test_extract_service_type_unaffected	tests/test_k8s_filename_helpers.py	/^    def test_extract_service_type_unaffected(self):$/;"	m	class:TestExtractK8sParts
+test_extract_type_with_backslashes	tests/test_k8s_filename_helpers.py	/^    def test_extract_type_with_backslashes(self):$/;"	m	class:TestExtractK8sParts
+test_extract_type_with_consecutive_slashes	tests/test_k8s_filename_helpers.py	/^    def test_extract_type_with_consecutive_slashes(self):$/;"	m	class:TestExtractK8sParts
+test_extract_type_with_mixed_delimiters	tests/test_k8s_filename_helpers.py	/^    def test_extract_type_with_mixed_delimiters(self):$/;"	m	class:TestExtractK8sParts
 test_extract_with_type_field	tests/test_k8s_filename_helpers.py	/^    def test_extract_with_type_field(self):$/;"	m	class:TestExtractK8sParts
 test_fallback_from_nested_source_file	tests/test_k8s_filename_helpers.py	/^    def test_fallback_from_nested_source_file(self):$/;"	m	class:TestGenerateFallbackFilename
 test_fallback_from_source_file	tests/test_k8s_filename_helpers.py	/^    def test_fallback_from_source_file(self):$/;"	m	class:TestGenerateFallbackFilename
@@ -425,6 +432,7 @@ test_filename_fallback_from_source_file	tests/test_cli.py	/^    def test_filenam
 test_filename_fallback_mixed_k8s_and_non_k8s	tests/test_cli.py	/^    def test_filename_fallback_mixed_k8s_and_non_k8s(self, capsys):$/;"	m	class:TestOutputFlag
 test_filename_fallback_stdin_multiple_documents	tests/test_cli.py	/^    def test_filename_fallback_stdin_multiple_documents(self, capsys):$/;"	m	class:TestOutputFlag
 test_filename_fallback_stdin_single_document	tests/test_cli.py	/^    def test_filename_fallback_stdin_single_document(self, capsys):$/;"	m	class:TestOutputFlag
+test_generate_dockerconfig_secret_filename	tests/test_k8s_filename_helpers.py	/^    def test_generate_dockerconfig_secret_filename(self):$/;"	m	class:TestGenerateK8sFilenameIntegration
 test_generate_empty_dict_fallback	tests/test_k8s_filename_helpers.py	/^    def test_generate_empty_dict_fallback(self):$/;"	m	class:TestGenerateK8sFilenameIntegration
 test_generate_empty_dict_with_stdin	tests/test_k8s_filename_helpers.py	/^    def test_generate_empty_dict_with_stdin(self):$/;"	m	class:TestGenerateK8sFilenameIntegration
 test_generate_full_manifest	tests/test_k8s_filename_helpers.py	/^    def test_generate_full_manifest(self):$/;"	m	class:TestGenerateK8sFilenameIntegration

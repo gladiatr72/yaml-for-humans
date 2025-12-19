@@ -4,6 +4,9 @@ All notable changes to yaml-for-humans will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **Kubernetes Secret filename generation**: Fixed path delimiter bug where Kubernetes Secret types containing `/` or `\` (e.g., `kubernetes.io/dockerconfigjson`) caused file write errors when outputting to a directory. Path delimiters in filename parts are now replaced with `--` to prevent filesystem path issues.
+
 ### Changed
 - **Internal refactoring**: Reduced CLI function parameter counts by 40-87% via `CliConfig` dataclass
   - `_huml_main()`: 8 parameters → 1 parameter (87.5% reduction)

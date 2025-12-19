@@ -9,6 +9,7 @@ import glob
 import io
 import json
 import os
+import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -776,14 +777,24 @@ def _extract_k8s_parts(document: dict) -> list[str]:
         document: Kubernetes resource dictionary
 
     Returns:
-        List of filename parts (kind, type, name) in lowercase
+        List of filename parts (kind, type, name) in lowercase.
+        Path delimiters (/ and \\) are replaced with single --
+        to prevent filesystem path issues.
     """
     kind = document.get("kind", "")
     doc_type = document.get("type", "")
     metadata = document.get("metadata", {})
     name = metadata.get("name", "") if isinstance(metadata, dict) else ""
 
-    return [value.lower() for value in [kind, doc_type, name] if value]
+    # Sanitize path delimiters: one or more / or \ becomes single --
+    def sanitize(value: str) -> str:
+        return re.sub(r'[/\\]+', '--', value)
+
+    return [
+        sanitize(value).lower()
+        for value in [kind, doc_type, name]
+        if value
+    ]
 
 
 def _generate_fallback_filename(source_file: str | None, stdin_position: int | None) -> str:

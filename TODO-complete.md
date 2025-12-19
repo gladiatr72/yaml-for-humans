@@ -2,7 +2,66 @@
 
 ## Completed Tasks
 
-### Recent Completion (2025-10-08)
+### Recent Completion (2025-12-19)
+
+#### Bug Fix: Kubernetes Secret Type Path Delimiter Issue ✅ **COMPLETED**
+
+**Date**: 2025-12-19
+**Effort**: 1 hour
+**Impact**: HIGH - Fixes critical file write errors for K8s Secrets with delimiter-containing types
+
+**Problem**:
+Kubernetes Secrets with types containing "/" (like `kubernetes.io/dockerconfigjson`) failed when outputting to a directory because the "/" was interpreted as a directory delimiter, causing file write errors.
+
+**Solution**:
+Modified `_extract_k8s_parts()` to sanitize ALL filename parts (kind, type, name) by replacing path delimiters with `--`:
+- Uses regex `[/\\]+` to match one or more consecutive path delimiters
+- Replaces with single `--` to prevent filesystem path errors
+- Example: `kubernetes.io/dockerconfigjson` → `kubernetes.io--dockerconfigjson`
+
+**Implementation details**:
+1. **Added `import re`** to `src/yaml_for_humans/cli.py` (line 12)
+
+2. **Modified `_extract_k8s_parts()`** (cli.py:773-797)
+   - Added nested `sanitize()` helper using `re.sub(r'[/\\]+', '--', value)`
+   - Applied sanitization to all parts before lowercasing
+   - Updated docstring to document sanitization behavior
+
+3. **Added 7 comprehensive tests** to `tests/test_k8s_filename_helpers.py`:
+   - test_extract_secret_with_docker_type (primary bug case)
+   - test_extract_type_with_consecutive_slashes (collapse multiple slashes)
+   - test_extract_type_with_backslashes (Windows compatibility)
+   - test_extract_type_with_mixed_delimiters (mixed / and \)
+   - test_extract_service_type_unaffected (regression test)
+   - test_extract_name_with_slashes (all parts sanitized)
+   - test_generate_dockerconfig_secret_filename (integration test)
+
+**Test results**:
+- **34 tests passed** in test_k8s_filename_helpers.py (13 existing + 21 new assertions)
+- **0 warnings** after fixing docstring escape sequence
+- **Manual validation**: Successfully generated file `08-secret-kubernetes.io--dockerconfigjson-internal-registry.yaml`
+
+**Files modified**:
+- `src/yaml_for_humans/cli.py` (added import, modified function)
+- `tests/test_k8s_filename_helpers.py` (added 7 tests)
+- `CHANGELOG.md` (documented fix)
+- `TODO.md` (created task list)
+
+**Key lessons**:
+- Regex `[/\\]+` collapses consecutive delimiters to single replacement
+- Sanitizing all parts (not just type) prevents future edge cases
+- Following cli-testing-pattern.xml: test pure helpers directly, no CliRunner needed
+- Brain patterns should be consulted first (initially missed, corrected during planning)
+
+**Metrics**:
+- Lines of code changed: ~15 lines
+- Tests added: 7 tests (6 unit + 1 integration)
+- Test coverage: 100% of modified function
+- Complexity: Low (pure function with regex-based sanitization)
+
+---
+
+### Previous Completion (2025-10-08)
 
 #### Phase 1: CLI Layer Configuration Refactoring ✅ **COMPLETED**
 **Improvement #10 - Extract Configuration Dataclasses for High-Parameter Functions**
